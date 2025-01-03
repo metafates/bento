@@ -3,7 +3,6 @@ package textwidget
 import (
 	"unicode"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/metafates/bento"
 	"github.com/rivo/uniseg"
 )
@@ -11,13 +10,13 @@ import (
 var _ bento.Widget = (*Span)(nil)
 
 type Span struct {
-	Style   lipgloss.Style
+	Style   bento.Style
 	Content string
 }
 
 func NewSpan(v string) *Span {
 	return &Span{
-		Style:   lipgloss.NewStyle(),
+		Style:   bento.NewStyle(),
 		Content: v,
 	}
 }
@@ -34,7 +33,7 @@ func (s *Span) Render(area bento.Rect, buffer *bento.Buffer) {
 
 	x, y := area.X, area.Y
 
-	for i, grapheme := range s.StyledGraphemes(lipgloss.NewStyle()) {
+	for i, grapheme := range s.StyledGraphemes(bento.NewStyle()) {
 		symbolWidth := grapheme.Width
 
 		nextX := x + symbolWidth
@@ -66,9 +65,8 @@ func (s *Span) Render(area bento.Rect, buffer *bento.Buffer) {
 	}
 }
 
-func (s *Span) StyledGraphemes(style lipgloss.Style) []StyledGrapheme {
-	// TODO: patch styles
-	// style = style.Patch(s.Style)
+func (s *Span) StyledGraphemes(style bento.Style) []StyledGrapheme {
+	style = style.Patched(s.Style)
 
 	var result []StyledGrapheme
 
@@ -183,39 +181,8 @@ func unicodeTruncateStart(s string, maxWidth int) (string, int) {
 	return "", 0
 }
 
-// func unicodeTruncateStart(s string, maxWidth int) (string, int) {
-// 	graphemes := uniseg.NewGraphemes(uniseg.ReverseString(s))
-//
-// 	var (
-// 		currentWidth int
-// 		newWidth     int
-// 	)
-//
-// 	byteIndex := len(s)
-//
-// 	for graphemes.Next() {
-// 		from, to := graphemes.Positions()
-//
-// 		index := from
-// 		width := to - from
-//
-// 		currentWidth += width
-//
-// 		if currentWidth <= maxWidth {
-// 			byteIndex = index
-// 			newWidth = currentWidth
-// 		} else {
-// 			break
-// 		}
-// 	}
-//
-// 	result := s[byteIndex:]
-//
-// 	return result, newWidth
-// }
-
 type StyledGrapheme struct {
-	Style  lipgloss.Style
+	Style  bento.Style
 	Symbol string
 	Width  int
 }

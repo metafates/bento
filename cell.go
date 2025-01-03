@@ -1,17 +1,15 @@
 package bento
 
-import "github.com/charmbracelet/lipgloss"
-
 type Cell struct {
 	Symbol string
-	Style  lipgloss.Style
+	Style  Style
 	Skip   bool
 }
 
 func NewCell(symbol string) *Cell {
 	return &Cell{
 		Symbol: symbol,
-		Style:  lipgloss.NewStyle(),
+		Style:  NewStyle(),
 		Skip:   false,
 	}
 }
@@ -28,14 +26,14 @@ func (c *Cell) AppendSymbol(symbol string) *Cell {
 	return c
 }
 
-func (c *Cell) SetStyle(style lipgloss.Style) *Cell {
-	c.Style = style
+func (c *Cell) SetStyle(style Style) *Cell {
+	c.Style = c.Style.Patched(style)
 
 	return c
 }
 
 func (c *Cell) Reset() {
 	c.Symbol = " "
-	c.Style = lipgloss.NewStyle()
+	c.Style = NewStyle()
 	c.Skip = false
 }

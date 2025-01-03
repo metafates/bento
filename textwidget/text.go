@@ -1,38 +1,20 @@
 package textwidget
 
 import (
-	"bufio"
-	"strings"
-
-	"github.com/charmbracelet/lipgloss"
 	"github.com/metafates/bento"
 )
 
 var _ bento.Widget = (*Text)(nil)
 
 type Text struct {
-	Style     lipgloss.Style
+	Style     bento.Style
 	Lines     Lines
 	Alignment bento.Alignment
 }
 
-func NewText(s string) *Text {
-	var lines []Line
-
-	if s == "" {
-		lines = []Line{*NewLine("")}
-	} else {
-		scanner := bufio.NewScanner(strings.NewReader(s))
-
-		for scanner.Scan() {
-			line := NewLine(scanner.Text())
-
-			lines = append(lines, *line)
-		}
-	}
-
+func NewText(lines Lines) *Text {
 	return &Text{
-		Style:     lipgloss.NewStyle(),
+		Style:     bento.NewStyle(),
 		Lines:     lines,
 		Alignment: bento.AlignmentNone,
 	}

@@ -3,7 +3,6 @@ package bento
 import (
 	"math"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/rivo/uniseg"
 )
 
@@ -33,7 +32,7 @@ func NewBufferFilled(area Rect, cell Cell) *Buffer {
 }
 
 // SetString prints a string, starting at the position (x, y)
-func (b *Buffer) SetString(x, y int, value string, style lipgloss.Style) {
+func (b *Buffer) SetString(x, y int, value string, style Style) {
 	b.SetStringN(x, y, value, math.MaxInt, style)
 }
 
@@ -41,8 +40,8 @@ func (b *Buffer) SetString(x, y int, value string, style lipgloss.Style) {
 // until the end of the line. Skips zero-width graphemes and control characters.
 //
 // Use [Buffer.SetString] when the maximum amount of characters can be printed.
-func (b *Buffer) SetStringN(x, y int, value string, maxWidth int, style lipgloss.Style) (int, int) {
-	remainingWidth := min(maxWidth, b.Area.Right()-x)
+func (b *Buffer) SetStringN(x, y int, value string, maxWidth int, style Style) (int, int) {
+	remainingWidth := min(maxWidth, max(0, b.Area.Right()-x))
 
 	graphemes := uniseg.NewGraphemes(value)
 
@@ -52,14 +51,13 @@ func (b *Buffer) SetStringN(x, y int, value string, maxWidth int, style lipgloss
 
 		remainingWidth -= width
 
-		b.CellAt(Position{x, y}).Symbol = symbol
-		b.CellAt(Position{x, y}).Style = style
+		b.CellAt(Position{x, y}).SetSymbol(symbol).SetStyle(style)
 
 		nextSymbol := x + width
 		x++
 
 		for x < nextSymbol {
-			*b.CellAt(Position{x, y}) = Cell{}
+			b.CellAt(Position{x, y}).Reset()
 			x++
 		}
 	}
@@ -103,14 +101,19 @@ func (b *Buffer) Resize(area Rect) {
 	b.Area = area
 }
 
-func (b *Buffer) SetStyle(area Rect, style lipgloss.Style) {
+func (b *Buffer) SetStyle(area Rect, style Style) {
 	area = b.Area.Intersection(area)
 
-	for y := area.Top(); y < area.Bottom(); y++ {
-		for x := area.Left(); x < area.Right(); x++ {
+	top := area.Top()
+	right := area.Right()
+	bottom := area.Bottom()
+	left := area.Left()
+
+	for y := top; y < bottom; y++ {
+		for x := left; x < right; x++ {
 			pos := Position{x, y}
 
-			b.CellAt(pos).Style = style
+			b.CellAt(pos).SetStyle(style)
 		}
 	}
 }

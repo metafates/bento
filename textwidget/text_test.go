@@ -4,12 +4,13 @@ import (
 	"testing"
 
 	"github.com/metafates/bento"
+	"github.com/muesli/termenv"
 	"github.com/stretchr/testify/require"
 )
 
 func TestText_Render(t *testing.T) {
 	t.Run("simple", func(t *testing.T) {
-		text := NewText("foo")
+		text := NewText(NewLines("foo"))
 		area := bento.Rect{
 			X:      0,
 			Y:      0,
@@ -21,7 +22,7 @@ func TestText_Render(t *testing.T) {
 
 		text.Render(area, buffer)
 
-		want := NewLines(*NewLine("foo  ")).NewBuffer()
+		want := NewLines("foo  ").NewBuffer()
 
 		require.Equal(t, want, buffer)
 	})
@@ -39,13 +40,13 @@ func TestText_Render(t *testing.T) {
 			Height: 1,
 		}
 
-		NewText("Hello, World!").Render(outOfBoundsArea, smallBuffer)
+		NewText(NewLines("Hello, World!")).Render(outOfBoundsArea, smallBuffer)
 
 		require.Equal(t, bento.NewBufferEmpty(smallBuffer.Area), smallBuffer)
 	})
 
 	t.Run("right aligned", func(t *testing.T) {
-		text := NewText("foo")
+		text := NewText(NewLines("foo"))
 		text.Alignment = bento.AlignmentRight
 
 		area := bento.Rect{
@@ -57,7 +58,7 @@ func TestText_Render(t *testing.T) {
 
 		text.Render(area, buffer)
 
-		want := NewLines(*NewLine("  foo")).NewBuffer()
+		want := NewLines("  foo").NewBuffer()
 
 		require.Equal(t, want, buffer)
 	})
@@ -83,7 +84,7 @@ func TestText_Render(t *testing.T) {
 			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
-				text := NewText(tc.text)
+				text := NewText(NewLines(tc.text))
 				text.Alignment = bento.AlignmentCenter
 
 				area := bento.Rect{
@@ -95,7 +96,7 @@ func TestText_Render(t *testing.T) {
 
 				text.Render(area, buffer)
 
-				want := NewLines(*NewLine(tc.want)).NewBuffer()
+				want := NewLines(tc.want).NewBuffer()
 
 				require.Equal(t, want, buffer)
 			})
@@ -103,7 +104,7 @@ func TestText_Render(t *testing.T) {
 	})
 
 	t.Run("right aligned with truncation", func(t *testing.T) {
-		text := NewText("123456789")
+		text := NewText(NewLines("123456789"))
 		text.Alignment = bento.AlignmentRight
 
 		area := bento.Rect{Width: 5, Height: 1}
@@ -112,13 +113,13 @@ func TestText_Render(t *testing.T) {
 
 		text.Render(area, buffer)
 
-		want := NewLines(*NewLine("56789")).NewBuffer()
+		want := NewLines("56789").NewBuffer()
 
 		require.Equal(t, want, buffer)
 	})
 
 	t.Run("center aligned odd with truncation", func(t *testing.T) {
-		text := NewText("123456789")
+		text := NewText(NewLines("123456789"))
 		text.Alignment = bento.AlignmentCenter
 
 		area := bento.Rect{Width: 5, Height: 1}
@@ -127,13 +128,13 @@ func TestText_Render(t *testing.T) {
 
 		text.Render(area, buffer)
 
-		want := NewLines(*NewLine("34567")).NewBuffer()
+		want := NewLines("34567").NewBuffer()
 
 		require.Equal(t, want, buffer)
 	})
 
 	t.Run("center aligned even with truncation", func(t *testing.T) {
-		text := NewText("123456789")
+		text := NewText(NewLines("123456789"))
 		text.Alignment = bento.AlignmentCenter
 
 		area := bento.Rect{Width: 6, Height: 1}
@@ -142,7 +143,53 @@ func TestText_Render(t *testing.T) {
 
 		text.Render(area, buffer)
 
-		want := NewLines(*NewLine("234567")).NewBuffer()
+		want := NewLines("234567").NewBuffer()
+
+		require.Equal(t, want, buffer)
+	})
+
+	t.Run("one line right", func(t *testing.T) {
+		line1 := NewLine("foo")
+		line2 := NewLine("bar")
+		line2.Alignment = bento.AlignmentCenter
+
+		text := NewText([]Line{line1, line2})
+		text.Alignment = bento.AlignmentRight
+
+		area := bento.Rect{Width: 5, Height: 2}
+		buffer := bento.NewBufferEmpty(area)
+
+		text.Render(area, buffer)
+
+		want := NewLines("  foo", " bar ").NewBuffer()
+
+		require.Equal(t, want, buffer)
+	})
+
+	t.Run("only styles line area", func(t *testing.T) {
+		area := bento.Rect{Width: 5, Height: 1}
+
+		buffer := bento.NewBufferEmpty(area)
+
+		line := NewLine("foo").WithStyle(bento.NewStyle().WithBackground(termenv.ANSIBlue))
+
+		NewText([]Line{line}).Render(area, buffer)
+
+		want := NewLines("foo  ").NewBuffer()
+		want.SetStyle(bento.Rect{Width: 3, Height: 1}, bento.NewStyle().WithBackground(termenv.ANSIBlue))
+
+		require.Equal(t, want, buffer)
+	})
+
+	t.Run("truncate", func(t *testing.T) {
+		buffer := bento.NewBufferEmpty(bento.Rect{Width: 6, Height: 1})
+
+		NewText([]Line{
+			NewLine("foobar").WithStyle(bento.NewStyle().WithBackground(termenv.ANSIBlue)),
+		}).Render(bento.Rect{Width: 3, Height: 1}, buffer)
+
+		want := NewLines("foo   ").NewBuffer()
+		want.SetStyle(bento.Rect{Width: 3, Height: 1}, bento.NewStyle().WithBackground(termenv.ANSIBlue))
 
 		require.Equal(t, want, buffer)
 	})

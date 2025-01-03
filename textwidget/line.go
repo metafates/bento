@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/metafates/bento"
 )
 
@@ -12,7 +11,23 @@ var _ bento.Widget = (*Line)(nil)
 
 type Lines []Line
 
-func NewLines(lines ...Line) Lines {
+func NewLines(s ...string) Lines {
+	var lines []Line
+
+	joined := strings.Join(s, "\n")
+
+	if joined == "" {
+		lines = []Line{NewLine("")}
+	} else {
+		scanner := bufio.NewScanner(strings.NewReader(joined))
+
+		for scanner.Scan() {
+			line := NewLine(scanner.Text())
+
+			lines = append(lines, line)
+		}
+	}
+
 	return Lines(lines)
 }
 
@@ -21,8 +36,6 @@ func (l Lines) NewBuffer() *bento.Buffer {
 	width := l.Width()
 
 	buffer := bento.NewBufferEmpty(bento.Rect{
-		X:      0,
-		Y:      0,
 		Width:  width,
 		Height: height,
 	})
@@ -38,19 +51,19 @@ func (l Lines) Width() int {
 	var width int
 
 	for _, line := range l {
-		width += line.Width()
+		width = max(width, line.Width())
 	}
 
 	return width
 }
 
 type Line struct {
-	Style     lipgloss.Style
+	Style     bento.Style
 	Spans     []Span
 	Alignment bento.Alignment
 }
 
-func NewLine(s string) *Line {
+func NewLine(s string) Line {
 	lines := bufio.NewScanner(strings.NewReader(s))
 
 	var spans []Span
@@ -63,18 +76,24 @@ func NewLine(s string) *Line {
 		spans = append(spans, *span)
 	}
 
-	return &Line{
-		Style:     lipgloss.NewStyle(),
+	return Line{
+		Style:     bento.NewStyle(),
 		Spans:     spans,
 		Alignment: bento.AlignmentNone,
 	}
 }
 
-func (l *Line) Render(area bento.Rect, buffer *bento.Buffer) {
+func (l Line) WithStyle(style bento.Style) Line {
+	l.Style = style
+
+	return l
+}
+
+func (l Line) Render(area bento.Rect, buffer *bento.Buffer) {
 	l.renderWithAlignment(area, buffer, bento.AlignmentNone)
 }
 
-func (l *Line) renderWithAlignment(
+func (l Line) renderWithAlignment(
 	area bento.Rect,
 	buffer *bento.Buffer,
 	parentAlignment bento.Alignment,
@@ -140,7 +159,7 @@ func (l *Line) renderWithAlignment(
 	}
 }
 
-func (l *Line) Width() int {
+func (l Line) Width() int {
 	var width int
 
 	for _, s := range l.Spans {
@@ -158,8 +177,8 @@ func setLine(x, y int, buffer *bento.Buffer, line *Line, maxWidth int) (int, int
 			break
 		}
 
-		// TODO: line.Style.Patch(span.Style)
-		newX, _ := buffer.SetStringN(x, y, s.Content, remainingWidth, line.Style)
+		style := line.Style.Patched(s.Style)
+		newX, _ := buffer.SetStringN(x, y, s.Content, remainingWidth, style)
 
 		w := max(0, newX-x)
 		x = newX
