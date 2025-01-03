@@ -21,7 +21,7 @@ func TestText_Render(t *testing.T) {
 
 		text.Render(area, buffer)
 
-		want := Lines([]Line{*NewLine("foo  ")}).NewBuffer()
+		want := NewLines(*NewLine("foo  ")).NewBuffer()
 
 		require.Equal(t, want, buffer)
 	})
@@ -57,23 +57,92 @@ func TestText_Render(t *testing.T) {
 
 		text.Render(area, buffer)
 
-		want := Lines([]Line{*NewLine("  foo")}).NewBuffer()
+		want := NewLines(*NewLine("  foo")).NewBuffer()
 
 		require.Equal(t, want, buffer)
 	})
 
-	t.Run("center aligned odd", func(t *testing.T) {
-		text := NewText("foo")
+	t.Run("center aligned", func(t *testing.T) {
+		for _, tc := range []struct {
+			name  string
+			width int
+			text  string
+			want  string
+		}{
+			{
+				name:  "odd",
+				width: 5,
+				text:  "foo",
+				want:  " foo ",
+			},
+			{
+				name:  "even",
+				width: 6,
+				text:  "foo",
+				want:  " foo  ",
+			},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				text := NewText(tc.text)
+				text.Alignment = bento.AlignmentCenter
+
+				area := bento.Rect{
+					Width:  tc.width,
+					Height: 1,
+				}
+
+				buffer := bento.NewBufferEmpty(area)
+
+				text.Render(area, buffer)
+
+				want := NewLines(*NewLine(tc.want)).NewBuffer()
+
+				require.Equal(t, want, buffer)
+			})
+		}
+	})
+
+	t.Run("right aligned with truncation", func(t *testing.T) {
+		text := NewText("123456789")
 		text.Alignment = bento.AlignmentRight
 
-		area := bento.Rect{
-			Width:  5,
-			Height: 1,
-		}
+		area := bento.Rect{Width: 5, Height: 1}
 
 		buffer := bento.NewBufferEmpty(area)
 
-		want := Lines([]Line{*NewLine(" foo ")})
+		text.Render(area, buffer)
+
+		want := NewLines(*NewLine("56789")).NewBuffer()
+
+		require.Equal(t, want, buffer)
+	})
+
+	t.Run("center aligned odd with truncation", func(t *testing.T) {
+		text := NewText("123456789")
+		text.Alignment = bento.AlignmentCenter
+
+		area := bento.Rect{Width: 5, Height: 1}
+
+		buffer := bento.NewBufferEmpty(area)
+
+		text.Render(area, buffer)
+
+		want := NewLines(*NewLine("34567")).NewBuffer()
+
+		require.Equal(t, want, buffer)
+	})
+
+	t.Run("center aligned even with truncation", func(t *testing.T) {
+		text := NewText("123456789")
+		text.Alignment = bento.AlignmentCenter
+
+		area := bento.Rect{Width: 6, Height: 1}
+
+		buffer := bento.NewBufferEmpty(area)
+
+		text.Render(area, buffer)
+
+		want := NewLines(*NewLine("234567")).NewBuffer()
 
 		require.Equal(t, want, buffer)
 	})

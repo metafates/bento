@@ -155,35 +155,64 @@ func spansAfterWidth(spans []Span, skipWidth int) []_SpanAfterWidth {
 }
 
 func unicodeTruncateStart(s string, maxWidth int) (string, int) {
-	graphemes := uniseg.NewGraphemes(uniseg.ReverseString(s))
+	state := -1
 
-	var (
-		currentWidth int
-		newWidth     int
-	)
+	currentWidth := uniseg.StringWidth(s)
 
-	byteIndex := len(s)
-
-	for graphemes.Next() {
-		from, to := graphemes.Positions()
-
-		index := from
-		width := to - from
-
-		currentWidth += width
-
-		if currentWidth <= maxWidth {
-			byteIndex = index
-			newWidth = currentWidth
-		} else {
-			break
-		}
+	if currentWidth <= maxWidth {
+		return s, currentWidth
 	}
 
-	result := s[byteIndex:]
+	for {
+		_, rest, width, newState := uniseg.FirstGraphemeClusterInString(s, state)
 
-	return result, newWidth
+		if width == 0 {
+			break
+		}
+
+		currentWidth -= width
+
+		if currentWidth <= maxWidth {
+			return rest, uniseg.StringWidth(rest)
+		}
+
+		state = newState
+		s = rest
+	}
+
+	return "", 0
 }
+
+// func unicodeTruncateStart(s string, maxWidth int) (string, int) {
+// 	graphemes := uniseg.NewGraphemes(uniseg.ReverseString(s))
+//
+// 	var (
+// 		currentWidth int
+// 		newWidth     int
+// 	)
+//
+// 	byteIndex := len(s)
+//
+// 	for graphemes.Next() {
+// 		from, to := graphemes.Positions()
+//
+// 		index := from
+// 		width := to - from
+//
+// 		currentWidth += width
+//
+// 		if currentWidth <= maxWidth {
+// 			byteIndex = index
+// 			newWidth = currentWidth
+// 		} else {
+// 			break
+// 		}
+// 	}
+//
+// 	result := s[byteIndex:]
+//
+// 	return result, newWidth
+// }
 
 type StyledGrapheme struct {
 	Style  lipgloss.Style

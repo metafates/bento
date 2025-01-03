@@ -12,6 +12,10 @@ var _ bento.Widget = (*Line)(nil)
 
 type Lines []Line
 
+func NewLines(lines ...Line) Lines {
+	return Lines(lines)
+}
+
 func (l Lines) NewBuffer() *bento.Buffer {
 	height := len(l)
 	width := l.Width()
