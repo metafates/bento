@@ -3,7 +3,8 @@ package bento
 type Flex int
 
 const (
-	FlexStart Flex = iota + 1
+	FlexLegacy Flex = iota
+	FlexStart
 	FlexEnd
 	FlexCenter
 	FlexSpaceBetween

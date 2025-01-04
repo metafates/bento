@@ -1,5 +1,7 @@
 package casso
 
+import "slices"
+
 func (v Variable) Sub(other Variable) Expression {
 	return NewExpression(0, NewTerm(v, 1), NewTerm(other, -1))
 }
@@ -20,6 +22,17 @@ func (e Expression) Sub(other Expression) Expression {
 
 func (e Expression) SubVariable(other Variable) Expression {
 	e.Terms = append(e.Terms, NewTerm(other, -1.0))
+
+	return e
+}
+
+func (e Expression) MulConstant(other float64) Expression {
+	e.Terms = slices.Clone(e.Terms)
+	e.Constant *= other
+
+	for i := range e.Terms {
+		e.Terms[i].Coefficient *= other
+	}
 
 	return e
 }

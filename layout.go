@@ -2,6 +2,7 @@ package bento
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/metafates/bento/casso"
 )
@@ -60,7 +61,6 @@ func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 	variableCount := len(l.Constraints)*2 + 2
 
 	variables := make([]casso.Variable, variableCount)
-
 	for i := 0; i < variableCount; i++ {
 		variables[i] = casso.NewVariable()
 	}
@@ -79,7 +79,7 @@ func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 
 	areaSize := _Element{
 		Start: variables[0],
-		End:   variables[1],
+		End:   variables[len(variables)-1],
 	}
 
 	if err := configureArea(&solver, areaSize, areaStart, areaEnd); err != nil {
@@ -102,23 +102,36 @@ func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 		return nil, nil, fmt.Errorf("configure constraints: %w", err)
 	}
 
-	for i := 0; i < len(segmentElements)-1; i++ {
-		left := segmentElements[i]
-		right := segmentElements[i+1]
+	if err := configureFillConstraints(&solver, segmentElements, l.Constraints, l.Flex); err != nil {
+		return nil, nil, fmt.Errorf("configure fill constraints: %w", err)
+	}
 
-		if err := solver.AddConstraint(left.hasSize(right.size(), AllSegmentGrow)); err != nil {
-			return nil, nil, fmt.Errorf("add has size constraint: %w", err)
+	if l.Flex != FlexLegacy {
+		for i := 0; i < len(segmentElements)-1; i++ {
+			left := segmentElements[i]
+			right := segmentElements[i+1]
+
+			if err := solver.AddConstraint(left.hasSize(right.size(), AllSegmentGrow)); err != nil {
+				return nil, nil, fmt.Errorf("add has size constraint: %w", err)
+			}
 		}
 	}
 
-	changes := make(map[casso.Variable]float64)
+	fetched := solver.FetchChanges()
 
-	for _, c := range solver.FetchChanges() {
+	changes := make(map[casso.Variable]float64, len(fetched))
+	for _, c := range fetched {
 		changes[c.Variable] = c.Constant
 	}
 
+	fmt.Printf("segmentElements: %+v\n", segmentElements)
+	fmt.Printf("spacerElements: %+v\n", spacerElements)
+
+	fmt.Printf("changes: %+v\n", changes)
 	segments = changesToRects(changes, segmentElements, innerArea, l.Direction)
+	fmt.Printf("segments: %+v\n", segments)
 	spacers = changesToRects(changes, spacerElements, innerArea, l.Direction)
+	fmt.Printf("spacers: %+v\n", spacers)
 
 	return segments, spacers, nil
 }
@@ -131,7 +144,36 @@ func changesToRects(
 ) []Rect {
 	var rects []Rect
 
-	// TODO
+	for _, e := range elements {
+		start := changes[e.Start]
+		end := changes[e.End]
+
+		startRounded := int(math.Round(math.Round(start) / _floatPrecisionMultiplier))
+		endRounded := int(math.Round(math.Round(end) / _floatPrecisionMultiplier))
+
+		size := max(0, endRounded-startRounded)
+
+		switch direction {
+		case DirectionHorizontal:
+			rect := Rect{
+				X:      startRounded,
+				Y:      area.Y,
+				Width:  size,
+				Height: area.Height,
+			}
+
+			rects = append(rects, rect)
+		case DirectionVertical:
+			rect := Rect{
+				X:      area.X,
+				Y:      startRounded,
+				Width:  area.Width,
+				Height: size,
+			}
+
+			rects = append(rects, rect)
+		}
+	}
 
 	return rects
 }
@@ -142,7 +184,67 @@ func configureFillConstraints(
 	constraints []Constraint,
 	flex Flex,
 ) error {
-	// TODO
+	var (
+		validConstraints []Constraint
+		validSegments    []_Element
+	)
+
+	for i := 0; i < min(len(constraints), len(segments)); i++ {
+		c := constraints[i]
+		s := segments[i]
+
+		switch c.(type) {
+		case ConstraintFill, ConstraintMin:
+			if _, ok := c.(ConstraintMin); ok && flex == FlexLegacy {
+				continue
+			}
+
+			validConstraints = append(validConstraints, c)
+			validSegments = append(validSegments, s)
+		}
+	}
+
+	if len(validConstraints) == 0 {
+		return nil
+	}
+
+	for _, indices := range combinations(len(validConstraints), 2) {
+		i, j := indices[0], indices[1]
+
+		leftConstraint := validConstraints[i]
+		leftSegment := validSegments[i]
+
+		rightConstraint := validConstraints[j]
+		rightSegment := validSegments[j]
+
+		getScalingFactor := func(c Constraint) float64 {
+			var scalingFactor float64
+
+			const max_ float64 = 1e-6
+			switch c := c.(type) {
+			case ConstraintFill:
+				scale := float64(c)
+
+				scalingFactor = max(max_, scale)
+			case ConstraintMin:
+				scalingFactor = 1
+			}
+
+			return scalingFactor
+		}
+
+		leftScalingFactor := getScalingFactor(leftConstraint)
+		rightScalingFactor := getScalingFactor(rightConstraint)
+
+		lhs := leftSegment.size().MulConstant(rightScalingFactor)
+		rhs := rightSegment.size().MulConstant(leftScalingFactor)
+
+		constraint := casso.Equal(Grow).ExpressionLHS(lhs).ExpressionRHS(rhs)
+		if err := solver.AddConstraint(constraint); err != nil {
+			return fmt.Errorf("add constraint: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -175,8 +277,14 @@ func configureConstraints(
 				return fmt.Errorf("add has min size constraint: %w", err)
 			}
 
-			if err := solver.AddConstraint(segment.hasSize(area.size(), FillGrow)); err != nil {
-				return fmt.Errorf("add has size constraint: %w", err)
+			if flex == FlexLegacy {
+				if err := solver.AddConstraint(segment.hasIntSize(size, MinSizeEq)); err != nil {
+					return fmt.Errorf("add has size constraint: %w", err)
+				}
+			} else {
+				if err := solver.AddConstraint(segment.hasSize(area.size(), FillGrow)); err != nil {
+					return fmt.Errorf("add has size constraint: %w", err)
+				}
 			}
 		case ConstraintLength:
 			length := int(constraint)
@@ -185,7 +293,11 @@ func configureConstraints(
 				return fmt.Errorf("add has int size constraint: %w", err)
 			}
 		case ConstraintPercentage:
-			panic("unimplemented")
+			size := area.size().MulConstant(float64(constraint) / 100.0)
+
+			if err := solver.AddConstraint(segment.hasSize(size, PercentageSizeEq)); err != nil {
+				return fmt.Errorf("add has size constraint: %w", err)
+			}
 		case ConstraintRatio:
 			panic("unimplemented")
 		case ConstraintFill:
@@ -212,6 +324,24 @@ func configureFlexConstraints(
 	spacingF := float64(spacing) * _floatPrecisionMultiplier
 
 	switch flex {
+	case FlexLegacy:
+		for _, s := range spacersExceptFirstAndLast {
+			if err := solver.AddConstraint(s.hasSize(casso.NewExpressionFromConstant(spacingF), SpacerSizeEq)); err != nil {
+				return fmt.Errorf("add has size constraint: %w", err)
+			}
+		}
+
+		if len(spacers) >= 2 {
+			first, last := spacers[0], spacers[len(spacers)-1]
+
+			if err := solver.AddConstraint(first.isEmpty()); err != nil {
+				return fmt.Errorf("add first is empty constraint: %w", err)
+			}
+
+			if err := solver.AddConstraint(last.isEmpty()); err != nil {
+				return fmt.Errorf("add last is empty constraint: %w", err)
+			}
+		}
 	case FlexSpaceAround:
 		panic("not implemented")
 	case FlexSpaceBetween:
@@ -256,7 +386,7 @@ func configureVariableConstraints(
 	for i := 0; i < count-count%2; i += 2 {
 		left, right := variables[i], variables[i+1]
 
-		constraint := casso.LessThanEqual(casso.Required).WithVariable(left).WithVariable(right)
+		constraint := casso.LessThanEqual(casso.Required).VariableLHS(left).VariableRHS(right)
 
 		if err := solver.AddConstraint(constraint); err != nil {
 			return fmt.Errorf("add constraint: %w", err)
@@ -272,8 +402,8 @@ func configureVariableInAreaConstraints(
 	area _Element,
 ) error {
 	for _, v := range variables {
-		start := casso.GreaterThanEqual(casso.Required).WithVariable(v).WithVariable(area.Start)
-		end := casso.GreaterThanEqual(casso.Required).WithVariable(v).WithVariable(area.End)
+		start := casso.GreaterThanEqual(casso.Required).VariableLHS(v).VariableRHS(area.Start)
+		end := casso.LessThanEqual(casso.Required).VariableLHS(v).VariableRHS(area.End)
 
 		if err := solver.AddConstraint(start); err != nil {
 			return fmt.Errorf("add start constraint: %w", err)
@@ -292,8 +422,8 @@ func configureArea(
 	area _Element,
 	areaStart, areaEnd float64,
 ) error {
-	startConstraint := casso.Equal(casso.Required).WithVariable(area.Start).WithConstant(areaStart)
-	endConstraint := casso.Equal(casso.Required).WithVariable(area.End).WithConstant(areaEnd)
+	startConstraint := casso.Equal(casso.Required).VariableLHS(area.Start).ConstantRHS(areaStart)
+	endConstraint := casso.Equal(casso.Required).VariableLHS(area.End).ConstantRHS(areaEnd)
 
 	if err := solver.AddConstraint(startConstraint); err != nil {
 		return fmt.Errorf("add start constraint: %w", err)
@@ -307,9 +437,9 @@ func configureArea(
 }
 
 func newElements(variables []casso.Variable) []_Element {
-	var elements []_Element
-
 	count := len(variables)
+
+	elements := make([]_Element, 0, count/2+1)
 
 	for i := 0; i < count-count%2; i += 2 {
 		start, end := variables[i], variables[i+1]
@@ -338,8 +468,8 @@ func (e _Element) size() casso.Expression {
 func (e _Element) isEmpty() casso.Constraint {
 	return casso.
 		Equal(casso.Required).
-		WithExpression(e.size()).
-		WithConstant(0)
+		ExpressionLHS(e.size()).
+		ConstantRHS(0)
 }
 
 func (e _Element) hasSize(
@@ -348,8 +478,8 @@ func (e _Element) hasSize(
 ) casso.Constraint {
 	return casso.
 		Equal(strength).
-		WithExpression(e.size()).
-		WithExpression(size)
+		ExpressionLHS(e.size()).
+		ExpressionRHS(size)
 }
 
 func (e _Element) hasMaxSize(
@@ -358,8 +488,8 @@ func (e _Element) hasMaxSize(
 ) casso.Constraint {
 	return casso.
 		LessThanEqual(strength).
-		WithExpression(e.size()).
-		WithConstant(float64(size) * _floatPrecisionMultiplier)
+		ExpressionLHS(e.size()).
+		ConstantRHS(float64(size) * _floatPrecisionMultiplier)
 }
 
 func (e _Element) hasMinSize(
@@ -368,8 +498,8 @@ func (e _Element) hasMinSize(
 ) casso.Constraint {
 	return casso.
 		GreaterThanEqual(strength).
-		WithExpression(e.size()).
-		WithConstant(float64(size) * _floatPrecisionMultiplier)
+		ExpressionLHS(e.size()).
+		ConstantRHS(float64(size) * _floatPrecisionMultiplier)
 }
 
 func (e _Element) hasIntSize(
@@ -378,6 +508,59 @@ func (e _Element) hasIntSize(
 ) casso.Constraint {
 	return casso.
 		Equal(strength).
-		WithExpression(e.size()).
-		WithConstant(float64(size) * _floatPrecisionMultiplier)
+		ExpressionLHS(e.size()).
+		ConstantRHS(float64(size) * _floatPrecisionMultiplier)
+}
+
+func combinations(n, k int) [][]int {
+	combins := binomial(n, k)
+	data := make([][]int, combins)
+	if len(data) == 0 {
+		return data
+	}
+
+	data[0] = make([]int, k)
+	for i := range data[0] {
+		data[0][i] = i
+	}
+
+	for i := 1; i < combins; i++ {
+		next := make([]int, k)
+		copy(next, data[i-1])
+		nextCombination(next, n, k)
+		data[i] = next
+	}
+
+	return data
+}
+
+func nextCombination(s []int, n, k int) {
+	for j := k - 1; j >= 0; j-- {
+		if s[j] == n+j-k {
+			continue
+		}
+		s[j]++
+		for l := j + 1; l < k; l++ {
+			s[l] = s[j] + l - j
+		}
+		break
+	}
+}
+
+func binomial(n, k int) int {
+	if n < 0 || k < 0 {
+		panic("negative input")
+	}
+	if n < k {
+		panic("bad set size")
+	}
+	// (n,k) = (n, n-k)
+	if k > n/2 {
+		k = n - k
+	}
+	b := 1
+	for i := 1; i <= k; i++ {
+		b = (n - k + i) * b / i
+	}
+	return b
 }

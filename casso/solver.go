@@ -101,9 +101,7 @@ func (s *Solver) AddConstraint(constraint Constraint) error {
 
 	s.cns[constraint] = tag
 
-	objective := s.objective.Clone()
-
-	if err := s.optimize(&objective); err != nil {
+	if err := s.optimize(&s.objective); err != nil {
 		return err
 	}
 
@@ -175,19 +173,53 @@ func (s *Solver) Reset() {
 	s.idTick = 1
 }
 
+func ptr[T any](value T) *T {
+	return &value
+}
+
 func (s *Solver) addWithArtificialVariable(row _Row) (bool, error) {
 	// Create and add the artificial variable to the tableau
 	art := _Symbol{Value: s.idTick, Type: SymbolTypeSlack}
 	s.idTick++
 	s.rows[art] = row.Clone()
-	artRow := row.Clone()
-	s.artificial = &artRow
+	s.artificial = ptr(row.Clone())
 
 	// Optimize the artificial objective. This is successful
 	// only if the artificial objective is optimized to zero.
-	artRow = artRow.Clone()
+	if err := s.optimize(s.artificial); err != nil {
+		return false, fmt.Errorf("optimize: %w", err)
+	}
 
-	return false, nil
+	success := nearZero(s.artificial.constant)
+	s.artificial = nil
+
+	if row, ok := s.rows[art]; ok {
+		delete(s.rows, art)
+
+		if len(row.cells) == 0 {
+			return success, nil
+		}
+
+		entering := anyPivotableSymbol(row)
+		if entering.Type == SymbolTypeInvalid {
+			return false, nil
+		}
+
+		row.SolveForSymbols(art, entering)
+		s.substitute(entering, row)
+		s.rows[entering] = row
+	}
+
+	// Remove the artificial row from the tableau
+	for symbol, row := range s.rows {
+		row.Remove(art)
+
+		s.rows[symbol] = row
+	}
+
+	s.objective.Remove(art)
+
+	return success, nil
 }
 
 func (s *Solver) optimize(objective *_Row) error {
@@ -232,7 +264,7 @@ func (s *Solver) substitute(symbol _Symbol, row _Row) {
 			s.varChanged(v)
 		}
 
-		if otherSymbol.Type == SymbolTypeExternal && otherRow.constant < 0 {
+		if otherSymbol.Type != SymbolTypeExternal && otherRow.constant < 0 {
 			s.infeasibleRows = append(s.infeasibleRows, otherSymbol)
 		}
 	}
@@ -334,7 +366,7 @@ func (s *Solver) createRow(constraint Constraint) (_Row, _Tag) {
 			s.idTick++
 
 			row.InsertSymbol(errPlus, -1)
-			row.InsertSymbol(errMinus, 1.0)
+			row.InsertSymbol(errMinus, 1)
 
 			s.objective.InsertSymbol(errPlus, float64(constraint.strength))
 			s.objective.InsertSymbol(errMinus, float64(constraint.strength))
@@ -359,7 +391,7 @@ func (s *Solver) createRow(constraint Constraint) (_Row, _Tag) {
 	}
 
 	if row.constant < 0 {
-		row.Negate()
+		row.reverseSign()
 	}
 
 	return row, tag
@@ -379,7 +411,6 @@ func (s *Solver) getVarSymbol(v Variable) _Symbol {
 	}
 
 	data.id++
-
 	s.varData[v] = data
 
 	return data.symbol
@@ -406,7 +437,7 @@ func chooseSubject(row _Row, tag _Tag) _Symbol {
 
 func allDummies(row _Row) bool {
 	for s := range row.cells {
-		if s.Type == SymbolTypeDummy {
+		if s.Type != SymbolTypeDummy {
 			return false
 		}
 	}
@@ -417,6 +448,17 @@ func allDummies(row _Row) bool {
 func getEnteringSymbol(objective _Row) _Symbol {
 	for s, v := range objective.cells {
 		if s.Type != SymbolTypeDummy && v < 0 {
+			return s
+		}
+	}
+
+	return newInvalidSymbol()
+}
+
+func anyPivotableSymbol(row _Row) _Symbol {
+	for s := range row.cells {
+		switch s.Type {
+		case SymbolTypeSlack, SymbolTypeError:
 			return s
 		}
 	}

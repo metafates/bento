@@ -2,6 +2,7 @@ package casso
 
 import (
 	"maps"
+	"slices"
 	"sync/atomic"
 )
 
@@ -22,7 +23,7 @@ const (
 	RelationOperatorGreaterThanEqual
 )
 
-var _variableID atomic.Uint64
+var _variableID = atomic.Uint64{}
 
 type Variable uint64
 
@@ -68,6 +69,7 @@ func NewExpression(constant float64, terms ...Term) Expression {
 }
 
 func (e Expression) Negate() Expression {
+	e.Terms = slices.Clone(e.Terms)
 	e.Constant = -e.Constant
 
 	for i := range e.Terms {
@@ -112,14 +114,14 @@ type WeightedRelation struct {
 	Strength Strength
 }
 
-func (w WeightedRelation) WithExpression(expression Expression) PartialConstraint {
+func (w WeightedRelation) ExpressionLHS(expression Expression) PartialConstraint {
 	return PartialConstraint{
 		Expression: expression,
 		Relation:   w,
 	}
 }
 
-func (w WeightedRelation) WithVariable(variable Variable) PartialConstraint {
+func (w WeightedRelation) VariableLHS(variable Variable) PartialConstraint {
 	return PartialConstraint{
 		Expression: NewExpressionFromTerm(NewTerm(variable, 1)),
 		Relation:   w,
@@ -143,7 +145,7 @@ type PartialConstraint struct {
 	Relation   WeightedRelation
 }
 
-func (p PartialConstraint) WithConstant(v float64) Constraint {
+func (p PartialConstraint) ConstantRHS(v float64) Constraint {
 	return NewConstraint(
 		p.Expression.SubConstant(v),
 		p.Relation.Operator,
@@ -151,7 +153,7 @@ func (p PartialConstraint) WithConstant(v float64) Constraint {
 	)
 }
 
-func (p PartialConstraint) WithExpression(e Expression) Constraint {
+func (p PartialConstraint) ExpressionRHS(e Expression) Constraint {
 	return NewConstraint(
 		p.Expression.Sub(e),
 		p.Relation.Operator,
@@ -159,7 +161,7 @@ func (p PartialConstraint) WithExpression(e Expression) Constraint {
 	)
 }
 
-func (p PartialConstraint) WithVariable(v Variable) Constraint {
+func (p PartialConstraint) VariableRHS(v Variable) Constraint {
 	return NewConstraint(
 		p.Expression.SubVariable(v),
 		p.Relation.Operator,
@@ -208,7 +210,7 @@ func (r *_Row) Clone() _Row {
 	}
 }
 
-func (r *_Row) Negate() {
+func (r *_Row) reverseSign() {
 	r.constant = -r.constant
 
 	for s := range r.cells {
@@ -245,7 +247,7 @@ func (r *_Row) InsertRow(other _Row, coefficient float64) bool {
 	constantDiff := other.constant * coefficient
 	r.constant += constantDiff
 
-	for s, v := range r.cells {
+	for s, v := range other.cells {
 		r.InsertSymbol(s, v*coefficient)
 	}
 
@@ -258,6 +260,7 @@ func (r *_Row) Remove(s _Symbol) {
 
 func (r *_Row) SolveForSymbol(s _Symbol) {
 	coeff := -1.0 / r.cells[s]
+	delete(r.cells, s)
 
 	r.constant *= coeff
 
