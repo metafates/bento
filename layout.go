@@ -467,7 +467,7 @@ func (e _Element) size() casso.Expression {
 
 func (e _Element) isEmpty() casso.Constraint {
 	return casso.
-		Equal(casso.Required).
+		Equal(casso.Required - 1).
 		ExpressionLHS(e.size()).
 		ConstantRHS(0)
 }

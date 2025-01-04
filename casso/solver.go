@@ -257,6 +257,7 @@ func (s *Solver) varChanged(v Variable) {
 func (s *Solver) substitute(symbol _Symbol, row _Row) {
 	for otherSymbol, otherRow := range s.rows {
 		constantChanged := otherRow.Substitute(symbol, row)
+		s.rows[otherSymbol] = otherRow
 
 		if otherSymbol.Type == SymbolTypeExternal && constantChanged {
 			v := s.varForSymbol[otherSymbol]

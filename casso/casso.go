@@ -28,7 +28,9 @@ var _variableID = atomic.Uint64{}
 type Variable uint64
 
 func NewVariable() Variable {
-	return Variable(_variableID.Add(1))
+	defer _variableID.Add(1)
+
+	return Variable(_variableID.Load())
 }
 
 type Term struct {
