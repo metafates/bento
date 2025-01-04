@@ -1,493 +1,425 @@
 package casso
 
 import (
-	"errors"
+	"fmt"
 	"math"
 )
 
-type Tag struct {
-	priority Priority
-	marker   Symbol
-	other    Symbol
+type PublicChange struct {
+	Variable Variable
+	Constant float64
 }
 
-type Edit struct {
-	tag Tag
-	val float64
+type _Tag struct {
+	marker _Symbol
+	other  _Symbol
+}
+
+type _EditInfo struct {
+	tag        _Tag
+	constraint Constraint
+	constant   float64
+}
+
+type _VariableData struct {
+	constant float64
+	symbol   _Symbol
+	id       uint8
 }
 
 type Solver struct {
-	tabs  map[Symbol]Constraint // symbol id -> constraint
-	edits map[Symbol]Edit       // variable id -> value
-	tags  map[Symbol]Tag        // marker id -> tag
-
-	infeasible []Symbol
-
-	objective  Expr
-	artificial Expr
+	cns                map[Constraint]_Tag
+	varData            map[Variable]_VariableData
+	varForSymbol       map[_Symbol]Variable
+	publicChanges      []PublicChange
+	changed            map[Variable]struct{}
+	shouldClearChanges bool
+	rows               map[_Symbol]_Row
+	edits              map[Variable]_EditInfo
+	infeasibleRows     []_Symbol
+	objective          _Row
+	artificial         *_Row
+	idTick             uint8
 }
 
-func NewSolver() *Solver {
-	return &Solver{
-		tabs:  make(map[Symbol]Constraint),
-		edits: make(map[Symbol]Edit),
-		tags:  make(map[Symbol]Tag),
+func NewSolver() Solver {
+	return Solver{
+		cns:                make(map[Constraint]_Tag),
+		varData:            make(map[Variable]_VariableData),
+		varForSymbol:       make(map[_Symbol]Variable),
+		publicChanges:      nil,
+		changed:            make(map[Variable]struct{}),
+		shouldClearChanges: false,
+		rows:               make(map[_Symbol]_Row),
+		edits:              make(map[Variable]_EditInfo),
+		infeasibleRows:     nil,
+		objective:          newRow(0),
+		artificial:         nil,
+		idTick:             1,
 	}
 }
 
-func (s *Solver) Val(id Symbol) float64 {
-	row, ok := s.tabs[id]
-	if !ok {
-		return 0
-	}
-	return row.expr.constant
-}
-
-func (s *Solver) AddConstraint(cell Constraint) (Symbol, error) {
-	return s.AddConstraintWithPriority(Required, cell)
-}
-
-func (s *Solver) AddConstraintWithPriority(priority Priority, cell Constraint) (Symbol, error) {
-	tag := Tag{priority: priority}
-
-	c := cell
-	c.expr.terms = make([]Term, 0, len(c.expr.terms))
-
-	// 1. filter away terms with coefficients that are zero
-	// 2. check that all variables in the constraint are registered
-	// 3. replace variables with their values if they have values assigned to them
-
-	for _, term := range cell.expr.terms {
-		if eqz(term.coeff) {
-			continue
-		}
-		if term.id.Zero() {
-			return zero, ErrBadTermInConstraint
-		}
-		resolved, exists := s.tabs[term.id]
-		if !exists {
-			c.expr.addSymbol(term.coeff, term.id)
-			continue
-		}
-		c.expr.addExpr(term.coeff, resolved.expr)
+func (s *Solver) AddConstraint(constraint Constraint) error {
+	if _, ok := s.cns[constraint]; ok {
+		return ErrDuplicateConstraint
 	}
 
-	// convert constraint to augmented simplex form
+	row, tag := s.createRow(constraint)
+	subject := chooseSubject(row, tag)
 
-	switch c.op {
-	case LTE, GTE:
-		coeff := 1.0
-		if c.op == GTE {
-			coeff = -1.0
+	if subject.Type == SymbolTypeInvalid && allDummies(row) {
+		if !nearZero(row.constant) {
+			return ErrUnsatisfiableConstraint
 		}
 
-		tag.marker = next(Slack)
-		c.expr.addSymbol(coeff, tag.marker)
-
-		if priority < Required {
-			tag.other = next(Error)
-			c.expr.addSymbol(-coeff, tag.other)
-			s.objective.addSymbol(float64(priority), tag.other)
-		}
-	case EQ:
-		if priority < Required {
-			tag.marker = next(Error)
-			tag.other = next(Error)
-
-			c.expr.addSymbol(-1.0, tag.marker)
-			c.expr.addSymbol(1.0, tag.other)
-
-			s.objective.addSymbol(float64(priority), tag.marker)
-			s.objective.addSymbol(float64(priority), tag.other)
-		} else {
-			tag.marker = next(Dummy)
-			c.expr.addSymbol(1.0, tag.marker)
-		}
+		subject = tag.marker
 	}
 
-	if c.expr.constant < 0.0 {
-		c.expr.negate()
-	}
-
-	// find a subject variable to pivot on
-
-	subject, err := s.findSubject(c, tag)
-	if err != nil {
-		return zero, err
-	}
-
-	if subject.Zero() {
-		err := s.augmentArtificialVariable(c)
+	// If an entering symbol still isn't found, then the row must
+	// be added using an artificial variable. If that fails, then
+	// the row represents an unsatisfiable constraint.
+	if subject.Type == SymbolTypeInvalid {
+		ok, err := s.addWithArtificialVariable(row)
 		if err != nil {
-			return tag.marker, err
+			return err
+		}
+
+		if !ok {
+			return ErrUnsatisfiableConstraint
 		}
 	} else {
-		// 1. solve for the subject variable
-		// 2. substitute the solution into our tableau
+		row.SolveForSymbol(subject)
+		s.substitute(subject, row)
 
-		c.expr.solveFor(subject)
+		if subject.Type == SymbolTypeExternal && row.constant != 0 {
+			v := s.varForSymbol[subject]
+			s.varChanged(v)
+		}
 
-		s.substitute(subject, c.expr)
-		s.tabs[subject] = c
+		s.rows[subject] = row
 	}
 
-	s.tags[tag.marker] = tag
+	s.cns[constraint] = tag
 
-	return tag.marker, s.optimizeAgainst(&s.objective)
+	objective := s.objective.Clone()
+
+	if err := s.optimize(&objective); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (s *Solver) RemoveConstraint(marker Symbol) error {
-	tag, exists := s.tags[marker]
-	if !exists {
-		return ErrBadConstraintMarker
+// FetchChanges fetches all changes to the values of variables since the last call to this function.
+//
+// The list of changes returned is not in a specific order. Each change comprises the variable changed and
+// the new value of that variable.
+func (s *Solver) FetchChanges() []PublicChange {
+	if s.shouldClearChanges {
+		clear(s.changed)
+		s.shouldClearChanges = false
+	} else {
+		s.shouldClearChanges = true
 	}
 
-	delete(s.tags, tag.marker)
+	clear(s.publicChanges)
 
-	if tag.marker.Error() {
-		row, exists := s.tabs[tag.marker]
-		if exists {
-			s.objective.addExpr(float64(-tag.priority), row.expr)
-		} else {
-			s.objective.addSymbol(float64(-tag.priority), tag.marker)
+	for v := range s.changed {
+		if varData, ok := s.varData[v]; ok {
+			var newValue float64
+
+			if row, ok := s.rows[varData.symbol]; ok {
+				newValue = row.constant
+			}
+
+			oldValue := varData.constant
+
+			if oldValue != newValue {
+				s.publicChanges = append(s.publicChanges, PublicChange{
+					Variable: v,
+					Constant: newValue,
+				})
+
+				varData.constant = newValue
+			}
 		}
 	}
 
-	if tag.other.Error() {
-		row, exists := s.tabs[tag.other]
-		if exists {
-			s.objective.addExpr(float64(-tag.priority), row.expr)
-		} else {
-			s.objective.addSymbol(float64(-tag.priority), tag.other)
+	return s.publicChanges
+}
+
+func (s *Solver) GetValue(v Variable) float64 {
+	if data, ok := s.varData[v]; ok {
+		if row, ok := s.rows[data.symbol]; ok {
+			return row.constant
 		}
 	}
 
-	row, exists := s.tabs[tag.marker]
-	if !exists {
-		r1 := math.MaxFloat64
-		r2 := math.MaxFloat64
+	return 0
+}
 
-		exit := zero
-		first := zero
-		second := zero
-		third := zero
+func (s *Solver) Reset() {
+	clear(s.rows)
+	clear(s.cns)
+	clear(s.varData)
+	clear(s.varForSymbol)
+	clear(s.changed)
 
-		for symbol, row := range s.tabs {
-			idx := row.expr.find(tag.marker)
-			if idx == -1 {
-				continue
-			}
+	s.shouldClearChanges = false
 
-			coeff := row.expr.terms[idx].coeff
-			if eqz(coeff) {
-				continue
-			}
+	clear(s.edits)
+	clear(s.infeasibleRows)
 
-			if symbol.External() {
-				third = symbol
-			} else {
-				r := -row.expr.constant / coeff
+	s.objective = newRow(0)
+	s.artificial = nil
+	s.idTick = 1
+}
 
-				switch {
-				case coeff < 0 && r < r1:
-					r1, first = r, symbol
-				case coeff >= 0 && r < r2:
-					r2, second = r, symbol
+func (s *Solver) addWithArtificialVariable(row _Row) (bool, error) {
+	// Create and add the artificial variable to the tableau
+	art := _Symbol{Value: s.idTick, Type: SymbolTypeSlack}
+	s.idTick++
+	s.rows[art] = row.Clone()
+	artRow := row.Clone()
+	s.artificial = &artRow
+
+	// Optimize the artificial objective. This is successful
+	// only if the artificial objective is optimized to zero.
+	artRow = artRow.Clone()
+
+	return false, nil
+}
+
+func (s *Solver) optimize(objective *_Row) error {
+	for {
+		entering := getEnteringSymbol(*objective)
+		if entering.Type == SymbolTypeInvalid {
+			return nil
+		}
+
+		leaving, row, ok := s.getLeavingRow(entering)
+		if !ok {
+			return InternalSolverError("unbounded objective")
+		}
+
+		row.SolveForSymbols(leaving, entering)
+
+		s.substitute(entering, row)
+
+		if entering.Type == SymbolTypeExternal && row.constant != 0 {
+			v := s.varForSymbol[entering]
+			s.varChanged(v)
+		}
+		s.rows[entering] = row
+	}
+}
+
+func (s *Solver) varChanged(v Variable) {
+	if s.shouldClearChanges {
+		clear(s.changed)
+		s.shouldClearChanges = false
+	}
+	s.changed[v] = struct{}{}
+}
+
+func (s *Solver) substitute(symbol _Symbol, row _Row) {
+	for otherSymbol, otherRow := range s.rows {
+		constantChanged := otherRow.Substitute(symbol, row)
+
+		if otherSymbol.Type == SymbolTypeExternal && constantChanged {
+			v := s.varForSymbol[otherSymbol]
+
+			s.varChanged(v)
+		}
+
+		if otherSymbol.Type == SymbolTypeExternal && otherRow.constant < 0 {
+			s.infeasibleRows = append(s.infeasibleRows, otherSymbol)
+		}
+	}
+
+	s.objective.Substitute(symbol, row)
+
+	if s.artificial != nil {
+		s.artificial.Substitute(symbol, row)
+	}
+}
+
+func (s *Solver) getLeavingRow(entering _Symbol) (_Symbol, _Row, bool) {
+	ratio := math.Inf(1)
+
+	var (
+		found _Symbol
+		ok    bool
+	)
+
+	for s, r := range s.rows {
+		if s.Type != SymbolTypeExternal {
+			temp := r.CoefficientFor(entering)
+
+			if temp < 0 {
+				tempRatio := -r.constant / temp
+
+				if tempRatio < ratio {
+					ratio = tempRatio
+					found = s
+					ok = true
 				}
 			}
 		}
-
-		switch {
-		case !first.Zero():
-			exit = first
-		case !second.Zero():
-			exit = second
-		default:
-			exit = third
-		}
-
-		row = s.tabs[exit]
-		delete(s.tabs, exit)
-
-		row.expr.solveForSymbols(exit, tag.marker)
-		s.substitute(tag.marker, row.expr)
-
-		return s.optimizeAgainst(&s.objective)
 	}
 
-	delete(s.tabs, tag.marker)
-
-	return s.optimizeAgainst(&s.objective)
-}
-
-func (s *Solver) Edit(id Symbol, priority Priority) error {
-	if priority < 0 || priority >= Required {
-		return ErrBadPriority
-	}
-	if _, exists := s.edits[id]; exists {
-		return nil
-	}
-	constraint := Constraint{op: EQ, expr: NewExpr(0.0, id.T(1.0))}
-	marker, err := s.AddConstraintWithPriority(priority, constraint)
-	if err != nil {
-		return err
-	}
-	s.edits[id] = Edit{tag: s.tags[marker], val: 0.0}
-	return nil
-}
-
-func (s *Solver) Suggest(id Symbol, val float64) error {
-	edit, ok := s.edits[id]
 	if !ok {
-		return ErrBadEditVariable
+		return _Symbol{}, _Row{}, false
 	}
 
-	defer s.optimizeDualObjective()
+	row := s.rows[found]
+	delete(s.rows, found)
 
-	delta := val - edit.val
-
-	edit.val = val
-	s.edits[id] = edit
-
-	row, exists := s.tabs[edit.tag.marker]
-	if exists {
-		row.expr.constant -= delta
-		if row.expr.constant < 0.0 {
-			s.infeasible = append(s.infeasible, edit.tag.marker)
-		}
-		s.tabs[edit.tag.marker] = row
-		return nil
-	}
-
-	row, exists = s.tabs[edit.tag.other]
-	if exists {
-		row.expr.constant -= delta
-		if row.expr.constant < 0.0 {
-			s.infeasible = append(s.infeasible, edit.tag.other)
-		}
-		s.tabs[edit.tag.other] = row
-		return nil
-	}
-
-	for symbol := range s.tabs {
-		row := s.tabs[symbol]
-
-		idx := row.expr.find(edit.tag.marker)
-		if idx == -1 {
-			continue
-		}
-
-		coeff := row.expr.terms[idx].coeff
-		if eqz(coeff) {
-			continue
-		}
-
-		row.expr.constant += coeff * delta
-		s.tabs[symbol] = row
-
-		if row.expr.constant >= 0.0 {
-			continue
-		}
-
-		if symbol.External() {
-			continue
-		}
-
-		s.infeasible = append(s.infeasible, symbol)
-	}
-
-	return nil
+	return found, row, true
 }
 
-// findSubject finds a subject variable to pivot on. It must either:
-// 1. be an external variable,
-// 2. be a negative slack/error variable, or
-// 3. be a dummy variable that has previously been cancelled out
-func (s *Solver) findSubject(cell Constraint, tag Tag) (Symbol, error) {
-	for _, term := range cell.expr.terms {
-		if term.id.External() {
-			return term.id, nil
+func (s *Solver) createRow(constraint Constraint) (_Row, _Tag) {
+	expr := constraint.expression
+	row := newRow(expr.Constant)
+
+	for _, term := range expr.Terms {
+		if !nearZero(term.Coefficient) {
+			symbol := s.getVarSymbol(term.Variable)
+
+			if otherRow, ok := s.rows[symbol]; ok {
+				row.InsertRow(otherRow, term.Coefficient)
+			} else {
+				row.InsertSymbol(symbol, term.Coefficient)
+			}
 		}
 	}
 
-	if tag.marker.Restricted() {
-		idx := cell.expr.find(tag.marker)
-		if idx != -1 && cell.expr.terms[idx].coeff < 0.0 {
-			return tag.marker, nil
+	var tag _Tag
+
+	switch constraint.op {
+	case RelationOperatorGreaterThanEqual, RelationOperatorLessThanEqual:
+		coeff := -1.0
+		if constraint.op == RelationOperatorLessThanEqual {
+			coeff = 1.0
 		}
-	}
 
-	if tag.other.Restricted() {
-		idx := cell.expr.find(tag.other)
-		if idx != -1 && cell.expr.terms[idx].coeff < 0.0 {
-			return tag.other, nil
+		slack := _Symbol{Value: s.idTick, Type: SymbolTypeSlack}
+		s.idTick++
+
+		row.InsertSymbol(slack, coeff)
+
+		if constraint.strength < Required {
+			errorSymbol := _Symbol{Value: s.idTick, Type: SymbolTypeError}
+			s.idTick++
+
+			row.InsertSymbol(errorSymbol, -coeff)
+			s.objective.InsertSymbol(errorSymbol, float64(constraint.strength))
+
+			tag = _Tag{
+				marker: slack,
+				other:  errorSymbol,
+			}
+		} else {
+			tag = _Tag{
+				marker: slack,
+				other:  newInvalidSymbol(),
+			}
 		}
-	}
+	case RelationOperatorEqual:
+		if constraint.strength < Required {
+			errPlus := _Symbol{Value: s.idTick, Type: SymbolTypeError}
+			s.idTick++
 
-	for _, term := range cell.expr.terms {
-		if !term.id.Dummy() {
-			return zero, nil
+			errMinus := _Symbol{Value: s.idTick, Type: SymbolTypeError}
+			s.idTick++
+
+			row.InsertSymbol(errPlus, -1)
+			row.InsertSymbol(errMinus, 1.0)
+
+			s.objective.InsertSymbol(errPlus, float64(constraint.strength))
+			s.objective.InsertSymbol(errMinus, float64(constraint.strength))
+
+			tag = _Tag{
+				marker: errPlus,
+				other:  errMinus,
+			}
+		} else {
+			dummy := _Symbol{Value: s.idTick, Type: SymbolTypeDummy}
+			s.idTick++
+
+			row.InsertSymbol(dummy, 1)
+
+			tag = _Tag{
+				marker: dummy,
+				other:  newInvalidSymbol(),
+			}
 		}
+	default:
+		panic(fmt.Sprintf("unexpected casso.RelationOperator: %#v", constraint.op))
 	}
 
-	if !eqz(cell.expr.constant) {
-		return zero, ErrBadDummyVariable
+	if row.constant < 0 {
+		row.Negate()
 	}
 
-	return tag.marker, nil
+	return row, tag
 }
 
-func (s *Solver) substitute(id Symbol, expr Expr) {
-	for symbol := range s.tabs {
-		row := s.tabs[symbol]
-		row.expr.substitute(id, expr)
-		s.tabs[symbol] = row
-		if symbol.External() || row.expr.constant >= 0.0 {
-			continue
+func (s *Solver) getVarSymbol(v Variable) _Symbol {
+	data, ok := s.varData[v]
+	if !ok {
+		symbol := _Symbol{Value: s.idTick, Type: SymbolTypeExternal}
+		s.varForSymbol[symbol] = v
+		s.idTick++
+		data = _VariableData{
+			constant: math.NaN(),
+			symbol:   symbol,
+			id:       0,
 		}
-		s.infeasible = append(s.infeasible, symbol)
 	}
-	s.objective.substitute(id, expr)
-	s.artificial.substitute(id, expr)
+
+	data.id++
+
+	s.varData[v] = data
+
+	return data.symbol
 }
 
-func (s *Solver) optimizeAgainst(objective *Expr) error {
-	for {
-		entry := zero
-		exit := zero
-
-		for _, term := range objective.terms {
-			if !term.id.Dummy() && term.coeff < 0.0 {
-				entry = term.id
-				break
-			}
+func chooseSubject(row _Row, tag _Tag) _Symbol {
+	for s := range row.cells {
+		if s.Type == SymbolTypeExternal {
+			return s
 		}
-		if entry.Zero() {
-			return nil
-		}
-
-		ratio := math.MaxFloat64
-
-		for symbol := range s.tabs {
-			if symbol.External() {
-				continue
-			}
-			idx := s.tabs[symbol].expr.find(entry)
-			if idx == -1 {
-				continue
-			}
-			coeff := s.tabs[symbol].expr.terms[idx].coeff
-			if coeff >= 0.0 {
-				continue
-			}
-			r := -s.tabs[symbol].expr.constant / coeff
-			if r < ratio {
-				ratio, exit = r, symbol
-			}
-		}
-
-		row := s.tabs[exit]
-		delete(s.tabs, exit)
-
-		row.expr.solveForSymbols(exit, entry)
-
-		s.substitute(entry, row.expr)
-		s.tabs[entry] = row
 	}
+
+	for _, s := range []_Symbol{tag.marker, tag.other} {
+		switch s.Type {
+		case SymbolTypeSlack, SymbolTypeError:
+			if row.CoefficientFor(s) < 0 {
+				return s
+			}
+		}
+	}
+
+	return newInvalidSymbol()
 }
 
-func (s *Solver) augmentArtificialVariable(row Constraint) error {
-	art := next(Slack)
-
-	s.tabs[art] = row.clone()
-	s.artificial = row.expr.clone()
-
-	err := s.optimizeAgainst(&s.artificial)
-	if err != nil {
-		return err
-	}
-
-	success := eqz(s.artificial.constant)
-	s.artificial = NewExpr(0.0)
-
-	artificial, ok := s.tabs[art]
-	if ok {
-		delete(s.tabs, art)
-
-		if len(artificial.expr.terms) == 0 {
-			return nil
+func allDummies(row _Row) bool {
+	for s := range row.cells {
+		if s.Type == SymbolTypeDummy {
+			return false
 		}
-
-		entry := zero
-		for _, term := range artificial.expr.terms {
-			if term.id.Restricted() {
-				entry = term.id
-				break
-			}
-		}
-		if entry.Zero() {
-			return errors.New("unsatisfiable")
-		}
-
-		artificial.expr.solveForSymbols(art, entry)
-
-		s.substitute(entry, artificial.expr)
-		s.tabs[entry] = artificial
 	}
 
-	for symbol, row := range s.tabs {
-		idx := row.expr.find(art)
-		if idx == -1 {
-			continue
-		}
-		row.expr.delete(idx)
-		s.tabs[symbol] = row
-	}
-
-	idx := s.objective.find(art)
-	if idx != -1 {
-		s.objective.delete(idx)
-	}
-
-	if !success {
-		return errors.New("unsatisfiable")
-	}
-	return nil
+	return true
 }
 
-// optimizeDualObjective optimizes away infeasible constraints.
-func (s *Solver) optimizeDualObjective() {
-	for len(s.infeasible) > 0 {
-		exit := s.infeasible[len(s.infeasible)-1]
-		s.infeasible = s.infeasible[:len(s.infeasible)-1]
-
-		row, exists := s.tabs[exit]
-		if !exists || row.expr.constant >= 0.0 {
-			continue
+func getEnteringSymbol(objective _Row) _Symbol {
+	for s, v := range objective.cells {
+		if s.Type != SymbolTypeDummy && v < 0 {
+			return s
 		}
-
-		delete(s.tabs, exit)
-
-		entry := zero
-		ratio := math.MaxFloat64
-
-		for _, term := range row.expr.terms {
-			if term.coeff <= 0.0 || term.id.Dummy() {
-				continue
-			}
-			idx := s.objective.find(term.id)
-			if idx == -1 {
-				continue
-			}
-			r := s.objective.terms[idx].coeff / term.coeff
-			if r < ratio {
-				entry, ratio = term.id, r
-			}
-		}
-
-		row.expr.solveForSymbols(exit, entry)
-
-		s.substitute(entry, row.expr)
-		s.tabs[entry] = row
 	}
+
+	return newInvalidSymbol()
 }

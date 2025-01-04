@@ -2,7 +2,6 @@ package bento
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/metafates/bento/casso"
 )
@@ -10,19 +9,19 @@ import (
 const _floatPrecisionMultiplier float64 = 100.0
 
 const (
-	SpacerSizeEq     casso.Priority = casso.Required / 10.0
-	MinSizeGTE       casso.Priority = casso.Strong * 100.0
-	MaxSizeLTE       casso.Priority = casso.Strong * 100.0
-	MinSizeLTE       casso.Priority = casso.Strong * 100.0
-	LengthSizeEq     casso.Priority = casso.Strong * 10.0
-	PercentageSizeEq casso.Priority = casso.Strong
-	RatioSizeEq      casso.Priority = casso.Strong / 10.0
-	MinSizeEq        casso.Priority = casso.Medium * 10.0
-	MaxSizeEq        casso.Priority = casso.Medium * 10.0
-	Grow             casso.Priority = 100.0
-	FillGrow         casso.Priority = casso.Medium
-	SpaceGrow        casso.Priority = casso.Weak * 10.0
-	AllSegmentGrow   casso.Priority = casso.Weak
+	SpacerSizeEq     casso.Strength = casso.Required / 10.0
+	MinSizeGTE       casso.Strength = casso.Strong * 100.0
+	MaxSizeLTE       casso.Strength = casso.Strong * 100.0
+	MinSizeLTE       casso.Strength = casso.Strong * 100.0
+	LengthSizeEq     casso.Strength = casso.Strong * 10.0
+	PercentageSizeEq casso.Strength = casso.Strong
+	RatioSizeEq      casso.Strength = casso.Strong / 10.0
+	MinSizeEq        casso.Strength = casso.Medium * 10.0
+	MaxSizeEq        casso.Strength = casso.Medium * 10.0
+	Grow             casso.Strength = 100.0
+	FillGrow         casso.Strength = casso.Medium
+	SpaceGrow        casso.Strength = casso.Weak * 10.0
+	AllSegmentGrow   casso.Strength = casso.Weak
 )
 
 type Layout struct {
@@ -60,10 +59,10 @@ func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 
 	variableCount := len(l.Constraints)*2 + 2
 
-	variables := make([]casso.Symbol, variableCount)
+	variables := make([]casso.Variable, variableCount)
 
 	for i := 0; i < variableCount; i++ {
-		variables[i] = casso.New()
+		variables[i] = casso.NewVariable()
 	}
 
 	spacerElements := newElements(variables)
@@ -83,23 +82,23 @@ func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 		End:   variables[1],
 	}
 
-	if err := configureArea(solver, areaSize, areaStart, areaEnd); err != nil {
+	if err := configureArea(&solver, areaSize, areaStart, areaEnd); err != nil {
 		return nil, nil, fmt.Errorf("configure area: %w", err)
 	}
 
-	if err := configureVariableInAreaConstraints(solver, variables, areaSize); err != nil {
+	if err := configureVariableInAreaConstraints(&solver, variables, areaSize); err != nil {
 		return nil, nil, fmt.Errorf("configure variable in area constraints: %w", err)
 	}
 
-	if err := configureVariableConstraints(solver, variables); err != nil {
+	if err := configureVariableConstraints(&solver, variables); err != nil {
 		return nil, nil, fmt.Errorf("configure variable constraints: %w", err)
 	}
 
-	if err := configureFlexConstraints(solver, areaSize, spacerElements, l.Flex, spacing); err != nil {
+	if err := configureFlexConstraints(&solver, areaSize, spacerElements, l.Flex, spacing); err != nil {
 		return nil, nil, fmt.Errorf("configure flex constraints: %w", err)
 	}
 
-	if err := configureConstraints(solver, areaSize, segmentElements, l.Constraints, l.Flex); err != nil {
+	if err := configureConstraints(&solver, areaSize, segmentElements, l.Constraints, l.Flex); err != nil {
 		return nil, nil, fmt.Errorf("configure constraints: %w", err)
 	}
 
@@ -107,61 +106,32 @@ func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 		left := segmentElements[i]
 		right := segmentElements[i+1]
 
-		if err := left.addHasSizeConstraint(solver, right.size(), AllSegmentGrow); err != nil {
+		if err := solver.AddConstraint(left.hasSize(right.size(), AllSegmentGrow)); err != nil {
 			return nil, nil, fmt.Errorf("add has size constraint: %w", err)
 		}
 	}
 
-	segments = valuesToRects(solver, segmentElements, innerArea, l.Direction)
-	spacers = valuesToRects(solver, spacerElements, innerArea, l.Direction)
+	changes := make(map[casso.Variable]float64)
+
+	for _, c := range solver.FetchChanges() {
+		changes[c.Variable] = c.Constant
+	}
+
+	segments = changesToRects(changes, segmentElements, innerArea, l.Direction)
+	spacers = changesToRects(changes, spacerElements, innerArea, l.Direction)
 
 	return segments, spacers, nil
 }
 
-func valuesToRects(
-	solver *casso.Solver,
+func changesToRects(
+	changes map[casso.Variable]float64,
 	elements []_Element,
 	area Rect,
 	direction Direction,
 ) []Rect {
-	rects := make([]Rect, 0, len(elements))
+	var rects []Rect
 
-	for _, e := range elements {
-		startRaw := solver.Val(e.Start)
-		endRaw := solver.Val(e.End)
-
-		process := func(value float64) int {
-			rounded := math.Round(math.Round(value) / _floatPrecisionMultiplier)
-
-			return int(math.Trunc(rounded))
-		}
-
-		start := process(startRaw)
-		end := process(endRaw)
-
-		size := end - start
-
-		switch direction {
-		case DirectionHorizontal:
-			rect := Rect{
-				X:      start,
-				Y:      area.Y,
-				Width:  size,
-				Height: area.Height,
-			}
-
-			rects = append(rects, rect)
-		case DirectionVertical:
-			rect := Rect{
-				X:      area.X,
-				Y:      start,
-				Width:  area.Width,
-				Height: size,
-			}
-
-			rects = append(rects, rect)
-		}
-	}
+	// TODO
 
 	return rects
 }
@@ -191,27 +161,27 @@ func configureConstraints(
 		case ConstraintMax:
 			size := int(constraint)
 
-			if err := segment.addHasMaxSizeConstraint(solver, size, MaxSizeLTE); err != nil {
+			if err := solver.AddConstraint(segment.hasMaxSize(size, MaxSizeLTE)); err != nil {
 				return fmt.Errorf("add has max size constraint: %w", err)
 			}
 
-			if err := segment.addHasIntSizeConstraint(solver, size, MaxSizeEq); err != nil {
+			if err := solver.AddConstraint(segment.hasIntSize(size, MaxSizeEq)); err != nil {
 				return fmt.Errorf("add has int size constraint: %w", err)
 			}
 		case ConstraintMin:
 			size := int(constraint)
 
-			if err := segment.addHasMinSizeConstraint(solver, size, MinSizeGTE); err != nil {
+			if err := solver.AddConstraint(segment.hasMinSize(size, MinSizeGTE)); err != nil {
 				return fmt.Errorf("add has min size constraint: %w", err)
 			}
 
-			if err := segment.addHasSizeConstraint(solver, area.size(), FillGrow); err != nil {
+			if err := solver.AddConstraint(segment.hasSize(area.size(), FillGrow)); err != nil {
 				return fmt.Errorf("add has size constraint: %w", err)
 			}
 		case ConstraintLength:
 			length := int(constraint)
 
-			if err := segment.addHasIntSizeConstraint(solver, length, LengthSizeEq); err != nil {
+			if err := solver.AddConstraint(segment.hasIntSize(length, LengthSizeEq)); err != nil {
 				return fmt.Errorf("add has int size constraint: %w", err)
 			}
 		case ConstraintPercentage:
@@ -248,7 +218,7 @@ func configureFlexConstraints(
 		panic("not implemented")
 	case FlexStart:
 		for _, s := range spacersExceptFirstAndLast {
-			if err := s.addHasSizeConstraint(solver, casso.NewExpr(spacingF), SpacerSizeEq); err != nil {
+			if err := solver.AddConstraint(s.hasSize(casso.NewExpressionFromConstant(spacingF), SpacerSizeEq)); err != nil {
 				return fmt.Errorf("add has size constraint: %w", err)
 			}
 
@@ -256,11 +226,11 @@ func configureFlexConstraints(
 				first := spacers[0]
 				last := spacers[len(spacers)-1]
 
-				if err := first.addIsEmptyConstraint(solver); err != nil {
+				if err := solver.AddConstraint(first.isEmpty()); err != nil {
 					return fmt.Errorf("add is empty constraint: %w", err)
 				}
 
-				if err := last.addHasSizeConstraint(solver, area.size(), Grow); err != nil {
+				if err := solver.AddConstraint(last.hasSize(area.size(), Grow)); err != nil {
 					return fmt.Errorf("add has size constraint: %w", err)
 				}
 			}
@@ -277,7 +247,7 @@ func configureFlexConstraints(
 
 func configureVariableConstraints(
 	solver *casso.Solver,
-	variables []casso.Symbol,
+	variables []casso.Variable,
 ) error {
 	variables = variables[1:]
 
@@ -286,12 +256,9 @@ func configureVariableConstraints(
 	for i := 0; i < count-count%2; i += 2 {
 		left, right := variables[i], variables[i+1]
 
-		if _, err := solver.AddConstraint(casso.NewConstraint(
-			casso.LTE,
-			0,
-			left.T(1),
-			right.T(-1),
-		)); err != nil {
+		constraint := casso.LessThanEqual(casso.Required).WithVariable(left).WithVariable(right)
+
+		if err := solver.AddConstraint(constraint); err != nil {
 			return fmt.Errorf("add constraint: %w", err)
 		}
 	}
@@ -301,18 +268,18 @@ func configureVariableConstraints(
 
 func configureVariableInAreaConstraints(
 	solver *casso.Solver,
-	variables []casso.Symbol,
+	variables []casso.Variable,
 	area _Element,
 ) error {
 	for _, v := range variables {
-		startConstraint := casso.NewConstraint(casso.GTE, 0, v.T(1), area.Start.T(-1))
-		endConstraint := casso.NewConstraint(casso.LTE, 0, v.T(1), area.End.T(-1))
+		start := casso.GreaterThanEqual(casso.Required).WithVariable(v).WithVariable(area.Start)
+		end := casso.GreaterThanEqual(casso.Required).WithVariable(v).WithVariable(area.End)
 
-		if _, err := solver.AddConstraint(startConstraint); err != nil {
+		if err := solver.AddConstraint(start); err != nil {
 			return fmt.Errorf("add start constraint: %w", err)
 		}
 
-		if _, err := solver.AddConstraint(endConstraint); err != nil {
+		if err := solver.AddConstraint(end); err != nil {
 			return fmt.Errorf("add end constraint: %w", err)
 		}
 	}
@@ -325,21 +292,21 @@ func configureArea(
 	area _Element,
 	areaStart, areaEnd float64,
 ) error {
-	startConstraint := casso.NewConstraint2(casso.EQ, casso.NewExpr(-areaStart, area.Start.T(1)))
-	endConstraint := casso.NewConstraint2(casso.EQ, casso.NewExpr(-areaEnd, area.End.T(1)))
+	startConstraint := casso.Equal(casso.Required).WithVariable(area.Start).WithConstant(areaStart)
+	endConstraint := casso.Equal(casso.Required).WithVariable(area.End).WithConstant(areaEnd)
 
-	if _, err := solver.AddConstraint(startConstraint); err != nil {
+	if err := solver.AddConstraint(startConstraint); err != nil {
 		return fmt.Errorf("add start constraint: %w", err)
 	}
 
-	if _, err := solver.AddConstraint(endConstraint); err != nil {
+	if err := solver.AddConstraint(endConstraint); err != nil {
 		return fmt.Errorf("add end constraint: %w", err)
 	}
 
 	return nil
 }
 
-func newElements(variables []casso.Symbol) []_Element {
+func newElements(variables []casso.Variable) []_Element {
 	var elements []_Element
 
 	count := len(variables)
@@ -354,86 +321,63 @@ func newElements(variables []casso.Symbol) []_Element {
 }
 
 type _Element struct {
-	Start, End casso.Symbol
+	Start, End casso.Variable
 }
 
-func (e _Element) size() casso.Expr {
-	return casso.NewExpr(0, e.End.T(1), e.Start.T(-1))
+func newElement() _Element {
+	return _Element{
+		Start: casso.NewVariable(),
+		End:   casso.NewVariable(),
+	}
 }
 
-func (e _Element) addIsEmptyConstraint(solver *casso.Solver) error {
-	_, err := solver.AddConstraintWithPriority(
-		casso.Required-1,
-		casso.NewConstraint2(
-			casso.EQ,
-			e.size(),
-			casso.NewExpr(0),
-		),
-	)
-
-	return err
+func (e _Element) size() casso.Expression {
+	return e.End.Sub(e.Start)
 }
 
-func (e _Element) addHasSizeConstraint(
-	solver *casso.Solver,
-	size casso.Expr,
-	priority casso.Priority,
-) error {
-	_, err := solver.AddConstraintWithPriority(
-		priority,
-		casso.NewConstraint2(casso.EQ, e.size(), size),
-	)
-
-	return err
+func (e _Element) isEmpty() casso.Constraint {
+	return casso.
+		Equal(casso.Required).
+		WithExpression(e.size()).
+		WithConstant(0)
 }
 
-func (e _Element) addHasMaxSizeConstraint(
-	solver *casso.Solver,
+func (e _Element) hasSize(
+	size casso.Expression,
+	strength casso.Strength,
+) casso.Constraint {
+	return casso.
+		Equal(strength).
+		WithExpression(e.size()).
+		WithExpression(size)
+}
+
+func (e _Element) hasMaxSize(
 	size int,
-	priority casso.Priority,
-) error {
-	_, err := solver.AddConstraintWithPriority(
-		priority,
-		casso.NewConstraint2(
-			casso.LTE,
-			e.size(),
-			casso.NewExpr(float64(size)*_floatPrecisionMultiplier),
-		),
-	)
-
-	return err
+	strength casso.Strength,
+) casso.Constraint {
+	return casso.
+		LessThanEqual(strength).
+		WithExpression(e.size()).
+		WithConstant(float64(size) * _floatPrecisionMultiplier)
 }
 
-func (e _Element) addHasMinSizeConstraint(
-	solver *casso.Solver,
+func (e _Element) hasMinSize(
 	size int,
-	priority casso.Priority,
-) error {
-	_, err := solver.AddConstraintWithPriority(
-		priority,
-		casso.NewConstraint2(
-			casso.GTE,
-			e.size(),
-			casso.NewExpr(float64(size)*_floatPrecisionMultiplier),
-		),
-	)
-
-	return err
+	strength casso.Strength,
+) casso.Constraint {
+	return casso.
+		GreaterThanEqual(strength).
+		WithExpression(e.size()).
+		WithConstant(float64(size) * _floatPrecisionMultiplier)
 }
 
-func (e _Element) addHasIntSizeConstraint(
-	solver *casso.Solver,
+func (e _Element) hasIntSize(
 	size int,
-	priority casso.Priority,
-) error {
-	_, err := solver.AddConstraintWithPriority(
-		priority,
-		casso.NewConstraint2(
-			casso.EQ,
-			e.size(),
-			casso.NewExpr(float64(size)*_floatPrecisionMultiplier),
-		),
-	)
-
-	return err
+	strength casso.Strength,
+) casso.Constraint {
+	return casso.
+		Equal(strength).
+		WithExpression(e.size()).
+		WithConstant(float64(size) * _floatPrecisionMultiplier)
 }
