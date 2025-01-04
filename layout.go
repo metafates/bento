@@ -2,7 +2,6 @@ package bento
 
 import (
 	"fmt"
-	"log"
 	"math"
 
 	"github.com/metafates/bento/casso"
@@ -27,17 +26,17 @@ const (
 )
 
 type Layout struct {
-	direction   Direction
-	constraints []Constraint
-	margin      Margin
-	flex        Flex
-	spacing     Spacing
+	Direction   Direction
+	Constraints []Constraint
+	Margin      Margin
+	Flex        Flex
+	Spacing     Spacing
 }
 
 func (l Layout) Split(area Rect) []Rect {
 	segments, _, err := l.split(area)
 	if err != nil {
-		log.Panicf("failed to split: %w", err)
+		panic(err)
 	}
 
 	return segments
@@ -46,11 +45,11 @@ func (l Layout) Split(area Rect) []Rect {
 func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 	solver := casso.NewSolver()
 
-	innerArea := area.Inner(l.margin)
+	innerArea := area.Inner(l.Margin)
 
 	var areaStart, areaEnd float64
 
-	switch l.direction {
+	switch l.Direction {
 	case DirectionHorizontal:
 		areaStart = float64(innerArea.X) * _floatPrecisionMultiplier
 		areaEnd = float64(innerArea.Right()) * _floatPrecisionMultiplier
@@ -59,7 +58,7 @@ func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 		areaEnd = float64(innerArea.Bottom()) * _floatPrecisionMultiplier
 	}
 
-	variableCount := len(l.constraints)*2 + 2
+	variableCount := len(l.Constraints)*2 + 2
 
 	variables := make([]casso.Symbol, variableCount)
 
@@ -72,7 +71,7 @@ func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 
 	var spacing int
 
-	switch s := l.spacing.(type) {
+	switch s := l.Spacing.(type) {
 	case SpacingSpace:
 		spacing = int(s)
 	case SpacingOverlap:
@@ -96,11 +95,11 @@ func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 		return nil, nil, fmt.Errorf("configure variable constraints: %w", err)
 	}
 
-	if err := configureFlexConstraints(solver, areaSize, spacerElements, l.flex, spacing); err != nil {
+	if err := configureFlexConstraints(solver, areaSize, spacerElements, l.Flex, spacing); err != nil {
 		return nil, nil, fmt.Errorf("configure flex constraints: %w", err)
 	}
 
-	if err := configureConstraints(solver, areaSize, segmentElements, l.constraints, l.flex); err != nil {
+	if err := configureConstraints(solver, areaSize, segmentElements, l.Constraints, l.Flex); err != nil {
 		return nil, nil, fmt.Errorf("configure constraints: %w", err)
 	}
 
@@ -113,8 +112,8 @@ func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 		}
 	}
 
-	segments = valuesToRects(solver, segmentElements, innerArea, l.direction)
-	spacers = valuesToRects(solver, spacerElements, innerArea, l.direction)
+	segments = valuesToRects(solver, segmentElements, innerArea, l.Direction)
+	spacers = valuesToRects(solver, spacerElements, innerArea, l.Direction)
 
 	return segments, spacers, nil
 }
@@ -291,7 +290,7 @@ func configureVariableConstraints(
 			casso.LTE,
 			0,
 			left.T(1),
-			right.T(1),
+			right.T(-1),
 		)); err != nil {
 			return fmt.Errorf("add constraint: %w", err)
 		}
@@ -306,8 +305,8 @@ func configureVariableInAreaConstraints(
 	area _Element,
 ) error {
 	for _, v := range variables {
-		startConstraint := casso.NewConstraint(casso.GTE, 0, v.T(1), area.Start.T(1))
-		endConstraint := casso.NewConstraint(casso.LTE, 0, v.T(1), area.End.T(1))
+		startConstraint := casso.NewConstraint(casso.GTE, 0, v.T(1), area.Start.T(-1))
+		endConstraint := casso.NewConstraint(casso.LTE, 0, v.T(1), area.End.T(-1))
 
 		if _, err := solver.AddConstraint(startConstraint); err != nil {
 			return fmt.Errorf("add start constraint: %w", err)
@@ -326,11 +325,14 @@ func configureArea(
 	area _Element,
 	areaStart, areaEnd float64,
 ) error {
-	if _, err := solver.AddConstraint(area.Start.EQ(areaStart)); err != nil {
+	startConstraint := casso.NewConstraint2(casso.EQ, casso.NewExpr(-areaStart, area.Start.T(1)))
+	endConstraint := casso.NewConstraint2(casso.EQ, casso.NewExpr(-areaEnd, area.End.T(1)))
+
+	if _, err := solver.AddConstraint(startConstraint); err != nil {
 		return fmt.Errorf("add start constraint: %w", err)
 	}
 
-	if _, err := solver.AddConstraint(area.End.EQ(areaEnd)); err != nil {
+	if _, err := solver.AddConstraint(endConstraint); err != nil {
 		return fmt.Errorf("add end constraint: %w", err)
 	}
 
