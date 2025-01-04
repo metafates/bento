@@ -26,7 +26,7 @@ func (c *Cell) AppendSymbol(symbol string) *Cell {
 	return c
 }
 
-func (c *Cell) SetStyle(style Style) *Cell {
+func (c *Cell) PatchStyle(style Style) *Cell {
 	c.Style = c.Style.Patched(style)
 
 	return c

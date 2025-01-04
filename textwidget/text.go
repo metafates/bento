@@ -12,8 +12,8 @@ type Text struct {
 	Alignment bento.Alignment
 }
 
-func NewText(lines Lines) *Text {
-	return &Text{
+func NewText(lines ...Line) Text {
+	return Text{
 		Style:     bento.NewStyle(),
 		Lines:     lines,
 		Alignment: bento.AlignmentNone,
@@ -21,7 +21,7 @@ func NewText(lines Lines) *Text {
 }
 
 // Render implements bento.Widget.
-func (t *Text) Render(area bento.Rect, buffer *bento.Buffer) {
+func (t Text) Render(area bento.Rect, buffer *bento.Buffer) {
 	area = area.Intersection(buffer.Area)
 
 	buffer.SetStyle(area, t.Style)

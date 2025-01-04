@@ -2,6 +2,7 @@ package bento
 
 import (
 	"math"
+	"slices"
 
 	"github.com/rivo/uniseg"
 )
@@ -51,7 +52,7 @@ func (b *Buffer) SetStringN(x, y int, value string, maxWidth int, style Style) (
 
 		remainingWidth -= width
 
-		b.CellAt(Position{x, y}).SetSymbol(symbol).SetStyle(style)
+		b.CellAt(Position{x, y}).SetSymbol(symbol).PatchStyle(style)
 
 		nextSymbol := x + width
 		x++
@@ -87,11 +88,7 @@ func (b *Buffer) Resize(area Rect) {
 	length := area.Area()
 
 	if len(b.Content) > length {
-		// TODO: optimize with slices.Delete
-		truncated := make([]Cell, length)
-		copy(truncated, b.Content)
-
-		b.Content = truncated
+		b.Content = slices.Delete(b.Content, length, len(b.Content))
 	} else {
 		for i := 0; i < length-len(b.Content); i++ {
 			b.Content = append(b.Content, Cell{})
@@ -113,7 +110,7 @@ func (b *Buffer) SetStyle(area Rect, style Style) {
 		for x := left; x < right; x++ {
 			pos := Position{x, y}
 
-			b.CellAt(pos).SetStyle(style)
+			b.CellAt(pos).PatchStyle(style)
 		}
 	}
 }

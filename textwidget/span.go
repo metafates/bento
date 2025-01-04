@@ -44,17 +44,17 @@ func (s *Span) Render(area bento.Rect, buffer *bento.Buffer) {
 		switch {
 		case i == 0:
 			// the first grapheme is always set on the cell
-			buffer.CellAt(bento.Position{X: x, Y: y}).SetSymbol(grapheme.Symbol).SetStyle(grapheme.Style)
+			buffer.CellAt(bento.Position{X: x, Y: y}).SetSymbol(grapheme.Symbol).PatchStyle(grapheme.Style)
 		case x == area.X:
 			// there is one or more zero-width graphemes in the first cell, so the first cell
 			// must be appended to.
-			buffer.CellAt(bento.Position{X: x, Y: y}).AppendSymbol(grapheme.Symbol).SetStyle(grapheme.Style)
+			buffer.CellAt(bento.Position{X: x, Y: y}).AppendSymbol(grapheme.Symbol).PatchStyle(grapheme.Style)
 		case symbolWidth == 0:
 			// append zero-width graphemes to the previous cell
-			buffer.CellAt(bento.Position{X: x - 1, Y: y}).AppendSymbol(grapheme.Symbol).SetStyle(grapheme.Style)
+			buffer.CellAt(bento.Position{X: x - 1, Y: y}).AppendSymbol(grapheme.Symbol).PatchStyle(grapheme.Style)
 		default:
 			// just a normal grapheme (not first, not zero-width, not overflowing the area)
-			buffer.CellAt(bento.Position{X: x, Y: y}).SetSymbol(grapheme.Symbol).SetStyle(grapheme.Style)
+			buffer.CellAt(bento.Position{X: x, Y: y}).SetSymbol(grapheme.Symbol).PatchStyle(grapheme.Style)
 		}
 
 		for xHidden := x + 1; xHidden < nextX; xHidden++ {
