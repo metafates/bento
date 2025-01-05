@@ -12,12 +12,28 @@ type Text struct {
 	Alignment bento.Alignment
 }
 
+func NewTextString(s string) Text {
+	lines := NewLinesString(s)
+
+	return NewText(lines...)
+}
+
 func NewText(lines ...Line) Text {
 	return Text{
 		Style:     bento.NewStyle(),
 		Lines:     lines,
 		Alignment: bento.AlignmentNone,
 	}
+}
+
+func (t Text) WithStyle(style bento.Style) Text {
+	t.Style = style
+	return t
+}
+
+func (t Text) WithAlignment(alignment bento.Alignment) Text {
+	t.Alignment = alignment
+	return t
 }
 
 // Render implements bento.Widget.

@@ -14,18 +14,24 @@ type Span struct {
 	Content string
 }
 
-func NewSpan(v string) *Span {
-	return &Span{
+func NewSpan(v string) Span {
+	return Span{
 		Style:   bento.NewStyle(),
 		Content: v,
 	}
 }
 
-func (s *Span) Width() int {
+func (s Span) WithStyle(style bento.Style) Span {
+	s.Style = style
+
+	return s
+}
+
+func (s Span) Width() int {
 	return uniseg.StringWidth(s.Content)
 }
 
-func (s *Span) Render(area bento.Rect, buffer *bento.Buffer) {
+func (s Span) Render(area bento.Rect, buffer *bento.Buffer) {
 	area = area.Intersection(buffer.Area)
 	if area.IsEmpty() {
 		return
@@ -65,7 +71,7 @@ func (s *Span) Render(area bento.Rect, buffer *bento.Buffer) {
 	}
 }
 
-func (s *Span) StyledGraphemes(style bento.Style) []StyledGrapheme {
+func (s Span) StyledGraphemes(style bento.Style) []StyledGrapheme {
 	style = style.Patched(s.Style)
 
 	var result []StyledGrapheme

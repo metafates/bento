@@ -11,18 +11,22 @@ var _ bento.Widget = (*Line)(nil)
 
 type Lines []Line
 
-func NewLines(s ...string) Lines {
+func NewLines(lines ...Line) Lines {
+	return lines
+}
+
+func NewLinesString(s ...string) Lines {
 	var lines []Line
 
 	joined := strings.Join(s, "\n")
 
 	if joined == "" {
-		lines = []Line{NewLine("")}
+		lines = []Line{NewLineString("")}
 	} else {
 		scanner := bufio.NewScanner(strings.NewReader(joined))
 
 		for scanner.Scan() {
-			line := NewLine(scanner.Text())
+			line := NewLineString(scanner.Text())
 
 			lines = append(lines, line)
 		}
@@ -63,19 +67,7 @@ type Line struct {
 	Alignment bento.Alignment
 }
 
-func NewLine(s string) Line {
-	lines := bufio.NewScanner(strings.NewReader(s))
-
-	var spans []Span
-
-	for lines.Scan() {
-		line := lines.Text()
-
-		span := NewSpan(line)
-
-		spans = append(spans, *span)
-	}
-
+func NewLine(spans ...Span) Line {
 	return Line{
 		Style:     bento.NewStyle(),
 		Spans:     spans,
@@ -83,9 +75,27 @@ func NewLine(s string) Line {
 	}
 }
 
+func NewLineString(s string) Line {
+	lines := bufio.NewScanner(strings.NewReader(s))
+
+	var spans []Span
+
+	for lines.Scan() {
+		line := lines.Text()
+
+		spans = append(spans, NewSpan(line))
+	}
+
+	return NewLine(spans...)
+}
+
 func (l Line) WithStyle(style bento.Style) Line {
 	l.Style = style
+	return l
+}
 
+func (l Line) WithAlignment(alignment bento.Alignment) Line {
+	l.Alignment = alignment
 	return l
 }
 
