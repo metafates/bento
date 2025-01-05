@@ -220,12 +220,13 @@ func configureFillConstraints(
 		getScalingFactor := func(c Constraint) float64 {
 			var scalingFactor float64
 
-			const max_ float64 = 1e-6
 			switch c := c.(type) {
 			case ConstraintFill:
 				scale := float64(c)
 
-				scalingFactor = max(max_, scale)
+				scalingFactor = 1e-6
+				scalingFactor = max(scalingFactor, scale)
+
 			case ConstraintMin:
 				scalingFactor = 1
 			}
@@ -263,13 +264,14 @@ func configureConstraints(
 		case ConstraintMax:
 			size := int(constraint)
 
-			if err := solver.AddConstraint(segment.hasMaxSize(size, _maxSizeLTE)); err != nil {
-				return fmt.Errorf("add has max size constraint: %w", err)
+			err := solver.AddConstraints(
+				segment.hasMaxSize(size, _maxSizeLTE),
+				segment.hasIntSize(size, _maxSizeEq),
+			)
+			if err != nil {
+				return fmt.Errorf("add constraints: %w", err)
 			}
 
-			if err := solver.AddConstraint(segment.hasIntSize(size, _maxSizeEq)); err != nil {
-				return fmt.Errorf("add has int size constraint: %w", err)
-			}
 		case ConstraintMin:
 			size := int(constraint)
 
@@ -286,22 +288,32 @@ func configureConstraints(
 					return fmt.Errorf("add has size constraint: %w", err)
 				}
 			}
+
 		case ConstraintLength:
 			length := int(constraint)
 
 			if err := solver.AddConstraint(segment.hasIntSize(length, _lengthSizeEq)); err != nil {
 				return fmt.Errorf("add has int size constraint: %w", err)
 			}
+
 		case ConstraintPercentage:
 			size := area.size().MulConstant(float64(constraint)).DivConstant(100)
 
 			if err := solver.AddConstraint(segment.hasSize(size, _percentageSizeEq)); err != nil {
 				return fmt.Errorf("add has size constraint: %w", err)
 			}
+
 		case ConstraintRatio:
-			panic("unimplemented")
+			size := area.size().MulConstant(float64(constraint.Num)).DivConstant(float64(max(1, constraint.Den)))
+
+			if err := solver.AddConstraint(segment.hasSize(size, _ratioSizeEq)); err != nil {
+				return fmt.Errorf("add has size constraint: %w", err)
+			}
+
 		case ConstraintFill:
-			panic("unimplemented")
+			if err := solver.AddConstraint(segment.hasSize(area.size(), _fillGrow)); err != nil {
+				return fmt.Errorf("add has size constraint: %w", err)
+			}
 		}
 	}
 
@@ -334,16 +346,35 @@ func configureFlexConstraints(
 		if len(spacers) >= 2 {
 			first, last := spacers[0], spacers[len(spacers)-1]
 
-			if err := solver.AddConstraint(first.isEmpty()); err != nil {
-				return fmt.Errorf("add first is empty constraint: %w", err)
-			}
-
-			if err := solver.AddConstraint(last.isEmpty()); err != nil {
-				return fmt.Errorf("add last is empty constraint: %w", err)
+			err := solver.AddConstraints(first.isEmpty(), last.isEmpty())
+			if err != nil {
+				return fmt.Errorf("add constraints: %w", err)
 			}
 		}
 	case FlexSpaceAround:
-		panic("not implemented")
+		if len(spacersExceptFirstAndLast) >= 2 {
+			for _, indices := range combinations(len(spacersExceptFirstAndLast), 2) {
+				i, j := indices[0], indices[1]
+
+				left, right := spacersExceptFirstAndLast[i], spacersExceptFirstAndLast[j]
+
+				if err := solver.AddConstraint(left.hasSize(right.size(), _spacerSizeEq)); err != nil {
+					return fmt.Errorf("add has size constraint: %w", err)
+				}
+			}
+		}
+
+		for _, s := range spacersExceptFirstAndLast {
+			err := solver.AddConstraints(
+				s.hasMinSize(spacing, _spacerSizeEq),
+				s.hasSize(area.size(), _spaceGrow),
+			)
+			if err != nil {
+				return fmt.Errorf("add constraints: %w", err)
+			}
+
+		}
+
 	case FlexSpaceBetween:
 		if len(spacersExceptFirstAndLast) >= 2 {
 			for _, indices := range combinations(len(spacersExceptFirstAndLast), 2) {
@@ -358,25 +389,23 @@ func configureFlexConstraints(
 		}
 
 		for _, s := range spacersExceptFirstAndLast {
-			if err := solver.AddConstraint(s.hasMinSize(spacing, _spacerSizeEq)); err != nil {
-				return fmt.Errorf("add min size constraint: %w", err)
-			}
-
-			if err := solver.AddConstraint(s.hasSize(area.size(), _spaceGrow)); err != nil {
-				return fmt.Errorf("add has size constraint: %w", err)
+			err := solver.AddConstraints(
+				s.hasMinSize(spacing, _spacerSizeEq),
+				s.hasSize(area.size(), _spaceGrow),
+			)
+			if err != nil {
+				return fmt.Errorf("add constraints: %w", err)
 			}
 		}
 
 		if len(spacers) >= 2 {
 			first, last := spacers[0], spacers[len(spacers)-1]
 
-			if err := solver.AddConstraint(first.isEmpty()); err != nil {
-				return fmt.Errorf("add is empty constraint: %w", err)
+			err := solver.AddConstraints(first.isEmpty(), last.isEmpty())
+			if err != nil {
+				return fmt.Errorf("add constraints: %w", err)
 			}
 
-			if err := solver.AddConstraint(last.isEmpty()); err != nil {
-				return fmt.Errorf("add is empty constraint: %w", err)
-			}
 		}
 	case FlexStart:
 		for _, s := range spacersExceptFirstAndLast {
@@ -388,20 +417,56 @@ func configureFlexConstraints(
 				first := spacers[0]
 				last := spacers[len(spacers)-1]
 
-				if err := solver.AddConstraint(first.isEmpty()); err != nil {
-					return fmt.Errorf("add is empty constraint: %w", err)
-				}
-
-				if err := solver.AddConstraint(last.hasSize(area.size(), _grow)); err != nil {
-					return fmt.Errorf("add has size constraint: %w", err)
+				err := solver.AddConstraints(
+					first.isEmpty(),
+					last.hasSize(area.size(), _grow),
+				)
+				if err != nil {
+					return fmt.Errorf("add constraints: %w", err)
 				}
 			}
 		}
 
 	case FlexCenter:
-		panic("not implemented")
+		for _, s := range spacersExceptFirstAndLast {
+			constraint := s.hasSize(casso.NewExpressionFromConstant(spacingF), _spacerSizeEq)
+
+			if err := solver.AddConstraint(constraint); err != nil {
+				return fmt.Errorf("add has size constraint: %w", err)
+			}
+		}
+
+		if len(spacers) >= 2 {
+			first, last := spacers[0], spacers[len(spacers)-1]
+
+			err := solver.AddConstraints(
+				first.hasSize(area.size(), _grow),
+				last.hasSize(area.size(), _grow),
+				first.hasSize(last.size(), _spacerSizeEq),
+			)
+			if err != nil {
+				return fmt.Errorf("add constraints: %w", err)
+			}
+		}
 	case FlexEnd:
-		panic("not implemented")
+		for _, s := range spacersExceptFirstAndLast {
+			if err := solver.AddConstraint(s.hasSize(casso.NewExpressionFromConstant(spacingF), _spacerSizeEq)); err != nil {
+				return fmt.Errorf("add has size constraint: %w", err)
+			}
+
+			if len(spacers) >= 2 {
+				first := spacers[0]
+				last := spacers[len(spacers)-1]
+
+				err := solver.AddConstraints(
+					last.isEmpty(),
+					first.hasSize(area.size(), _grow),
+				)
+				if err != nil {
+					return fmt.Errorf("add constraints: %w", err)
+				}
+			}
+		}
 	}
 
 	return nil

@@ -59,6 +59,16 @@ func NewSolver() Solver {
 	}
 }
 
+func (s *Solver) AddConstraints(constraints ...Constraint) error {
+	for _, c := range constraints {
+		if err := s.AddConstraint(c); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (s *Solver) AddConstraint(constraint Constraint) error {
 	if _, ok := s.cns[constraint]; ok {
 		return ErrDuplicateConstraint

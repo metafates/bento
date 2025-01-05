@@ -13,7 +13,7 @@ type (
 	ConstraintMax        int
 	ConstraintLength     int
 	ConstraintPercentage int
-	ConstraintRatio      struct{ A, B int }
+	ConstraintRatio      struct{ Num, Den int }
 	ConstraintFill       int
 )
 
@@ -29,7 +29,7 @@ func (ConstraintLength) isConstraint()    {}
 func (p ConstraintPercentage) String() string { return fmt.Sprintf("Percentage(%d)", p) }
 func (ConstraintPercentage) isConstraint()    {}
 
-func (r ConstraintRatio) String() string { return fmt.Sprintf("Ratio(%d/%d)", r.A, r.B) }
+func (r ConstraintRatio) String() string { return fmt.Sprintf("Ratio(%d / %d)", r.Num, r.Den) }
 func (ConstraintRatio) isConstraint()    {}
 
 func (f ConstraintFill) String() string { return fmt.Sprintf("Fill(%d)", f) }
