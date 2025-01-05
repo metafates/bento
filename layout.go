@@ -10,19 +10,19 @@ import (
 const _floatPrecisionMultiplier float64 = 100.0
 
 const (
-	SpacerSizeEq     casso.Strength = casso.Required / 10.0
-	MinSizeGTE       casso.Strength = casso.Strong * 100.0
-	MaxSizeLTE       casso.Strength = casso.Strong * 100.0
-	MinSizeLTE       casso.Strength = casso.Strong * 100.0
-	LengthSizeEq     casso.Strength = casso.Strong * 10.0
-	PercentageSizeEq casso.Strength = casso.Strong
-	RatioSizeEq      casso.Strength = casso.Strong / 10.0
-	MinSizeEq        casso.Strength = casso.Medium * 10.0
-	MaxSizeEq        casso.Strength = casso.Medium * 10.0
-	Grow             casso.Strength = 100.0
-	FillGrow         casso.Strength = casso.Medium
-	SpaceGrow        casso.Strength = casso.Weak * 10.0
-	AllSegmentGrow   casso.Strength = casso.Weak
+	_spacerSizeEq     casso.Strength = casso.Required / 10.0
+	_minSizeGTE       casso.Strength = casso.Strong * 100.0
+	_maxSizeLTE       casso.Strength = casso.Strong * 100.0
+	_minSizeLTE       casso.Strength = casso.Strong * 100.0
+	_lengthSizeEq     casso.Strength = casso.Strong * 10.0
+	_percentageSizeEq casso.Strength = casso.Strong
+	_ratioSizeEq      casso.Strength = casso.Strong / 10.0
+	_minSizeEq        casso.Strength = casso.Medium * 10.0
+	_maxSizeEq        casso.Strength = casso.Medium * 10.0
+	_grow             casso.Strength = 100.0
+	_fillGrow         casso.Strength = casso.Medium
+	_spaceGrow        casso.Strength = casso.Weak * 10.0
+	_allSegmentGrow   casso.Strength = casso.Weak
 )
 
 type Layout struct {
@@ -111,7 +111,7 @@ func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 			left := segmentElements[i]
 			right := segmentElements[i+1]
 
-			if err := solver.AddConstraint(left.hasSize(right.size(), AllSegmentGrow)); err != nil {
+			if err := solver.AddConstraint(left.hasSize(right.size(), _allSegmentGrow)); err != nil {
 				return nil, nil, fmt.Errorf("add has size constraint: %w", err)
 			}
 		}
@@ -233,7 +233,7 @@ func configureFillConstraints(
 		lhs := leftSegment.size().MulConstant(rightScalingFactor)
 		rhs := rightSegment.size().MulConstant(leftScalingFactor)
 
-		constraint := casso.Equal(Grow).ExpressionLHS(lhs).ExpressionRHS(rhs)
+		constraint := casso.Equal(_grow).ExpressionLHS(lhs).ExpressionRHS(rhs)
 		if err := solver.AddConstraint(constraint); err != nil {
 			return fmt.Errorf("add constraint: %w", err)
 		}
@@ -257,39 +257,39 @@ func configureConstraints(
 		case ConstraintMax:
 			size := int(constraint)
 
-			if err := solver.AddConstraint(segment.hasMaxSize(size, MaxSizeLTE)); err != nil {
+			if err := solver.AddConstraint(segment.hasMaxSize(size, _maxSizeLTE)); err != nil {
 				return fmt.Errorf("add has max size constraint: %w", err)
 			}
 
-			if err := solver.AddConstraint(segment.hasIntSize(size, MaxSizeEq)); err != nil {
+			if err := solver.AddConstraint(segment.hasIntSize(size, _maxSizeEq)); err != nil {
 				return fmt.Errorf("add has int size constraint: %w", err)
 			}
 		case ConstraintMin:
 			size := int(constraint)
 
-			if err := solver.AddConstraint(segment.hasMinSize(size, MinSizeGTE)); err != nil {
+			if err := solver.AddConstraint(segment.hasMinSize(size, _minSizeGTE)); err != nil {
 				return fmt.Errorf("add has min size constraint: %w", err)
 			}
 
 			if flex == FlexLegacy {
-				if err := solver.AddConstraint(segment.hasIntSize(size, MinSizeEq)); err != nil {
+				if err := solver.AddConstraint(segment.hasIntSize(size, _minSizeEq)); err != nil {
 					return fmt.Errorf("add has size constraint: %w", err)
 				}
 			} else {
-				if err := solver.AddConstraint(segment.hasSize(area.size(), FillGrow)); err != nil {
+				if err := solver.AddConstraint(segment.hasSize(area.size(), _fillGrow)); err != nil {
 					return fmt.Errorf("add has size constraint: %w", err)
 				}
 			}
 		case ConstraintLength:
 			length := int(constraint)
 
-			if err := solver.AddConstraint(segment.hasIntSize(length, LengthSizeEq)); err != nil {
+			if err := solver.AddConstraint(segment.hasIntSize(length, _lengthSizeEq)); err != nil {
 				return fmt.Errorf("add has int size constraint: %w", err)
 			}
 		case ConstraintPercentage:
 			size := area.size().MulConstant(float64(constraint)).DivConstant(100)
 
-			if err := solver.AddConstraint(segment.hasSize(size, PercentageSizeEq)); err != nil {
+			if err := solver.AddConstraint(segment.hasSize(size, _percentageSizeEq)); err != nil {
 				return fmt.Errorf("add has size constraint: %w", err)
 			}
 		case ConstraintRatio:
@@ -320,7 +320,7 @@ func configureFlexConstraints(
 	switch flex {
 	case FlexLegacy:
 		for _, s := range spacersExceptFirstAndLast {
-			if err := solver.AddConstraint(s.hasSize(casso.NewExpressionFromConstant(spacingF), SpacerSizeEq)); err != nil {
+			if err := solver.AddConstraint(s.hasSize(casso.NewExpressionFromConstant(spacingF), _spacerSizeEq)); err != nil {
 				return fmt.Errorf("add has size constraint: %w", err)
 			}
 		}
@@ -345,18 +345,18 @@ func configureFlexConstraints(
 
 				left, right := spacersExceptFirstAndLast[i], spacersExceptFirstAndLast[j]
 
-				if err := solver.AddConstraint(left.hasSize(right.size(), SpacerSizeEq)); err != nil {
+				if err := solver.AddConstraint(left.hasSize(right.size(), _spacerSizeEq)); err != nil {
 					return fmt.Errorf("add has size constraint: %w", err)
 				}
 			}
 		}
 
 		for _, s := range spacersExceptFirstAndLast {
-			if err := solver.AddConstraint(s.hasMinSize(spacing, SpacerSizeEq)); err != nil {
+			if err := solver.AddConstraint(s.hasMinSize(spacing, _spacerSizeEq)); err != nil {
 				return fmt.Errorf("add min size constraint: %w", err)
 			}
 
-			if err := solver.AddConstraint(s.hasSize(area.size(), SpaceGrow)); err != nil {
+			if err := solver.AddConstraint(s.hasSize(area.size(), _spaceGrow)); err != nil {
 				return fmt.Errorf("add has size constraint: %w", err)
 			}
 		}
@@ -374,7 +374,7 @@ func configureFlexConstraints(
 		}
 	case FlexStart:
 		for _, s := range spacersExceptFirstAndLast {
-			if err := solver.AddConstraint(s.hasSize(casso.NewExpressionFromConstant(spacingF), SpacerSizeEq)); err != nil {
+			if err := solver.AddConstraint(s.hasSize(casso.NewExpressionFromConstant(spacingF), _spacerSizeEq)); err != nil {
 				return fmt.Errorf("add has size constraint: %w", err)
 			}
 
@@ -386,7 +386,7 @@ func configureFlexConstraints(
 					return fmt.Errorf("add is empty constraint: %w", err)
 				}
 
-				if err := solver.AddConstraint(last.hasSize(area.size(), Grow)); err != nil {
+				if err := solver.AddConstraint(last.hasSize(area.size(), _grow)); err != nil {
 					return fmt.Errorf("add has size constraint: %w", err)
 				}
 			}
