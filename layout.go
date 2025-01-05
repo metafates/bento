@@ -33,11 +33,17 @@ type Layout struct {
 	Spacing     Spacing
 }
 
-func (l Layout) Split(area Rect) []Rect {
-	segments, _, err := l.split(area)
+func (l Layout) SplitWithSpacers(area Rect) (segments []Rect, spacers []Rect) {
+	segments, spacers, err := l.split(area)
 	if err != nil {
 		panic(err)
 	}
+
+	return segments, spacers
+}
+
+func (l Layout) Split(area Rect) []Rect {
+	segments, _ := l.SplitWithSpacers(area)
 
 	return segments
 }
