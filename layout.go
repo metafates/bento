@@ -124,13 +124,8 @@ func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 		changes[c.Variable] = c.Constant
 	}
 
-	fmt.Printf("changes: %+v\n", changes)
-
 	segments = changesToRects(changes, segmentElements, innerArea, l.Direction)
 	spacers = changesToRects(changes, spacerElements, innerArea, l.Direction)
-
-	fmt.Printf("segments: %+v\n", segments)
-	fmt.Printf("spacers: %+v\n", spacers)
 
 	return segments, spacers, nil
 }

@@ -1,7 +1,6 @@
 package bento_test
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -1137,8 +1136,8 @@ func TestEdgeCases(t *testing.T) {
 			split:     bento.Rect{Width: 1, Height: 1},
 			want: []bento.Rect{
 				{X: 0, Y: 0, Width: 1, Height: 1},
-				{X: 1, Y: 0, Width: 1, Height: 1},
-				{X: 1, Y: 0, Width: 1, Height: 1},
+				{X: 1, Y: 0, Width: 0, Height: 1},
+				{X: 1, Y: 0, Width: 0, Height: 1},
 			},
 		},
 		{
@@ -1181,8 +1180,6 @@ func letters(t *testing.T, flex bento.Flex, constraints []bento.Constraint, widt
 		Flex:        flex,
 		Spacing:     bento.SpacingSpace(0),
 	}.Split(area)
-
-	fmt.Printf("layout: %+v\n", layout)
 
 	buffer := bento.NewBufferEmpty(area)
 
