@@ -124,8 +124,13 @@ func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 		changes[c.Variable] = c.Constant
 	}
 
+	fmt.Printf("changes: %+v\n", changes)
+
 	segments = changesToRects(changes, segmentElements, innerArea, l.Direction)
 	spacers = changesToRects(changes, spacerElements, innerArea, l.Direction)
+
+	fmt.Printf("segments: %+v\n", segments)
+	fmt.Printf("spacers: %+v\n", spacers)
 
 	return segments, spacers, nil
 }
@@ -287,7 +292,7 @@ func configureConstraints(
 				return fmt.Errorf("add has int size constraint: %w", err)
 			}
 		case ConstraintPercentage:
-			size := area.size().MulConstant(float64(constraint) / 100.0)
+			size := area.size().MulConstant(float64(constraint)).DivConstant(100)
 
 			if err := solver.AddConstraint(segment.hasSize(size, PercentageSizeEq)); err != nil {
 				return fmt.Errorf("add has size constraint: %w", err)
@@ -339,7 +344,39 @@ func configureFlexConstraints(
 	case FlexSpaceAround:
 		panic("not implemented")
 	case FlexSpaceBetween:
-		panic("not implemented")
+		if len(spacersExceptFirstAndLast) >= 2 {
+			for _, indices := range combinations(len(spacersExceptFirstAndLast), 2) {
+				i, j := indices[0], indices[1]
+
+				left, right := spacersExceptFirstAndLast[i], spacersExceptFirstAndLast[j]
+
+				if err := solver.AddConstraint(left.hasSize(right.size(), SpacerSizeEq)); err != nil {
+					return fmt.Errorf("add has size constraint: %w", err)
+				}
+			}
+		}
+
+		for _, s := range spacersExceptFirstAndLast {
+			if err := solver.AddConstraint(s.hasMinSize(spacing, SpacerSizeEq)); err != nil {
+				return fmt.Errorf("add min size constraint: %w", err)
+			}
+
+			if err := solver.AddConstraint(s.hasSize(area.size(), SpaceGrow)); err != nil {
+				return fmt.Errorf("add has size constraint: %w", err)
+			}
+		}
+
+		if len(spacers) >= 2 {
+			first, last := spacers[0], spacers[len(spacers)-1]
+
+			if err := solver.AddConstraint(first.isEmpty()); err != nil {
+				return fmt.Errorf("add is empty constraint: %w", err)
+			}
+
+			if err := solver.AddConstraint(last.isEmpty()); err != nil {
+				return fmt.Errorf("add is empty constraint: %w", err)
+			}
+		}
 	case FlexStart:
 		for _, s := range spacersExceptFirstAndLast {
 			if err := solver.AddConstraint(s.hasSize(casso.NewExpressionFromConstant(spacingF), SpacerSizeEq)); err != nil {

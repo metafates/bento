@@ -139,6 +139,7 @@ func (s *Solver) FetchChanges() []PublicChange {
 				})
 
 				varData.constant = newValue
+				s.varData[v] = varData
 			}
 		}
 	}

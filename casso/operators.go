@@ -36,3 +36,14 @@ func (e Expression) MulConstant(other float64) Expression {
 
 	return e
 }
+
+func (e Expression) DivConstant(other float64) Expression {
+	e.Terms = slices.Clone(e.Terms)
+	e.Constant /= other
+
+	for i := range e.Terms {
+		e.Terms[i].Coefficient /= other
+	}
+
+	return e
+}
