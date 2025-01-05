@@ -30,6 +30,13 @@ func (r Rect) Bottom() int {
 	return r.Y + r.Height
 }
 
+func (r Rect) Position() Position {
+	return Position{
+		X: r.X,
+		Y: r.Y,
+	}
+}
+
 func (r Rect) Inner(margin Margin) Rect {
 	doubleHorizontal := margin.Horizontal * 2
 	doubleVertical := margin.Vertical * 2

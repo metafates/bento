@@ -32,9 +32,67 @@ func NewBufferFilled(area Rect, cell Cell) *Buffer {
 	}
 }
 
+// Diff builds a minimal sequence of coordinates and Cells necessary to update the UI from
+// self to other.
+//
+// We're assuming that buffers are well-formed, that is no double-width cell is followed by
+// a non-blank cell.
+func (b *Buffer) Diff(other *Buffer) []PositionedCell {
+	prevBuffer := b.Content
+	nextBuffer := other.Content
+
+	var (
+		updates     []PositionedCell
+		invalidated int
+		toSkip      int
+	)
+
+	for i := 0; i < min(len(nextBuffer), len(prevBuffer)); i++ {
+		current := nextBuffer[i]
+		previous := prevBuffer[i]
+
+		if !current.Skip && (current != previous || invalidated > 0) && toSkip == 0 {
+			pos := b.PosOf(i)
+
+			updates = append(updates, PositionedCell{
+				Cell:     nextBuffer[i],
+				Position: pos,
+			})
+		}
+
+		previousWidth := uniseg.StringWidth(previous.Symbol)
+		currentWidth := uniseg.StringWidth(current.Symbol)
+
+		toSkip = max(0, currentWidth-1)
+
+		affectedWidth := max(previousWidth, currentWidth)
+
+		invalidated = max(0, max(invalidated, affectedWidth)-1)
+	}
+
+	return updates
+}
+
+func (b *Buffer) PosOf(index int) Position {
+	if index >= len(b.Content) {
+		panic("trying to get coords of a cell outside the buffer")
+	}
+
+	x := index%b.Area.Width + b.Area.X
+	y := index/b.Area.Width + b.Area.Y
+
+	return Position{X: x, Y: y}
+}
+
 // SetString prints a string, starting at the position (x, y)
 func (b *Buffer) SetString(x, y int, value string, style Style) {
 	b.SetStringN(x, y, value, math.MaxInt, style)
+}
+
+func (b *Buffer) Reset() {
+	for i := range b.Content {
+		b.Content[i].Reset()
+	}
 }
 
 // SetStringN prints at most the first n characters of a string if enough space is available
