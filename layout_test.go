@@ -693,7 +693,205 @@ func TestMin(t *testing.T) {
 	}
 }
 
-func TestPercentage(t *testing.T) {
+func TestPercentageFlexStart(t *testing.T) {
+	testCases := []LayoutSplitTestCase{
+		{
+			Name:        "Flex Start with Percentage 0, 0",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(0), bento.ConstraintPercentage(0)},
+			Want:        "          ",
+		},
+		{
+			Name:        "Flex Start with Percentage 0, 25",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(0), bento.ConstraintPercentage(25)},
+			Want:        "bbb       ",
+		},
+		{
+			Name:        "Flex Start with Percentage 0, 50",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(0), bento.ConstraintPercentage(50)},
+			Want:        "bbbbb     ",
+		},
+		{
+			Name:        "Flex Start with Percentage 0, 100",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(0), bento.ConstraintPercentage(100)},
+			Want:        "bbbbbbbbbb",
+		},
+		{
+			Name:        "Flex Start with Percentage 0, 200",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(0), bento.ConstraintPercentage(200)},
+			Want:        "bbbbbbbbbb",
+		},
+		{
+			Name:        "Flex Start with Percentage 10, 0",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(10), bento.ConstraintPercentage(0)},
+			Want:        "a         ",
+		},
+		{
+			Name:        "Flex Start with Percentage 10, 25",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(10), bento.ConstraintPercentage(25)},
+			Want:        "abbb      ",
+		},
+		{
+			Name:        "Flex Start with Percentage 10, 50",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(10), bento.ConstraintPercentage(50)},
+			Want:        "abbbbb    ",
+		},
+		{
+			Name:        "Flex Start with Percentage 10, 100",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(10), bento.ConstraintPercentage(100)},
+			Want:        "abbbbbbbbb",
+		},
+		{
+			Name:        "Flex Start with Percentage 10, 200",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(10), bento.ConstraintPercentage(200)},
+			Want:        "abbbbbbbbb",
+		},
+		{
+			Name:        "Flex Start with Percentage 25, 0",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(25), bento.ConstraintPercentage(0)},
+			Want:        "aaa       ",
+		},
+		{
+			Name:        "Flex Start with Percentage 25, 25",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(25), bento.ConstraintPercentage(25)},
+			Want:        "aaabb     ",
+		},
+		{
+			Name:        "Flex Start with Percentage 25, 50",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(25), bento.ConstraintPercentage(50)},
+			Want:        "aaabbbbb  ",
+		},
+		{
+			Name:        "Flex Start with Percentage 25, 100",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(25), bento.ConstraintPercentage(100)},
+			Want:        "aaabbbbbbb",
+		},
+		{
+			Name:        "Flex Start with Percentage 25, 200",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(25), bento.ConstraintPercentage(200)},
+			Want:        "aaabbbbbbb",
+		},
+		{
+			Name:        "Flex Start with Percentage 33, 0",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(33), bento.ConstraintPercentage(0)},
+			Want:        "aaa       ",
+		},
+		{
+			Name:        "Flex Start with Percentage 33, 25",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(33), bento.ConstraintPercentage(25)},
+			Want:        "aaabbb    ",
+		},
+		{
+			Name:        "Flex Start with Percentage 33, 50",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(33), bento.ConstraintPercentage(50)},
+			Want:        "aaabbbbb  ",
+		},
+		{
+			Name:        "Flex Start with Percentage 33, 100",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(33), bento.ConstraintPercentage(100)},
+			Want:        "aaabbbbbbb",
+		},
+		{
+			Name:        "Flex Start with Percentage 33, 200",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(33), bento.ConstraintPercentage(200)},
+			Want:        "aaabbbbbbb",
+		},
+		{
+			Name:        "Flex Start with Percentage 50, 0",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(50), bento.ConstraintPercentage(0)},
+			Want:        "aaaaa     ",
+		},
+		{
+			Name:        "Flex Start with Percentage 50, 50",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(50), bento.ConstraintPercentage(50)},
+			Want:        "aaaaabbbbb",
+		},
+		{
+			Name:        "Flex Start with Percentage 50, 100",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(50), bento.ConstraintPercentage(100)},
+			Want:        "aaaaabbbbb",
+		},
+		{
+			Name:        "Flex Start with Percentage 100, 0",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(100), bento.ConstraintPercentage(0)},
+			Want:        "aaaaaaaaaa",
+		},
+		{
+			Name:        "Flex Start with Percentage 100, 50",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(100), bento.ConstraintPercentage(50)},
+			Want:        "aaaaabbbbb",
+		},
+		{
+			Name:        "Flex Start with Percentage 100, 100",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(100), bento.ConstraintPercentage(100)},
+			Want:        "aaaaabbbbb",
+		},
+		{
+			Name:        "Flex Start with Percentage 100, 200",
+			Flex:        bento.FlexStart,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(100), bento.ConstraintPercentage(200)},
+			Want:        "aaaaabbbbb",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, tc.Test)
+	}
+}
+
+func TestPercentageFlexSpaceBetween(t *testing.T) {
 	testCases := []LayoutSplitTestCase{
 		{
 			Name:        "Flex SpaceBetween with Percentage 0, 0",
@@ -709,10 +907,268 @@ func TestPercentage(t *testing.T) {
 			Constraints: []bento.Constraint{bento.ConstraintPercentage(0), bento.ConstraintPercentage(25)},
 			Want:        "        bb",
 		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 0, 50",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(0), bento.ConstraintPercentage(50)},
+			Want:        "     bbbbb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 0, 100",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(0), bento.ConstraintPercentage(100)},
+			Want:        "bbbbbbbbbb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 0, 200",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(0), bento.ConstraintPercentage(200)},
+			Want:        "bbbbbbbbbb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 10, 0",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(10), bento.ConstraintPercentage(0)},
+			Want:        "a         ",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 10, 25",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(10), bento.ConstraintPercentage(25)},
+			Want:        "a       bb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 10, 50",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(10), bento.ConstraintPercentage(50)},
+			Want:        "a    bbbbb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 10, 100",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(10), bento.ConstraintPercentage(100)},
+			Want:        "abbbbbbbbb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 10, 200",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(10), bento.ConstraintPercentage(200)},
+			Want:        "abbbbbbbbb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 25, 0",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(25), bento.ConstraintPercentage(0)},
+			Want:        "aaa       ",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 25, 25",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(25), bento.ConstraintPercentage(25)},
+			Want:        "aaa     bb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 25, 50",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(25), bento.ConstraintPercentage(50)},
+			Want:        "aaa  bbbbb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 25, 100",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(25), bento.ConstraintPercentage(100)},
+			Want:        "aaabbbbbbb",
+		},
+		{
+			Name: "Flex SpaceBetween with Percentage 25, 200", Flex: bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(25), bento.ConstraintPercentage(200)},
+			Want:        "aaabbbbbbb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 33, 0",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(33), bento.ConstraintPercentage(0)},
+			Want:        "aaa       ",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 33, 25",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(33), bento.ConstraintPercentage(25)},
+			Want:        "aaa     bb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 33, 50",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(33), bento.ConstraintPercentage(50)},
+			Want:        "aaa  bbbbb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 33, 100",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(33), bento.ConstraintPercentage(100)},
+			Want:        "aaabbbbbbb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 33, 200",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(33), bento.ConstraintPercentage(200)},
+			Want:        "aaabbbbbbb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 50, 0",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(50), bento.ConstraintPercentage(0)},
+			Want:        "aaaaa     ",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 50, 50",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(50), bento.ConstraintPercentage(50)},
+			Want:        "aaaaabbbbb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 50, 100",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(50), bento.ConstraintPercentage(100)},
+			Want:        "aaaaabbbbb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 100, 0",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(100), bento.ConstraintPercentage(0)},
+			Want:        "aaaaaaaaaa",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 100, 50",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(100), bento.ConstraintPercentage(50)},
+			Want:        "aaaaabbbbb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 100, 100",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(100), bento.ConstraintPercentage(100)},
+			Want:        "aaaaabbbbb",
+		},
+		{
+			Name:        "Flex SpaceBetween with Percentage 100, 200",
+			Flex:        bento.FlexSpaceBetween,
+			Width:       10,
+			Constraints: []bento.Constraint{bento.ConstraintPercentage(100), bento.ConstraintPercentage(200)},
+			Want:        "aaaaabbbbb",
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, tc.Test)
+	}
+}
+
+func TestEdgeCases(t *testing.T) {
+	testCases := []struct {
+		name        string
+		constraints []bento.Constraint
+		direction   bento.Direction
+		split       bento.Rect
+		want        []bento.Rect
+	}{
+		{
+			name: "50% 50% min(0) stretches into last",
+			constraints: []bento.Constraint{
+				bento.ConstraintPercentage(50),
+				bento.ConstraintPercentage(50),
+				bento.ConstraintMin(0),
+			},
+			direction: bento.DirectionVertical,
+			split:     bento.Rect{Width: 1, Height: 1},
+			want: []bento.Rect{
+				{X: 0, Y: 0, Width: 1, Height: 1},
+				{X: 0, Y: 1, Width: 1, Height: 0},
+				{X: 0, Y: 1, Width: 1, Height: 0},
+			},
+		},
+		{
+			name: "max(1) 99% min(0) stretches into last",
+			constraints: []bento.Constraint{
+				bento.ConstraintMax(1),
+				bento.ConstraintPercentage(99),
+				bento.ConstraintMin(0),
+			},
+			direction: bento.DirectionVertical,
+			split:     bento.Rect{Width: 1, Height: 1},
+			want: []bento.Rect{
+				{X: 0, Y: 0, Width: 1, Height: 0},
+				{X: 0, Y: 0, Width: 1, Height: 1},
+				{X: 0, Y: 1, Width: 1, Height: 0},
+			},
+		},
+		{
+			name: "min(1) length(0) min(1)",
+			constraints: []bento.Constraint{
+				bento.ConstraintMin(1),
+				bento.ConstraintLength(0),
+				bento.ConstraintMin(1),
+			},
+			direction: bento.DirectionHorizontal,
+			split:     bento.Rect{Width: 1, Height: 1},
+			want: []bento.Rect{
+				{X: 0, Y: 0, Width: 1, Height: 1},
+				{X: 1, Y: 0, Width: 1, Height: 1},
+				{X: 1, Y: 0, Width: 1, Height: 1},
+			},
+		},
+		{
+			name: "stretches the 2nd last length instead of the last min based on ranking",
+			constraints: []bento.Constraint{
+				bento.ConstraintLength(3),
+				bento.ConstraintMin(4),
+				bento.ConstraintLength(1),
+				bento.ConstraintMin(4),
+			},
+			direction: bento.DirectionHorizontal,
+			split:     bento.Rect{Width: 7, Height: 1},
+			want: []bento.Rect{
+				{X: 0, Y: 0, Width: 0, Height: 1},
+				{X: 0, Y: 0, Width: 4, Height: 1},
+				{X: 4, Y: 0, Width: 0, Height: 1},
+				{X: 4, Y: 0, Width: 3, Height: 1},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			layout := bento.Layout{
+				Constraints: tc.constraints,
+				Direction:   tc.direction,
+			}.Split(tc.split)
+
+			require.Equal(t, tc.want, layout)
+		})
 	}
 }
 
