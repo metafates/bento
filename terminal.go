@@ -1,6 +1,8 @@
 package bento
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type PositionedCell struct {
 	Cell
@@ -22,6 +24,12 @@ type TerminalBackend interface {
 	ClearBeforeCursor() error
 	ClearCurrentLine() error
 	ClearUntilNewLine() error
+
+	EnableRawMode() error
+	DisableRawMode() error
+
+	EnableAlternateScreen() error
+	LeaveAlternateScreen() error
 }
 
 type Terminal struct {
@@ -87,6 +95,22 @@ func NewTerminal(backend TerminalBackend, viewport Viewport) (*Terminal, error) 
 	}, nil
 }
 
+func (t *Terminal) EnableAlternateScreen() error {
+	return t.backend.EnableAlternateScreen()
+}
+
+func (t *Terminal) LeaveAlternateScreen() error {
+	return nil
+}
+
+func (t *Terminal) EnableRawMode() error {
+	return t.backend.EnableRawMode()
+}
+
+func (t *Terminal) DisableRawMode() error {
+	return t.backend.DisableRawMode()
+}
+
 func (t *Terminal) Draw(draw func(frame *Frame)) (CompletedFrame, error) {
 	if err := t.Autoresize(); err != nil {
 		return CompletedFrame{}, fmt.Errorf("autoresize: %w", err)
@@ -116,7 +140,7 @@ func (t *Terminal) Draw(draw func(frame *Frame)) (CompletedFrame, error) {
 
 	t.SwapBuffers()
 
-	if err := t.backend.Flush(); err != nil {
+	if err := t.Flush(); err != nil {
 		return CompletedFrame{}, fmt.Errorf("backend flush: %w", err)
 	}
 
@@ -182,7 +206,7 @@ func (t *Terminal) Flush() error {
 func (t *Terminal) GetFrame() Frame {
 	return Frame{
 		cursorPosition: nil,
-		viewport:       t.viewportArea,
+		viewportArea:   t.viewportArea,
 		buffer:         t.CurrentBuffer(),
 		count:          t.frameCount,
 	}
@@ -265,7 +289,7 @@ func (t *Terminal) Clear() error {
 		}
 	}
 
-	t.buffers[1-t.current].Reset()
+	t.PreviousBuffer().Reset()
 
 	return nil
 }

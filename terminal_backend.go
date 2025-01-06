@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/metafates/bento/internal/ansi"
 	"github.com/muesli/termenv"
@@ -12,41 +13,75 @@ import (
 var _ TerminalBackend = (*DefaultBackend)(nil)
 
 type DefaultBackend struct {
+	file   *os.File
 	writer *bufio.Writer
-	output *termenv.Output
+
+	termState ansi.State
+}
+
+func NewDefaultBackend() DefaultBackend {
+	return DefaultBackend{
+		file:   os.Stdout,
+		writer: bufio.NewWriter(os.Stdout),
+	}
+}
+
+func (d *DefaultBackend) EnableRawMode() error {
+	if d.isRawMode() {
+		return nil
+	}
+
+	state, err := ansi.EnableRawMode(int(d.fd()))
+	if err != nil {
+		return fmt.Errorf("enable raw mode: %w", err)
+	}
+
+	d.termState = state
+
+	return nil
+}
+
+func (d *DefaultBackend) DisableRawMode() error {
+	if !d.isRawMode() {
+		return nil
+	}
+
+	if err := ansi.Restore(int(d.fd()), d.termState); err != nil {
+		return fmt.Errorf("restore: %w", err)
+	}
+
+	d.termState = nil
+
+	return nil
+}
+
+func (d *DefaultBackend) isRawMode() bool {
+	return d.termState != nil
 }
 
 // ClearAfterCursor implements TerminalBackend.
 func (d *DefaultBackend) ClearAfterCursor() error {
-	d.output.ClearLineRight()
-
-	return nil
+	return d.execute(ansi.ClearAfterCursor{})
 }
 
 // ClearAll implements TerminalBackend.
 func (d *DefaultBackend) ClearAll() error {
-	d.output.ClearScreen()
-
-	return nil
+	return d.execute(ansi.ClearAll{})
 }
 
 // ClearBeforeCursor implements TerminalBackend.
 func (d *DefaultBackend) ClearBeforeCursor() error {
-	d.output.ClearLineLeft()
-
-	return nil
+	return d.execute(ansi.ClearBeforeCursor{})
 }
 
 // ClearCurrentLine implements TerminalBackend.
 func (d *DefaultBackend) ClearCurrentLine() error {
-	d.output.ClearLine()
-
-	return nil
+	return d.execute(ansi.ClearCurrentLine{})
 }
 
 // ClearUntilNewLine implements TerminalBackend.
 func (d *DefaultBackend) ClearUntilNewLine() error {
-	panic("unimplemented")
+	return d.execute(ansi.ClearUntilNewLine{})
 }
 
 // Draw implements TerminalBackend.
@@ -66,7 +101,12 @@ func (d *DefaultBackend) Draw(cells []PositionedCell) error {
 		cell := pc.Cell
 
 		if lastPos == nil || lastPos.X+1 != x || lastPos.Y != y {
-			d.output.MoveCursor(y, x)
+			if err := d.queue(ansi.MoveTo{
+				Column: x,
+				Row:    y,
+			}); err != nil {
+				return fmt.Errorf("set cursor position: %w", err)
+			}
 		}
 
 		lastPos = &Position{X: x, Y: y}
@@ -77,7 +117,7 @@ func (d *DefaultBackend) Draw(cells []PositionedCell) error {
 				To:   cell.Style,
 			}
 
-			if err := diff.queue(d.output); err != nil {
+			if err := diff.queue(d.writer); err != nil {
 				return fmt.Errorf("queue: %w", err)
 			}
 
@@ -116,42 +156,81 @@ func (d *DefaultBackend) Draw(cells []PositionedCell) error {
 
 // Flush implements TerminalBackend.
 func (d *DefaultBackend) Flush() error {
-	panic("unimplemented")
+	return d.writer.Flush()
 }
 
 // GetCursorPosition implements TerminalBackend.
 func (d *DefaultBackend) GetCursorPosition() (Position, error) {
-	panic("unimplemented")
+	column, row, err := ansi.GetCursorPosition()
+	if err != nil {
+		return Position{}, fmt.Errorf("get cursor position: %w", err)
+	}
+
+	return Position{
+		X: column,
+		Y: row,
+	}, nil
 }
 
 // GetSize implements TerminalBackend.
 func (d *DefaultBackend) GetSize() (Size, error) {
-	panic("unimplemented")
+	fd := d.file.Fd()
+
+	width, height, err := ansi.GetSize(int(fd))
+	if err != nil {
+		return Size{}, fmt.Errorf("get size: %w", err)
+	}
+
+	return Size{
+		Width:  width,
+		Height: height,
+	}, nil
 }
 
 // HideCursor implements TerminalBackend.
 func (d *DefaultBackend) HideCursor() error {
-	d.output.HideCursor()
+	return d.execute(ansi.HideCursor{})
+}
 
-	return nil
+func (d *DefaultBackend) EnableAlternateScreen() error {
+	return d.execute(ansi.EnterAlternateScreen{})
+}
+
+func (d *DefaultBackend) LeaveAlternateScreen() error {
+	return d.execute(ansi.LeaveAlternateScreen{})
 }
 
 // SetCursorPosition implements TerminalBackend.
 func (d *DefaultBackend) SetCursorPosition(position Position) error {
-	d.output.MoveCursor(position.Y, position.X)
-
-	return nil
+	return d.execute(ansi.MoveTo{
+		Column: position.X,
+		Row:    position.Y,
+	})
 }
 
 // ShowCursor implements TerminalBackend.
 func (d *DefaultBackend) ShowCursor() error {
-	d.output.ShowCursor()
-
-	return nil
+	return d.execute(ansi.ShowCursor{})
 }
 
 func (d *DefaultBackend) queue(commands ...ansi.Command) error {
 	return queue(d.writer, commands...)
+}
+
+func (d *DefaultBackend) execute(commands ...ansi.Command) error {
+	if err := d.queue(commands...); err != nil {
+		return fmt.Errorf("queue: %w", err)
+	}
+
+	if err := d.Flush(); err != nil {
+		return fmt.Errorf("flush: %w", err)
+	}
+
+	return nil
+}
+
+func (d *DefaultBackend) fd() uintptr {
+	return d.file.Fd()
 }
 
 type _StyleDiff struct {

@@ -1,8 +1,9 @@
 package bento
 
 import (
-	"context"
+	"fmt"
 	"sync"
+	"time"
 )
 
 type Msg any
@@ -22,9 +23,6 @@ type App struct {
 	// program can exit.
 	handlers channelHandlers
 
-	ctx    context.Context
-	cancel context.CancelFunc
-
 	msgs     chan Msg
 	errs     chan error
 	finished chan struct{}
@@ -32,8 +30,28 @@ type App struct {
 	terminal *Terminal
 }
 
+func NewApp(initialModel Model) (App, error) {
+	backend := NewDefaultBackend()
+	terminal, err := NewTerminal(&backend, ViewportFullscreen{})
+	if err != nil {
+		return App{}, fmt.Errorf("new terminal: %w", err)
+	}
+
+	return App{
+		initialModel: initialModel,
+		handlers:     []chan struct{}{},
+		msgs:         make(chan Msg),
+		errs:         make(chan error),
+		finished:     make(chan struct{}),
+		terminal:     terminal,
+	}, nil
+}
+
 func (a *App) Run() (Model, error) {
 	// TODO: everything else
+	if err := a.enterAltScreen(); err != nil {
+		return a.initialModel, fmt.Errorf("enter alt screen: %w", err)
+	}
 
 	cmds := make(chan Cmd)
 
@@ -47,29 +65,61 @@ func (a *App) Run() (Model, error) {
 		go func() {
 			defer close(ch)
 
-			select {
-			case cmds <- initCmd:
-			case <-a.ctx.Done():
-			}
+			cmds <- initCmd
 		}()
 	}
 
 	a.terminal.Draw(model.Draw)
 
+	time.Sleep(5 * time.Second)
+
 	a.shutdown()
+
+	if err := a.leaveAltScreen(); err != nil {
+		return a.initialModel, fmt.Errorf("restore terminal: %w", err)
+	}
 
 	return a.initialModel, nil
 }
 
 func (a *App) shutdown() {
-	a.cancel()
 	a.handlers.shutdown()
 }
 
-func (a *App) restoreTerminal() {
-	a.terminal.ShowCursor()
+func (a *App) enterAltScreen() error {
+	if err := a.terminal.EnableRawMode(); err != nil {
+		return fmt.Errorf("enable raw mode: %w", err)
+	}
 
-	// TODO
+	if err := a.terminal.EnableAlternateScreen(); err != nil {
+		return fmt.Errorf("enable alt screen buffer: %w", err)
+	}
+
+	if err := a.terminal.Clear(); err != nil {
+		return fmt.Errorf("clear: %w", err)
+	}
+
+	if err := a.terminal.SetCursorPosition(Position{X: 0, Y: 0}); err != nil {
+		return fmt.Errorf("set cursor position: %w", err)
+	}
+
+	return nil
+}
+
+func (a *App) leaveAltScreen() error {
+	if err := a.terminal.DisableRawMode(); err != nil {
+		return fmt.Errorf("disable raw mode: %w", err)
+	}
+
+	if err := a.terminal.LeaveAlternateScreen(); err != nil {
+		return fmt.Errorf("leave alternate screen: %w", err)
+	}
+
+	if err := a.terminal.ShowCursor(); err != nil {
+		return fmt.Errorf("show cursor: %w", err)
+	}
+
+	return nil
 }
 
 // channelHandlers manages the series of channels returned by various processes.
