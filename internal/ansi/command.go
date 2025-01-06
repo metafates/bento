@@ -94,7 +94,7 @@ func (HideCursor) WriteANSI(w io.Writer) error {
 type ClearAll struct{}
 
 func (ClearAll) WriteANSI(w io.Writer) error {
-	return write(w, CSI+"2j")
+	return write(w, CSI+"2J")
 }
 
 type ClearAfterCursor struct{}
