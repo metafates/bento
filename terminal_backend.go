@@ -13,17 +13,24 @@ import (
 var _ TerminalBackend = (*DefaultBackend)(nil)
 
 type DefaultBackend struct {
-	file   *os.File
-	writer *bufio.Writer
+	input  io.Reader
+	tty    *os.File
+	ttyBuf *bufio.Writer
 
 	termState ansi.State
 }
 
 func NewDefaultBackend() DefaultBackend {
 	return DefaultBackend{
-		file:   os.Stdout,
-		writer: bufio.NewWriter(os.Stdout),
+		input:  os.Stdin,
+		tty:    os.Stdout,
+		ttyBuf: bufio.NewWriter(os.Stdout),
 	}
+}
+
+// Read implements TerminalBackend.
+func (d *DefaultBackend) Read(p []byte) (n int, err error) {
+	return d.input.Read(p)
 }
 
 func (d *DefaultBackend) EnableRawMode() error {
@@ -117,7 +124,7 @@ func (d *DefaultBackend) Draw(cells []PositionedCell) error {
 				To:   cell.Style,
 			}
 
-			if err := diff.queue(d.writer); err != nil {
+			if err := diff.queue(d.ttyBuf); err != nil {
 				return fmt.Errorf("queue: %w", err)
 			}
 
@@ -156,7 +163,7 @@ func (d *DefaultBackend) Draw(cells []PositionedCell) error {
 
 // Flush implements TerminalBackend.
 func (d *DefaultBackend) Flush() error {
-	return d.writer.Flush()
+	return d.ttyBuf.Flush()
 }
 
 // GetCursorPosition implements TerminalBackend.
@@ -174,7 +181,7 @@ func (d *DefaultBackend) GetCursorPosition() (Position, error) {
 
 // GetSize implements TerminalBackend.
 func (d *DefaultBackend) GetSize() (Size, error) {
-	fd := d.file.Fd()
+	fd := d.tty.Fd()
 
 	width, height, err := ansi.GetSize(int(fd))
 	if err != nil {
@@ -214,7 +221,7 @@ func (d *DefaultBackend) ShowCursor() error {
 }
 
 func (d *DefaultBackend) queue(commands ...ansi.Command) error {
-	return queue(d.writer, commands...)
+	return queue(d.ttyBuf, commands...)
 }
 
 func (d *DefaultBackend) execute(commands ...ansi.Command) error {
@@ -230,7 +237,7 @@ func (d *DefaultBackend) execute(commands ...ansi.Command) error {
 }
 
 func (d *DefaultBackend) fd() uintptr {
-	return d.file.Fd()
+	return d.tty.Fd()
 }
 
 type _StyleDiff struct {

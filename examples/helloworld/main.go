@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -15,17 +16,21 @@ type Model struct{}
 // Draw implements bento.Model.
 func (m *Model) Draw(frame *bento.Frame) {
 	chunks := bento.Layout{
-		Direction: bento.DirectionHorizontal,
+		Direction: bento.DirectionVertical,
 		Constraints: []bento.Constraint{
-			bento.ConstraintPercentage(50),
-			bento.ConstraintPercentage(50),
+			bento.ConstraintPercentage(25),
+			bento.ConstraintPercentage(25),
+			bento.ConstraintPercentage(25),
+			bento.ConstraintPercentage(25),
 		},
 	}.Split(frame.Area())
 
 	w := textwidget.NewTextString("Hello, world!")
 
 	frame.RenderWidget(w.WithAlignment(bento.AlignmentLeft), chunks[0])
-	frame.RenderWidget(w.WithAlignment(bento.AlignmentRight), chunks[1])
+	frame.RenderWidget(w.WithAlignment(bento.AlignmentCenter), chunks[1])
+	frame.RenderWidget(w.WithAlignment(bento.AlignmentRight), chunks[2])
+	frame.RenderWidget(w.WithAlignment(bento.AlignmentLeft), chunks[3])
 }
 
 // Init implements bento.Model.
@@ -35,11 +40,19 @@ func (m *Model) Init() bento.Cmd {
 
 // Update implements bento.Model.
 func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
+	switch msg := msg.(type) {
+	case bento.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c":
+			return m, bento.Quit
+		}
+	}
+
 	return m, nil
 }
 
 func run() error {
-	app, err := bento.NewApp(&Model{})
+	app, err := bento.NewApp(context.Background(), &Model{})
 	if err != nil {
 		return fmt.Errorf("new app: %w", err)
 	}

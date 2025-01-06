@@ -2,6 +2,7 @@ package bento
 
 import (
 	"fmt"
+	"io"
 )
 
 type PositionedCell struct {
@@ -11,6 +12,8 @@ type PositionedCell struct {
 }
 
 type TerminalBackend interface {
+	io.Reader
+
 	Draw(cells []PositionedCell) error
 	HideCursor() error
 	ShowCursor() error
@@ -31,6 +34,8 @@ type TerminalBackend interface {
 	EnableAlternateScreen() error
 	LeaveAlternateScreen() error
 }
+
+var _ io.Reader = (*Terminal)(nil)
 
 type Terminal struct {
 	backend      TerminalBackend
@@ -93,6 +98,11 @@ func NewTerminal(backend TerminalBackend, viewport Viewport) (*Terminal, error) 
 		hiddenCursor:       false,
 		frameCount:         0,
 	}, nil
+}
+
+// Read implements io.Reader.
+func (t *Terminal) Read(p []byte) (n int, err error) {
+	return t.backend.Read(p)
 }
 
 func (t *Terminal) EnableAlternateScreen() error {
