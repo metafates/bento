@@ -49,48 +49,71 @@ func NewApp(initialModel Model) (App, error) {
 
 func (a *App) Run() (Model, error) {
 	// TODO: everything else
+	if err := a.initTerminal(); err != nil {
+		return a.initialModel, fmt.Errorf("init input: %w", err)
+	}
+
 	if err := a.enterAltScreen(); err != nil {
 		return a.initialModel, fmt.Errorf("enter alt screen: %w", err)
 	}
 
-	cmds := make(chan Cmd)
-
 	model := a.initialModel
 
 	if initCmd := model.Init(); initCmd != nil {
-		ch := make(chan struct{})
-
-		a.handlers.add(ch)
-
-		go func() {
-			defer close(ch)
-
-			cmds <- initCmd
-		}()
+		_ = initCmd
 	}
 
 	a.terminal.Draw(model.Draw)
 
 	time.Sleep(5 * time.Second)
 
-	a.shutdown()
-
-	if err := a.leaveAltScreen(); err != nil {
-		return a.initialModel, fmt.Errorf("restore terminal: %w", err)
+	if err := a.shutdown(); err != nil {
+		return a.initialModel, fmt.Errorf("shutdown: %w", err)
 	}
 
 	return a.initialModel, nil
 }
 
-func (a *App) shutdown() {
-	a.handlers.shutdown()
+func (a *App) shutdown() error {
+	return a.restoreTerminal()
 }
 
-func (a *App) enterAltScreen() error {
+func (a *App) restoreTerminal() error {
+	if err := a.leaveAltScreen(); err != nil {
+		return fmt.Errorf("leave alt screen: %w", err)
+	}
+
+	// give the terminal a moment to catch up
+	time.Sleep(time.Millisecond * 10) //nolint:gomnd
+
+	if err := a.terminal.DisableRawMode(); err != nil {
+		return fmt.Errorf("disable raw mode: %w", err)
+	}
+
+	return nil
+}
+
+func (a *App) initTerminal() error {
+	if err := a.initInput(); err != nil {
+		return fmt.Errorf("init input: %w", err)
+	}
+
+	if err := a.terminal.HideCursor(); err != nil {
+		return fmt.Errorf("hide terminal: %w", err)
+	}
+
+	return nil
+}
+
+func (a *App) initInput() error {
 	if err := a.terminal.EnableRawMode(); err != nil {
 		return fmt.Errorf("enable raw mode: %w", err)
 	}
 
+	return nil
+}
+
+func (a *App) enterAltScreen() error {
 	if err := a.terminal.EnableAlternateScreen(); err != nil {
 		return fmt.Errorf("enable alt screen buffer: %w", err)
 	}
@@ -107,10 +130,6 @@ func (a *App) enterAltScreen() error {
 }
 
 func (a *App) leaveAltScreen() error {
-	if err := a.terminal.DisableRawMode(); err != nil {
-		return fmt.Errorf("disable raw mode: %w", err)
-	}
-
 	if err := a.terminal.LeaveAlternateScreen(); err != nil {
 		return fmt.Errorf("leave alternate screen: %w", err)
 	}
