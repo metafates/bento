@@ -49,12 +49,8 @@ func NewApp(initialModel Model) (App, error) {
 
 func (a *App) Run() (Model, error) {
 	// TODO: everything else
-	if err := a.initTerminal(); err != nil {
-		return a.initialModel, fmt.Errorf("init input: %w", err)
-	}
-
-	if err := a.enterAltScreen(); err != nil {
-		return a.initialModel, fmt.Errorf("enter alt screen: %w", err)
+	if err := a.init(); err != nil {
+		return a.initialModel, fmt.Errorf("init: %w", err)
 	}
 
 	model := a.initialModel
@@ -75,63 +71,28 @@ func (a *App) Run() (Model, error) {
 }
 
 func (a *App) shutdown() error {
-	return a.restoreTerminal()
+	return a.restore()
 }
 
-func (a *App) restoreTerminal() error {
-	if err := a.leaveAltScreen(); err != nil {
-		return fmt.Errorf("leave alt screen: %w", err)
-	}
-
-	// give the terminal a moment to catch up
-	time.Sleep(time.Millisecond * 10) //nolint:gomnd
-
-	if err := a.terminal.DisableRawMode(); err != nil {
-		return fmt.Errorf("disable raw mode: %w", err)
-	}
-
-	return nil
-}
-
-func (a *App) initTerminal() error {
-	if err := a.initInput(); err != nil {
-		return fmt.Errorf("init input: %w", err)
-	}
-
-	if err := a.terminal.HideCursor(); err != nil {
-		return fmt.Errorf("hide terminal: %w", err)
-	}
-
-	return nil
-}
-
-func (a *App) initInput() error {
+func (a *App) init() error {
 	if err := a.terminal.EnableRawMode(); err != nil {
 		return fmt.Errorf("enable raw mode: %w", err)
 	}
 
-	return nil
-}
-
-func (a *App) enterAltScreen() error {
 	if err := a.terminal.EnableAlternateScreen(); err != nil {
 		return fmt.Errorf("enable alt screen buffer: %w", err)
 	}
 
-	if err := a.terminal.Clear(); err != nil {
-		return fmt.Errorf("clear: %w", err)
-	}
-
-	if err := a.terminal.SetCursorPosition(Position{X: 0, Y: 0}); err != nil {
-		return fmt.Errorf("set cursor position: %w", err)
-	}
-
 	return nil
 }
 
-func (a *App) leaveAltScreen() error {
+func (a *App) restore() error {
+	if err := a.terminal.DisableRawMode(); err != nil {
+		return fmt.Errorf("disable raw mode: %w", err)
+	}
+
 	if err := a.terminal.LeaveAlternateScreen(); err != nil {
-		return fmt.Errorf("leave alternate screen: %w", err)
+		return fmt.Errorf("leave alt screen buffer: %w", err)
 	}
 
 	if err := a.terminal.ShowCursor(); err != nil {

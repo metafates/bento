@@ -100,7 +100,7 @@ func (t *Terminal) EnableAlternateScreen() error {
 }
 
 func (t *Terminal) LeaveAlternateScreen() error {
-	return nil
+	return t.backend.LeaveAlternateScreen()
 }
 
 func (t *Terminal) EnableRawMode() error {
@@ -140,7 +140,7 @@ func (t *Terminal) Draw(draw func(frame *Frame)) (CompletedFrame, error) {
 
 	t.SwapBuffers()
 
-	if err := t.Flush(); err != nil {
+	if err := t.backend.Flush(); err != nil {
 		return CompletedFrame{}, fmt.Errorf("backend flush: %w", err)
 	}
 
