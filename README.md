@@ -12,3 +12,5 @@ and functional design paradigms of [The Elm Architecture](https://guide.elm-lang
 This library is mostly full Go rewrite of [ratatui-core](https://github.com/ratatui/ratatui/tree/main/ratatui-core) crate with some parts copied from bubbletea runtime.
 
 No demo yet, but you can take a look at [examples](./examples) for now
+
+> It's named bento after how similar some bento boxes look like compared to the typical TUIs (multiple blocks of different sizes side by side)
