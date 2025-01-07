@@ -25,6 +25,30 @@ const (
 	_allSegmentGrow   casso.Strength = casso.Weak
 )
 
+type Splitted []Rect
+
+func (s Splitted) Assign(areas ...*Rect) {
+	for i := range areas {
+		*areas[i] = s[i]
+	}
+}
+
+func (s Splitted) Unwrap() Rect {
+	return s[0]
+}
+
+func (s Splitted) Unwrap2() (a, b Rect) {
+	return s[0], s[1]
+}
+
+func (s Splitted) Unwrap3() (a, b, c Rect) {
+	return s[0], s[1], s[2]
+}
+
+func (s Splitted) Unwrap4() (a, b, c, d Rect) {
+	return s[0], s[1], s[2], s[3]
+}
+
 type Layout struct {
 	Direction   Direction
 	Constraints []Constraint
@@ -33,7 +57,50 @@ type Layout struct {
 	Spacing     Spacing
 }
 
-func (l Layout) SplitWithSpacers(area Rect) (segments []Rect, spacers []Rect) {
+func NewLayout(constraints ...Constraint) Layout {
+	return Layout{
+		Direction:   DirectionVertical,
+		Constraints: constraints,
+		Margin:      Margin{},
+		Flex:        FlexLegacy,
+		Spacing:     SpacingSpace(0),
+	}
+}
+
+func (l Layout) Vertical() Layout {
+	return l.WithDirection(DirectionVertical)
+}
+
+func (l Layout) Horizontal() Layout {
+	return l.WithDirection(DirectionHorizontal)
+}
+
+func (l Layout) WithDirection(direction Direction) Layout {
+	l.Direction = direction
+	return l
+}
+
+func (l Layout) WithMargin(margin Margin) Layout {
+	l.Margin = margin
+	return l
+}
+
+func (l Layout) WithFlex(flex Flex) Layout {
+	l.Flex = flex
+	return l
+}
+
+func (l Layout) WithSpacing(spacing Spacing) Layout {
+	l.Spacing = spacing
+	return l
+}
+
+func (l Layout) WithConstraints(constraints ...Constraint) Layout {
+	l.Constraints = append(l.Constraints, constraints...)
+	return l
+}
+
+func (l Layout) SplitWithSpacers(area Rect) (segments, spacers Splitted) {
 	segments, spacers, err := l.split(area)
 	if err != nil {
 		panic(err)
@@ -42,28 +109,10 @@ func (l Layout) SplitWithSpacers(area Rect) (segments []Rect, spacers []Rect) {
 	return segments, spacers
 }
 
-func (l Layout) Split(area Rect) []Rect {
+func (l Layout) Split(area Rect) Splitted {
 	segments, _ := l.SplitWithSpacers(area)
 
 	return segments
-}
-
-func (l Layout) Split2(area Rect) (a, b Rect) {
-	r := l.Split(area)
-
-	return r[0], r[1]
-}
-
-func (l Layout) Split3(area Rect) (a, b, c Rect) {
-	r := l.Split(area)
-
-	return r[0], r[1], r[2]
-}
-
-func (l Layout) Split4(area Rect) (a, b, c, d Rect) {
-	r := l.Split(area)
-
-	return r[0], r[1], r[2], r[3]
 }
 
 func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {

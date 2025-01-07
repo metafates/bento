@@ -22,17 +22,22 @@ func (m *Model) Draw(frame *bento.Frame) {
 	mainBlock := blockwidget.
 		NewBlock().
 		WithTitle(blockwidget.NewTitleString("Example")).
-		WithPadding(blockwidget.NewPadding(3))
+		WithPadding(blockwidget.NewPadding(5)).
+		Plain()
 
-	statusBlock := blockwidget.NewBlock().WithTitle(blockwidget.NewTitleString("Status"))
+	statusBlock := blockwidget.NewBlock().Plain().WithTitle(blockwidget.NewTitleString("Status"))
 
-	mainArea, statusArea := bento.Layout{
-		Direction: bento.DirectionVertical,
-		Constraints: []bento.Constraint{
+	var mainArea, statusArea bento.Rect
+
+	bento.
+		NewLayout().
+		Vertical().
+		WithConstraints(
 			bento.ConstraintMin(3),
 			bento.ConstraintLength(3),
-		},
-	}.Split2(frame.Area())
+		).
+		Split(frame.Area()).
+		Assign(&mainArea, &statusArea)
 
 	mainInnerArea := mainBlock.Inner(mainArea)
 

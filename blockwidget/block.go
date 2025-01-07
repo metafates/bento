@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/metafates/bento"
+	"github.com/metafates/bento/internal/bit"
 )
 
 var _ bento.Widget = (*Block)(nil)
@@ -27,12 +28,20 @@ func NewBlock() Block {
 		titles:          nil,
 		titlesStyle:     bento.Style{},
 		titlesAlignment: bento.AlignmentLeft,
-		borders:         BordersAll,
+		borders:         BordersNone,
 		borderStyle:     bento.NewStyle(),
-		borderSet:       BorderPlain.Set(),
+		borderSet:       BorderTypePlain.Set(),
 		style:           bento.NewStyle(),
 		padding:         Padding{},
 	}
+}
+
+func (b Block) Rounded() Block {
+	return b.WithBorders().WithBorderType(BorderTypeRounded)
+}
+
+func (b Block) Plain() Block {
+	return b.WithBorders().WithBorderType(BorderTypePlain)
 }
 
 func (b Block) WithTitlesStyle(style bento.Style) Block {
@@ -59,8 +68,16 @@ func (b Block) WithTitle(title Title) Block {
 	return b
 }
 
-func (b Block) WithBorders(borders Borders) Block {
-	b.borders = borders
+func (b Block) WithBorders(borders ...Borders) Block {
+	if len(borders) == 0 {
+		b.borders = BordersAll
+		return b
+	}
+
+	for _, border := range borders {
+		b.borders = bit.Union(b.borders, border)
+	}
+
 	return b
 }
 

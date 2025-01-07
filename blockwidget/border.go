@@ -8,9 +8,8 @@ import (
 type BorderType int
 
 const (
-	BorderPlain BorderType = iota
-	// TODO
-	// BorderRounded
+	BorderTypePlain BorderType = iota
+	BorderTypeRounded
 	// BorderDouble
 	// BorderThick
 	// BorderQuadrantInside
@@ -19,8 +18,10 @@ const (
 
 func (b BorderType) Set() BorderSet {
 	switch b {
-	case BorderPlain:
+	case BorderTypePlain:
 		return _plainBorderSet
+	case BorderTypeRounded:
+		return _roundedBorderSet
 	default:
 		return _plainBorderSet
 	}
@@ -52,13 +53,26 @@ type BorderSet struct {
 	HorizontalTop, HorizontalBottom string
 }
 
-var _plainBorderSet = BorderSet{
-	TopLeft:          symbol.LineTopLeft,
-	TopRight:         symbol.LineTopRight,
-	BottomLeft:       symbol.LineBottomLeft,
-	BottomRight:      symbol.LineBottomRight,
-	VerticalLeft:     symbol.LineVertical,
-	VerticalRight:    symbol.LineVertical,
-	HorizontalTop:    symbol.LineHorizontal,
-	HorizontalBottom: symbol.LineHorizontal,
-}
+var (
+	_plainBorderSet = BorderSet{
+		TopLeft:          symbol.LineTopLeft,
+		TopRight:         symbol.LineTopRight,
+		BottomLeft:       symbol.LineBottomLeft,
+		BottomRight:      symbol.LineBottomRight,
+		VerticalLeft:     symbol.LineVertical,
+		VerticalRight:    symbol.LineVertical,
+		HorizontalTop:    symbol.LineHorizontal,
+		HorizontalBottom: symbol.LineHorizontal,
+	}
+
+	_roundedBorderSet = BorderSet{
+		TopLeft:          symbol.LineRoundedTopLeft,
+		TopRight:         symbol.LineRoundedTopRight,
+		BottomLeft:       symbol.LineRoundedBottomLeft,
+		BottomRight:      symbol.LineRoundedBottomRight,
+		VerticalLeft:     symbol.LineVertical,
+		VerticalRight:    symbol.LineVertical,
+		HorizontalTop:    symbol.LineHorizontal,
+		HorizontalBottom: symbol.LineHorizontal,
+	}
+)
