@@ -1,6 +1,10 @@
 package blockwidget
 
-import "github.com/metafates/bento"
+import (
+	"slices"
+
+	"github.com/metafates/bento"
+)
 
 var _ bento.Widget = (*Block)(nil)
 
@@ -93,7 +97,14 @@ func (b Block) hasTitleAtPosition(position TitlePosition) bool {
 
 func (b Block) Render(area bento.Rect, buffer *bento.Buffer) {
 	area = area.Intersection(buffer.Area)
+	if area.IsEmpty() {
+		return
+	}
+
 	buffer.SetStyle(area, b.style)
+
+	b.renderBorders(area, buffer)
+	b.renderTitles(area, buffer)
 }
 
 func (b Block) renderBorders(area bento.Rect, buffer *bento.Buffer) {
@@ -136,13 +147,85 @@ func (b Block) renderTopSide(area bento.Rect, buffer *bento.Buffer) {
 	}
 }
 
-func (b Block) renderRightSide(area bento.Rect, buffer *bento.Buffer)  {}
-func (b Block) renderBottomSide(area bento.Rect, buffer *bento.Buffer) {}
+func (b Block) renderRightSide(area bento.Rect, buffer *bento.Buffer) {
+	if b.borders.contains(BordersRight) {
+		x := area.Right() - 1
 
-func (b Block) renderBottomRightCorner(area bento.Rect, buffer *bento.Buffer) {}
-func (b Block) renderTopRightCorner(area bento.Rect, buffer *bento.Buffer)    {}
-func (b Block) renderBottomLeftCorner(area bento.Rect, buffer *bento.Buffer)  {}
-func (b Block) renderTopLeftCorner(area bento.Rect, buffer *bento.Buffer)     {}
+		for y := area.Top(); y < area.Bottom(); y++ {
+			buffer.
+				CellAt(bento.Position{
+					X: x,
+					Y: y,
+				}).
+				SetSymbol(b.borderSet.VerticalRight).
+				SetStyle(b.borderStyle)
+		}
+	}
+}
+
+func (b Block) renderBottomSide(area bento.Rect, buffer *bento.Buffer) {
+	if b.borders.contains(BordersBottom) {
+		y := area.Bottom() - 1
+
+		for x := area.Left(); x < area.Right(); x++ {
+			buffer.
+				CellAt(bento.Position{
+					X: x,
+					Y: y,
+				}).
+				SetSymbol(b.borderSet.HorizontalBottom).
+				SetStyle(b.borderStyle)
+		}
+	}
+}
+
+func (b Block) renderBottomRightCorner(area bento.Rect, buffer *bento.Buffer) {
+	if b.borders.contains(BordersRight | BordersBottom) {
+		buffer.
+			CellAt(bento.Position{
+				X: area.Right() - 1,
+				Y: area.Bottom() - 1,
+			}).
+			SetSymbol(b.borderSet.BottomRight).
+			SetStyle(b.borderStyle)
+	}
+}
+
+func (b Block) renderTopRightCorner(area bento.Rect, buffer *bento.Buffer) {
+	if b.borders.contains(BordersRight | BordersTop) {
+		buffer.
+			CellAt(bento.Position{
+				X: area.Right() - 1,
+				Y: area.Top(),
+			}).
+			SetSymbol(b.borderSet.TopRight).
+			SetStyle(b.borderStyle)
+	}
+}
+
+func (b Block) renderBottomLeftCorner(area bento.Rect, buffer *bento.Buffer) {
+	if b.borders.contains(BordersLeft | BordersBottom) {
+		buffer.
+			CellAt(bento.Position{
+				X: area.Left(),
+				Y: area.Bottom() - 1,
+			}).
+			SetSymbol(b.borderSet.BottomLeft).
+			SetStyle(b.borderStyle)
+	}
+}
+
+func (b Block) renderTopLeftCorner(area bento.Rect, buffer *bento.Buffer) {
+	if b.borders.contains(BordersLeft | BordersTop) {
+		buffer.
+			CellAt(bento.Position{
+				X: area.Left(),
+				Y: area.Top(),
+			}).
+			SetSymbol(b.borderSet.TopLeft).
+			SetStyle(b.borderStyle)
+	}
+}
 
 func (b Block) renderTitles(area bento.Rect, buffer *bento.Buffer) {
 	b.renderTitlePosition(TitlePositionTop, area, buffer)
@@ -156,8 +239,153 @@ func (b Block) renderTitlePosition(position TitlePosition, area bento.Rect, buff
 	b.renderLeftTitles(position, area, buffer)
 }
 
-func (b Block) renderRightTitles(position TitlePosition, area bento.Rect, buffer *bento.Buffer) {}
+func (b Block) renderRightTitles(position TitlePosition, area bento.Rect, buffer *bento.Buffer) {
+	titles := b.filterTitles(position, bento.AlignmentRight)
+	titlesArea := b.titlesArea(area, position)
 
-func (b Block) renderCenterTitles(position TitlePosition, area bento.Rect, buffer *bento.Buffer) {}
+	slices.Reverse(titles)
 
-func (b Block) renderLeftTitles(position TitlePosition, area bento.Rect, buffer *bento.Buffer) {}
+	for _, t := range titles {
+		if titlesArea.IsEmpty() {
+			break
+		}
+
+		titleWidth := t.Line.Width()
+		titleArea := bento.Rect{
+			X:      max(0, max(titlesArea.Left(), titlesArea.Right()-titleWidth)),
+			Y:      titlesArea.Y,
+			Width:  min(titlesArea.Width, titleWidth),
+			Height: titlesArea.Height,
+		}
+
+		buffer.SetStyle(titleArea, b.titlesStyle)
+		t.Line.Render(titleArea, buffer)
+
+		titlesArea.Width = max(0, titlesArea.Width-titleWidth-1)
+	}
+}
+
+func (b Block) renderCenterTitles(position TitlePosition, area bento.Rect, buffer *bento.Buffer) {
+	titles := b.filterTitles(position, bento.AlignmentCenter)
+
+	var totalWidth int
+
+	for _, t := range titles {
+		width := t.Line.Width() + 1
+
+		totalWidth += width
+	}
+
+	totalWidth = max(0, totalWidth-1)
+
+	titlesArea := b.titlesArea(area, position)
+
+	titlesArea = bento.Rect{
+		X:      titlesArea.Left() + max(0, titlesArea.Width-totalWidth)/2,
+		Y:      titlesArea.Y,
+		Width:  titlesArea.Width,
+		Height: titlesArea.Height,
+	}
+
+	for _, t := range titles {
+		if titlesArea.IsEmpty() {
+			break
+		}
+
+		titleWidth := t.Line.Width()
+
+		titleArea := bento.Rect{
+			X:      titlesArea.X,
+			Y:      titlesArea.Y,
+			Width:  min(titleWidth, titlesArea.Width),
+			Height: titlesArea.Height,
+		}
+
+		buffer.SetStyle(titleArea, b.titlesStyle)
+		t.Line.Render(titleArea, buffer)
+
+		titlesArea.X += titleWidth + 1
+		titlesArea.Width = max(0, titlesArea.Width-titleWidth-1)
+	}
+}
+
+func (b Block) renderLeftTitles(position TitlePosition, area bento.Rect, buffer *bento.Buffer) {
+	titles := b.filterTitles(position, bento.AlignmentLeft)
+	titlesArea := b.titlesArea(area, position)
+
+	for _, t := range titles {
+		if titlesArea.IsEmpty() {
+			break
+		}
+
+		titleWidth := t.Line.Width()
+		titleArea := bento.Rect{
+			X:      titlesArea.X,
+			Y:      titlesArea.Y,
+			Width:  min(titleWidth, titlesArea.Width),
+			Height: titlesArea.Height,
+		}
+
+		buffer.SetStyle(titleArea, b.titlesStyle)
+		t.Line.Render(titleArea, buffer)
+
+		titlesArea.X += titleWidth + 1
+		titlesArea.Width = max(0, titlesArea.Width-titleWidth-1)
+	}
+}
+
+func (b Block) filterTitles(position TitlePosition, alignment bento.Alignment) []Title {
+	titles := make([]Title, 0, len(b.titles))
+
+	for _, t := range b.titles {
+		titlePosition := b.titlesPosition
+		if t.Position != nil {
+			titlePosition = *t.Position
+		}
+
+		if titlePosition != position {
+			continue
+		}
+
+		titleAlignment := b.titlesAlignment
+		if t.Alignment != bento.AlignmentNone {
+			titleAlignment = t.Alignment
+		}
+
+		if titleAlignment != alignment {
+			continue
+		}
+
+		titles = append(titles, t)
+	}
+
+	return titles
+}
+
+func (b Block) titlesArea(area bento.Rect, position TitlePosition) bento.Rect {
+	var leftBorder, rightBorder int
+
+	if b.borders.contains(BordersLeft) {
+		leftBorder = 1
+	}
+
+	if b.borders.contains(BordersRight) {
+		rightBorder = 1
+	}
+
+	var y int
+
+	switch position {
+	case TitlePositionTop:
+		y = area.Top()
+	case TitlePositionBottom:
+		y = area.Bottom() - 1
+	}
+
+	return bento.Rect{
+		X:      area.Left() + leftBorder,
+		Y:      y,
+		Width:  max(0, area.Width-leftBorder-rightBorder),
+		Height: 1,
+	}
+}
