@@ -5,40 +5,32 @@ import (
 	"github.com/muesli/termenv"
 )
 
-type StyleModifier uint16
+type Modifier uint16
 
 const (
-	StyleModifierNone       StyleModifier = 0b0000_0000_0000
-	StyleModifierBold       StyleModifier = 0b0000_0000_0001
-	StyleModifierDim        StyleModifier = 0b0000_0000_0010
-	StyleModifierItalic     StyleModifier = 0b0000_0000_0100
-	StyleModifierUnderlined StyleModifier = 0b0000_0000_1000
-	StyleModifierSlowBlink  StyleModifier = 0b0000_0001_0000
-	StyleModifierRapidBlink StyleModifier = 0b0000_0010_0000
-	StyleModifierReversed   StyleModifier = 0b0000_0100_0000
-	StyleModifierHidden     StyleModifier = 0b0000_1000_0000
-	StyleModifierCrossedOut StyleModifier = 0b0001_0000_0000
-	StyleModifierAll        StyleModifier = StyleModifierBold |
-		StyleModifierDim |
-		StyleModifierItalic |
-		StyleModifierUnderlined |
-		StyleModifierSlowBlink |
-		StyleModifierRapidBlink |
-		StyleModifierReversed |
-		StyleModifierHidden |
-		StyleModifierCrossedOut
+	ModifierNone       Modifier = 0b0000_0000_0000
+	ModifierBold       Modifier = 0b0000_0000_0001
+	ModifierDim        Modifier = 0b0000_0000_0010
+	ModifierItalic     Modifier = 0b0000_0000_0100
+	ModifierUnderlined Modifier = 0b0000_0000_1000
+	ModifierSlowBlink  Modifier = 0b0000_0001_0000
+	ModifierRapidBlink Modifier = 0b0000_0010_0000
+	ModifierReversed   Modifier = 0b0000_0100_0000
+	ModifierHidden     Modifier = 0b0000_1000_0000
+	ModifierCrossedOut Modifier = 0b0001_0000_0000
+	ModifierAll        Modifier = ModifierBold |
+		ModifierDim |
+		ModifierItalic |
+		ModifierUnderlined |
+		ModifierSlowBlink |
+		ModifierRapidBlink |
+		ModifierReversed |
+		ModifierHidden |
+		ModifierCrossedOut
 )
 
-func (m *StyleModifier) Insert(other StyleModifier) {
-	*m = bit.Union(*m, other)
-}
-
-func (m *StyleModifier) Remove(other StyleModifier) {
-	*m = bit.Difference(*m, other)
-}
-
-func (m *StyleModifier) Contains(other StyleModifier) bool {
-	return bit.Contains(*m, other)
+func (m Modifier) Contains(other Modifier) bool {
+	return bit.Contains(m, other)
 }
 
 type StyleColor struct {
@@ -68,7 +60,7 @@ func (s *StyleColor) Set(color Color) {
 type Style struct {
 	Foreground, Background StyleColor
 
-	addModifier, subModifier StyleModifier
+	addModifier, subModifier Modifier
 }
 
 func NewStyle() Style {
@@ -76,19 +68,35 @@ func NewStyle() Style {
 		Foreground: StyleColor{},
 		Background: StyleColor{},
 
-		addModifier: StyleModifierNone,
-		subModifier: StyleModifierNone,
+		addModifier: ModifierNone,
+		subModifier: ModifierNone,
 	}
 }
 
-func (s Style) WithModifier(modifier StyleModifier) Style {
+func (s Style) Italic() Style {
+	return s.WithModifier(ModifierItalic)
+}
+
+func (s Style) Bold() Style {
+	return s.WithModifier(ModifierBold)
+}
+
+func (s Style) Underlined() Style {
+	return s.WithModifier(ModifierUnderlined)
+}
+
+func (s Style) Dim() Style {
+	return s.WithModifier(ModifierDim)
+}
+
+func (s Style) WithModifier(modifier Modifier) Style {
 	s.subModifier = bit.Difference(s.subModifier, modifier)
 	s.addModifier = bit.Union(s.addModifier, modifier)
 
 	return s
 }
 
-func (s Style) WithoutModifier(modifier StyleModifier) Style {
+func (s Style) WithoutModifier(modifier Modifier) Style {
 	s.addModifier = bit.Difference(s.addModifier, modifier)
 	s.subModifier = bit.Union(s.subModifier, modifier)
 
@@ -103,19 +111,6 @@ func (s Style) WithBackground(color Color) Style {
 
 func (s Style) WithForeground(color Color) Style {
 	s.Foreground.Set(color)
-
-	return s
-}
-
-func (s Style) Sub(other Style) Style {
-	for prev, curr := range map[StyleColor]StyleColor{
-		s.Background: other.Background,
-		s.Foreground: other.Foreground,
-	} {
-		if prev.IsSet() && prev.Color() == curr.Color() {
-			prev.Reset()
-		}
-	}
 
 	return s
 }

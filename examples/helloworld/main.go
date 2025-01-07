@@ -46,14 +46,13 @@ func (m *Model) Draw(frame *bento.Frame) {
 		},
 	}.Split(mainInnerArea)
 
-	style := bento.
-		NewStyle().
-		WithModifier(bento.StyleModifierItalic)
-		// WithForeground(termenv.ANSIBlue)
+	style := bento.NewStyle().Italic()
 
 	span := textwidget.NewSpan("Hello, World! " + strconv.Itoa(m.count)).WithStyle(style)
 
 	w := textwidget.NewText(textwidget.NewLine(span))
+
+	statusBlockInnerArea := statusBlock.Inner(statusArea)
 
 	frame.RenderWidget(mainBlock, mainArea)
 	frame.RenderWidget(w.WithAlignment(bento.AlignmentLeft), textChunks[0])
@@ -61,6 +60,7 @@ func (m *Model) Draw(frame *bento.Frame) {
 	frame.RenderWidget(w.WithAlignment(bento.AlignmentRight), textChunks[2])
 	frame.RenderWidget(w.WithAlignment(bento.AlignmentLeft), textChunks[3])
 	frame.RenderWidget(statusBlock, statusArea)
+	frame.RenderWidget(textwidget.NewTextString("Ready"), statusBlockInnerArea)
 }
 
 // Init implements bento.Model.

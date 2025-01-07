@@ -98,7 +98,7 @@ func (d *DefaultBackend) ClearUntilNewLine() error {
 func (d *DefaultBackend) Draw(cells []PositionedCell) error {
 	var (
 		lastPos  *Position
-		modifier StyleModifier
+		modifier Modifier
 	)
 
 	var (
@@ -244,7 +244,7 @@ func (d *DefaultBackend) fd() uintptr {
 }
 
 type _StyleModifierDiff struct {
-	From, To StyleModifier
+	From, To Modifier
 }
 
 func (d _StyleModifierDiff) queue(w io.Writer) error {
@@ -252,69 +252,69 @@ func (d _StyleModifierDiff) queue(w io.Writer) error {
 
 	removed := bit.Difference(d.From, d.To)
 
-	if removed.Contains(StyleModifierReversed) {
+	if removed.Contains(ModifierReversed) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrNoReverse))
 	}
 
-	if removed.Contains(StyleModifierBold) || removed.Contains(StyleModifierDim) {
+	if removed.Contains(ModifierBold) || removed.Contains(ModifierDim) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrNormalIntensity))
 
-		if d.To.Contains(StyleModifierDim) {
+		if d.To.Contains(ModifierDim) {
 			cmds = append(cmds, ansi.SetAttribute(ansi.AttrDim))
 		}
 
-		if d.To.Contains(StyleModifierBold) {
+		if d.To.Contains(ModifierBold) {
 			cmds = append(cmds, ansi.SetAttribute(ansi.AttrBold))
 		}
 	}
 
-	if removed.Contains(StyleModifierItalic) {
+	if removed.Contains(ModifierItalic) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrNoItalic))
 	}
 
-	if removed.Contains(StyleModifierUnderlined) {
+	if removed.Contains(ModifierUnderlined) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrNoUnderline))
 	}
 
-	if removed.Contains(StyleModifierCrossedOut) {
+	if removed.Contains(ModifierCrossedOut) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrNotCrossedOut))
 	}
 
-	if removed.Contains(StyleModifierSlowBlink) || removed.Contains(StyleModifierRapidBlink) {
+	if removed.Contains(ModifierSlowBlink) || removed.Contains(ModifierRapidBlink) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrNoBlink))
 	}
 
 	added := bit.Difference(d.To, d.From)
 
-	if added.Contains(StyleModifierReversed) {
+	if added.Contains(ModifierReversed) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrReverse))
 	}
 
-	if added.Contains(StyleModifierBold) {
+	if added.Contains(ModifierBold) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrBold))
 	}
 
-	if added.Contains(StyleModifierItalic) {
+	if added.Contains(ModifierItalic) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrItalic))
 	}
 
-	if added.Contains(StyleModifierUnderlined) {
+	if added.Contains(ModifierUnderlined) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrUnderlined))
 	}
 
-	if added.Contains(StyleModifierDim) {
+	if added.Contains(ModifierDim) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrDim))
 	}
 
-	if added.Contains(StyleModifierCrossedOut) {
+	if added.Contains(ModifierCrossedOut) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrCrossedOut))
 	}
 
-	if added.Contains(StyleModifierSlowBlink) {
+	if added.Contains(ModifierSlowBlink) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrSlowBlink))
 	}
 
-	if added.Contains(StyleModifierRapidBlink) {
+	if added.Contains(ModifierRapidBlink) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrRapidBlink))
 	}
 

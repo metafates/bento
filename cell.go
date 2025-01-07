@@ -5,7 +5,7 @@ import "github.com/metafates/bento/internal/bit"
 type Cell struct {
 	Symbol   string
 	Fg, Bg   Color
-	Modifier StyleModifier
+	Modifier Modifier
 	Skip     bool
 }
 
