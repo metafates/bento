@@ -1,6 +1,9 @@
 package blockwidget
 
-import "github.com/metafates/bento/symbol"
+import (
+	"github.com/metafates/bento/internal/bit"
+	"github.com/metafates/bento/symbol"
+)
 
 type BorderType int
 
@@ -35,11 +38,11 @@ const (
 )
 
 func (b Borders) intersects(other Borders) bool {
-	return b&other != 0
+	return bit.Intersects(b, other)
 }
 
 func (b Borders) contains(other Borders) bool {
-	return b&other == other
+	return bit.Contains(b, other)
 }
 
 type BorderSet struct {

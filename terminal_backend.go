@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/metafates/bento/internal/ansi"
+	"github.com/metafates/bento/internal/bit"
 	"github.com/muesli/termenv"
 )
 
@@ -96,8 +97,8 @@ func (d *DefaultBackend) ClearUntilNewLine() error {
 // Draw implements TerminalBackend.
 func (d *DefaultBackend) Draw(cells []PositionedCell) error {
 	var (
-		lastPos *Position
-		style   Style
+		lastPos  *Position
+		modifier StyleModifier
 	)
 
 	var (
@@ -109,7 +110,7 @@ func (d *DefaultBackend) Draw(cells []PositionedCell) error {
 		x, y := pc.Position.X, pc.Position.Y
 		cell := pc.Cell
 
-		if !(lastPos != nil && lastPos.X+1 == x && lastPos.Y == y) {
+		if lastPos == nil || lastPos.X+1 != x || lastPos.Y != y {
 			if err := d.queue(ansi.MoveTo{
 				Column: x,
 				Row:    y,
@@ -120,30 +121,29 @@ func (d *DefaultBackend) Draw(cells []PositionedCell) error {
 
 		lastPos = &Position{X: x, Y: y}
 
-		if cell.Style != style {
-			diff := _StyleDiff{
-				From: style,
-				To:   cell.Style,
+		if cell.Modifier != modifier {
+			diff := _StyleModifierDiff{
+				From: modifier,
+				To:   cell.Modifier,
 			}
 
 			if err := diff.queue(d.ttyBuf); err != nil {
 				return fmt.Errorf("queue: %w", err)
 			}
 
-			style = cell.Style
+			modifier = cell.Modifier
 		}
 
-		if cell.Style.Foreground.Color() != fg || cell.Style.Background.Color() != bg {
-			// panic(fmt.Sprintf("here %+v", lastPos))
+		if cell.Fg != fg || cell.Bg != bg {
 			if err := d.queue(ansi.SetColors(ansi.Colors{
-				Foreground: d.colorProfile.Convert(fg),
-				Background: d.colorProfile.Convert(bg),
+				Foreground: d.colorProfile.Convert(cell.Fg),
+				Background: d.colorProfile.Convert(cell.Bg),
 			})); err != nil {
 				return fmt.Errorf("queue: %w", err)
 			}
 
-			fg = cell.Style.Foreground.Color()
-			bg = cell.Style.Background.Color()
+			fg = cell.Fg
+			bg = cell.Bg
 		}
 
 		if err := d.queue(ansi.Print(cell.Symbol)); err != nil {
@@ -243,74 +243,78 @@ func (d *DefaultBackend) fd() uintptr {
 	return d.tty.Fd()
 }
 
-type _StyleDiff struct {
-	From, To Style
+type _StyleModifierDiff struct {
+	From, To StyleModifier
 }
 
-func (d _StyleDiff) queue(w io.Writer) error {
+func (d _StyleModifierDiff) queue(w io.Writer) error {
 	var cmds []ansi.Command
 
-	removed := d.From.Sub(d.To)
+	removed := bit.Difference(d.From, d.To)
 
-	if removed.Reversed.IsSet() {
+	if removed.Contains(StyleModifierReversed) {
+		cmds = append(cmds, ansi.SetAttribute(ansi.AttrNoReverse))
+	}
+
+	if removed.Contains(StyleModifierBold) || removed.Contains(StyleModifierDim) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrNormalIntensity))
 
-		if d.To.Dim.IsSet() {
+		if d.To.Contains(StyleModifierDim) {
 			cmds = append(cmds, ansi.SetAttribute(ansi.AttrDim))
 		}
 
-		if d.To.Bold.IsSet() {
+		if d.To.Contains(StyleModifierBold) {
 			cmds = append(cmds, ansi.SetAttribute(ansi.AttrBold))
 		}
 	}
 
-	if removed.Italic.IsSet() {
+	if removed.Contains(StyleModifierItalic) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrNoItalic))
 	}
 
-	if removed.Underlined.IsSet() {
+	if removed.Contains(StyleModifierUnderlined) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrNoUnderline))
 	}
 
-	if removed.CrossedOut.IsSet() {
+	if removed.Contains(StyleModifierCrossedOut) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrNotCrossedOut))
 	}
 
-	if removed.SlowBlink.IsSet() || removed.RapidBlink.IsSet() {
+	if removed.Contains(StyleModifierSlowBlink) || removed.Contains(StyleModifierRapidBlink) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrNoBlink))
 	}
 
-	added := d.To.Sub(d.From)
+	added := bit.Difference(d.To, d.From)
 
-	if added.Reversed.IsSet() {
+	if added.Contains(StyleModifierReversed) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrReverse))
 	}
 
-	if added.Bold.IsSet() {
+	if added.Contains(StyleModifierBold) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrBold))
 	}
 
-	if added.Italic.IsSet() {
+	if added.Contains(StyleModifierItalic) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrItalic))
 	}
 
-	if added.Underlined.IsSet() {
+	if added.Contains(StyleModifierUnderlined) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrUnderlined))
 	}
 
-	if added.Dim.IsSet() {
+	if added.Contains(StyleModifierDim) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrDim))
 	}
 
-	if added.CrossedOut.IsSet() {
+	if added.Contains(StyleModifierCrossedOut) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrCrossedOut))
 	}
 
-	if added.SlowBlink.IsSet() {
+	if added.Contains(StyleModifierSlowBlink) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrSlowBlink))
 	}
 
-	if added.RapidBlink.IsSet() {
+	if added.Contains(StyleModifierRapidBlink) {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrRapidBlink))
 	}
 

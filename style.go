@@ -1,38 +1,51 @@
 package bento
 
 import (
+	"github.com/metafates/bento/internal/bit"
 	"github.com/muesli/termenv"
 )
 
-type StyleModifier struct {
-	enabled *bool
+type StyleModifier uint16
+
+const (
+	StyleModifierNone       StyleModifier = 0b0000_0000_0000
+	StyleModifierBold       StyleModifier = 0b0000_0000_0001
+	StyleModifierDim        StyleModifier = 0b0000_0000_0010
+	StyleModifierItalic     StyleModifier = 0b0000_0000_0100
+	StyleModifierUnderlined StyleModifier = 0b0000_0000_1000
+	StyleModifierSlowBlink  StyleModifier = 0b0000_0001_0000
+	StyleModifierRapidBlink StyleModifier = 0b0000_0010_0000
+	StyleModifierReversed   StyleModifier = 0b0000_0100_0000
+	StyleModifierHidden     StyleModifier = 0b0000_1000_0000
+	StyleModifierCrossedOut StyleModifier = 0b0001_0000_0000
+	StyleModifierAll        StyleModifier = StyleModifierBold |
+		StyleModifierDim |
+		StyleModifierItalic |
+		StyleModifierUnderlined |
+		StyleModifierSlowBlink |
+		StyleModifierRapidBlink |
+		StyleModifierReversed |
+		StyleModifierHidden |
+		StyleModifierCrossedOut
+)
+
+func (m *StyleModifier) Insert(other StyleModifier) {
+	*m = bit.Union(*m, other)
 }
 
-func (s *StyleModifier) IsSet() bool {
-	return s.enabled != nil
+func (m *StyleModifier) Remove(other StyleModifier) {
+	*m = bit.Difference(*m, other)
 }
 
-func (s *StyleModifier) Bool() bool {
-	if s.enabled == nil {
-		return false
-	}
-
-	return *s.enabled
-}
-
-func (s *StyleModifier) Set(enabled bool) {
-	s.enabled = &enabled
-}
-
-func (s *StyleModifier) Reset() {
-	s.enabled = nil
+func (m *StyleModifier) Contains(other StyleModifier) bool {
+	return bit.Contains(*m, other)
 }
 
 type StyleColor struct {
-	color termenv.Color
+	color Color
 }
 
-func (s *StyleColor) Color() termenv.Color {
+func (s *StyleColor) Color() Color {
 	if s.color == nil {
 		return termenv.NoColor{}
 	}
@@ -41,43 +54,54 @@ func (s *StyleColor) Color() termenv.Color {
 }
 
 func (s *StyleColor) IsSet() bool {
-	return s.color == nil
+	return s.color != nil
 }
 
 func (s *StyleColor) Reset() {
 	s.color = nil
 }
 
-func (s *StyleColor) Set(color termenv.Color) {
+func (s *StyleColor) Set(color Color) {
 	s.color = color
 }
 
 type Style struct {
 	Foreground, Background StyleColor
 
-	Bold,
-	Dim,
-	Italic,
-	Underlined,
-	Reversed,
-	CrossedOut,
-	SlowBlink,
-	RapidBlink,
-	Hidden StyleModifier
+	addModifier, subModifier StyleModifier
 }
 
 func NewStyle() Style {
-	// default values are ok
-	return Style{}
+	return Style{
+		Foreground: StyleColor{},
+		Background: StyleColor{},
+
+		addModifier: StyleModifierNone,
+		subModifier: StyleModifierNone,
+	}
 }
 
-func (s Style) WithBackground(color termenv.Color) Style {
+func (s Style) WithModifier(modifier StyleModifier) Style {
+	s.subModifier = bit.Difference(s.subModifier, modifier)
+	s.addModifier = bit.Union(s.addModifier, modifier)
+
+	return s
+}
+
+func (s Style) WithoutModifier(modifier StyleModifier) Style {
+	s.addModifier = bit.Difference(s.addModifier, modifier)
+	s.subModifier = bit.Union(s.subModifier, modifier)
+
+	return s
+}
+
+func (s Style) WithBackground(color Color) Style {
 	s.Background.Set(color)
 
 	return s
 }
 
-func (s Style) WithForeground(color termenv.Color) Style {
+func (s Style) WithForeground(color Color) Style {
 	s.Foreground.Set(color)
 
 	return s
@@ -89,22 +113,6 @@ func (s Style) Sub(other Style) Style {
 		s.Foreground: other.Foreground,
 	} {
 		if prev.IsSet() && prev.Color() == curr.Color() {
-			prev.Reset()
-		}
-	}
-
-	for prev, curr := range map[StyleModifier]StyleModifier{
-		s.Bold:       other.Bold,
-		s.Dim:        other.Dim,
-		s.Italic:     other.Italic,
-		s.Underlined: other.Underlined,
-		s.Reversed:   other.Reversed,
-		s.CrossedOut: other.CrossedOut,
-		s.SlowBlink:  other.SlowBlink,
-		s.RapidBlink: other.RapidBlink,
-		s.Hidden:     other.Hidden,
-	} {
-		if prev.IsSet() && prev.Bool() == curr.Bool() {
 			prev.Reset()
 		}
 	}
@@ -121,41 +129,11 @@ func (s Style) Patched(patch Style) Style {
 		s.Background = patch.Background
 	}
 
-	if patch.Bold.IsSet() {
-		s.Bold = patch.Bold
-	}
+	s.addModifier = bit.Difference(s.addModifier, patch.subModifier)
+	s.addModifier = bit.Union(s.addModifier, patch.addModifier)
 
-	if patch.Dim.IsSet() {
-		s.Dim = patch.Dim
-	}
-
-	if patch.Italic.IsSet() {
-		s.Italic = patch.Italic
-	}
-
-	if patch.Underlined.IsSet() {
-		s.Underlined = patch.Underlined
-	}
-
-	if patch.Reversed.IsSet() {
-		s.Reversed = patch.Reversed
-	}
-
-	if patch.CrossedOut.IsSet() {
-		s.CrossedOut = patch.CrossedOut
-	}
-
-	if patch.SlowBlink.IsSet() {
-		s.SlowBlink = patch.SlowBlink
-	}
-
-	if patch.RapidBlink.IsSet() {
-		s.RapidBlink = patch.RapidBlink
-	}
-
-	if patch.Hidden.IsSet() {
-		s.Hidden = patch.Hidden
-	}
+	s.subModifier = bit.Difference(s.subModifier, patch.addModifier)
+	s.subModifier = bit.Union(s.subModifier, patch.subModifier)
 
 	return s
 }

@@ -1,15 +1,23 @@
 package bento
 
+import "github.com/metafates/bento/internal/bit"
+
 type Cell struct {
-	Symbol string
-	Style  Style
-	Skip   bool
+	Symbol   string
+	Fg, Bg   Color
+	Modifier StyleModifier
+	Skip     bool
 }
 
-func NewCell(symbol string) *Cell {
-	return &Cell{
+func NewEmptyCell() Cell {
+	return NewCell(" ")
+}
+
+func NewCell(symbol string) Cell {
+	return Cell{
 		Symbol: symbol,
-		Style:  NewStyle(),
+		Fg:     ResetColor{},
+		Bg:     ResetColor{},
 		Skip:   false,
 	}
 }
@@ -27,19 +35,24 @@ func (c *Cell) AppendSymbol(symbol string) *Cell {
 }
 
 func (c *Cell) SetStyle(style Style) *Cell {
-	c.Style = style
+	if style.Foreground.IsSet() {
+		c.Fg = style.Foreground.Color()
+	}
 
-	return c
-}
+	if style.Background.IsSet() {
+		c.Bg = style.Background.Color()
+	}
 
-func (c *Cell) PatchStyle(style Style) *Cell {
-	c.Style = c.Style.Patched(style)
+	c.Modifier = bit.Union(c.Modifier, style.addModifier)
+	c.Modifier = bit.Difference(c.Modifier, style.subModifier)
 
 	return c
 }
 
 func (c *Cell) Reset() {
 	c.Symbol = " "
-	c.Style = NewStyle()
 	c.Skip = false
+	c.Fg = ResetColor{}
+	c.Bg = ResetColor{}
+	c.Modifier = 0
 }

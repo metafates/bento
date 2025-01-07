@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/blockwidget"
@@ -12,18 +13,30 @@ import (
 
 var _ bento.Model = (*Model)(nil)
 
-type Model struct{}
+type Model struct {
+	count int
+}
 
 // Draw implements bento.Model.
 func (m *Model) Draw(frame *bento.Frame) {
-	block := blockwidget.
+	mainBlock := blockwidget.
 		NewBlock().
 		WithTitle(blockwidget.NewTitleString("Example")).
 		WithPadding(blockwidget.NewPadding(3))
 
-	area := block.Inner(frame.Area())
+	statusBlock := blockwidget.NewBlock().WithTitle(blockwidget.NewTitleString("Status"))
 
-	chunks := bento.Layout{
+	mainArea, statusArea := bento.Layout{
+		Direction: bento.DirectionVertical,
+		Constraints: []bento.Constraint{
+			bento.ConstraintMin(3),
+			bento.ConstraintLength(3),
+		},
+	}.Split2(frame.Area())
+
+	mainInnerArea := mainBlock.Inner(mainArea)
+
+	textChunks := bento.Layout{
 		Direction: bento.DirectionVertical,
 		Constraints: []bento.Constraint{
 			bento.ConstraintPercentage(25),
@@ -31,15 +44,23 @@ func (m *Model) Draw(frame *bento.Frame) {
 			bento.ConstraintPercentage(25),
 			bento.ConstraintPercentage(25),
 		},
-	}.Split(area)
+	}.Split(mainInnerArea)
 
-	w := textwidget.NewTextString("Hello, world!")
+	style := bento.
+		NewStyle().
+		WithModifier(bento.StyleModifierItalic)
+		// WithForeground(termenv.ANSIBlue)
 
-	frame.RenderWidget(block, frame.Area())
-	frame.RenderWidget(w.WithAlignment(bento.AlignmentLeft), chunks[0])
-	frame.RenderWidget(w.WithAlignment(bento.AlignmentCenter), chunks[1])
-	frame.RenderWidget(w.WithAlignment(bento.AlignmentRight), chunks[2])
-	frame.RenderWidget(w.WithAlignment(bento.AlignmentLeft), chunks[3])
+	span := textwidget.NewSpan("Hello, World! " + strconv.Itoa(m.count)).WithStyle(style)
+
+	w := textwidget.NewText(textwidget.NewLine(span))
+
+	frame.RenderWidget(mainBlock, mainArea)
+	frame.RenderWidget(w.WithAlignment(bento.AlignmentLeft), textChunks[0])
+	frame.RenderWidget(w.WithAlignment(bento.AlignmentCenter), textChunks[1])
+	frame.RenderWidget(w.WithAlignment(bento.AlignmentRight), textChunks[2])
+	frame.RenderWidget(w.WithAlignment(bento.AlignmentLeft), textChunks[3])
+	frame.RenderWidget(statusBlock, statusArea)
 }
 
 // Init implements bento.Model.
@@ -52,6 +73,8 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 	switch msg := msg.(type) {
 	case bento.KeyMsg:
 		switch msg.String() {
+		case "a":
+			m.count++
 		case "ctrl+c":
 			return m, bento.Quit
 		}

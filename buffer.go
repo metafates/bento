@@ -15,7 +15,7 @@ type Buffer struct {
 }
 
 func NewBufferEmpty(area Rect) *Buffer {
-	return NewBufferFilled(area, Cell{Symbol: " "})
+	return NewBufferFilled(area, NewEmptyCell())
 }
 
 func NewBufferFilled(area Rect, cell Cell) *Buffer {
@@ -110,7 +110,7 @@ func (b *Buffer) SetStringN(x, y int, value string, maxWidth int, style Style) (
 
 		remainingWidth -= width
 
-		b.CellAt(Position{x, y}).SetSymbol(symbol).PatchStyle(style)
+		b.CellAt(Position{x, y}).SetSymbol(symbol).SetStyle(style)
 
 		nextSymbol := x + width
 		x++
@@ -151,7 +151,7 @@ func (b *Buffer) Resize(area Rect) {
 		toAdd := length - len(b.Content)
 
 		for i := 0; i < toAdd; i++ {
-			b.Content = append(b.Content, Cell{Symbol: " "})
+			b.Content = append(b.Content, NewEmptyCell())
 		}
 	}
 
@@ -165,7 +165,7 @@ func (b *Buffer) SetStyle(area Rect, style Style) {
 		for x := area.Left(); x < area.Right(); x++ {
 			pos := Position{X: x, Y: y}
 
-			b.CellAt(pos).PatchStyle(style)
+			b.CellAt(pos).SetStyle(style)
 		}
 	}
 }

@@ -1,15 +1,15 @@
-package ansi
+package bento
 
-type Color interface {
-	Sequence(bg bool) string
-}
+import "github.com/muesli/termenv"
+
+type Color = termenv.Color
 
 var _ Color = (*ResetColor)(nil)
 
 type ResetColor struct{}
 
 // Sequence implements termenv.Color.
-func (r ResetColor) Sequence(bg bool) string {
+func (ResetColor) Sequence(bg bool) string {
 	if bg {
 		return "49"
 	}
