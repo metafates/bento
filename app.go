@@ -259,6 +259,13 @@ func (a *App) eventLoop(model Model, cmds chan Cmd) (Model, error) {
 			switch msg := msg.(type) {
 			case QuitMsg:
 				return model, nil
+			case WindowSizeMsg:
+				if err := a.terminal.Resize(Rect{
+					Width:  msg.Width,
+					Height: msg.Height,
+				}); err != nil {
+					return model, fmt.Errorf("resize: %w", err)
+				}
 			case sequenceMsg:
 				go func() {
 					// Execute commands one at a time, in order.

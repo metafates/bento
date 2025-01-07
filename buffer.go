@@ -134,8 +134,8 @@ func (b *Buffer) indexOf(position Position) int {
 	}
 
 	// remove offset
-	y := position.Y - b.Area.Y
-	x := position.X - b.Area.X
+	y := max(0, position.Y-b.Area.Y)
+	x := max(0, position.X-b.Area.X)
 
 	width := b.Area.Width
 
@@ -148,8 +148,10 @@ func (b *Buffer) Resize(area Rect) {
 	if len(b.Content) > length {
 		b.Content = slices.Delete(b.Content, length, len(b.Content))
 	} else {
-		for i := 0; i < length-len(b.Content); i++ {
-			b.Content = append(b.Content, Cell{})
+		toAdd := length - len(b.Content)
+
+		for i := 0; i < toAdd; i++ {
+			b.Content = append(b.Content, Cell{Symbol: " "})
 		}
 	}
 
@@ -159,14 +161,9 @@ func (b *Buffer) Resize(area Rect) {
 func (b *Buffer) SetStyle(area Rect, style Style) {
 	area = b.Area.Intersection(area)
 
-	top := area.Top()
-	right := area.Right()
-	bottom := area.Bottom()
-	left := area.Left()
-
-	for y := top; y < bottom; y++ {
-		for x := left; x < right; x++ {
-			pos := Position{x, y}
+	for y := area.Top(); y < area.Bottom(); y++ {
+		for x := area.Left(); x < area.Right(); x++ {
+			pos := Position{X: x, Y: y}
 
 			b.CellAt(pos).PatchStyle(style)
 		}

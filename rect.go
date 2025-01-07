@@ -48,8 +48,8 @@ func (r Rect) Inner(margin Margin) Rect {
 	return Rect{
 		X:      r.X + margin.Horizontal,
 		Y:      r.Y + margin.Vertical,
-		Width:  r.Width - doubleHorizontal,
-		Height: r.Height - doubleVertical,
+		Width:  max(0, r.Width-doubleHorizontal),
+		Height: max(0, r.Height-doubleVertical),
 	}
 }
 
@@ -63,8 +63,8 @@ func (r Rect) Intersection(other Rect) Rect {
 	return Rect{
 		X:      x1,
 		Y:      y1,
-		Width:  x2 - x1,
-		Height: y2 - y1,
+		Width:  max(0, x2-x1),
+		Height: max(0, y2-y1),
 	}
 }
 
