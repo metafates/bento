@@ -23,7 +23,31 @@ type Block struct {
 }
 
 func NewBlock() Block {
-	return Block{}
+	return Block{
+		titles:          nil,
+		titlesStyle:     bento.Style{},
+		titlesAlignment: bento.AlignmentLeft,
+		borders:         BordersAll,
+		borderStyle:     bento.NewStyle(),
+		borderSet:       BorderPlain.Set(),
+		style:           bento.NewStyle(),
+		padding:         Padding{},
+	}
+}
+
+func (b Block) WithTitlesStyle(style bento.Style) Block {
+	b.titlesStyle = style
+	return b
+}
+
+func (b Block) WithTitlesAlignment(alignment bento.Alignment) Block {
+	b.titlesAlignment = alignment
+	return b
+}
+
+func (b Block) WithStyle(style bento.Style) Block {
+	b.style = style
+	return b
 }
 
 func (b Block) WithTitle(title Title) Block {
@@ -54,12 +78,12 @@ func (b Block) Inner(area bento.Rect) bento.Rect {
 	inner := area
 
 	if b.borders.intersects(BordersLeft) {
-		inner.X = min(inner.X, inner.Right())
+		inner.X = min(inner.X+1, inner.Right())
 		inner.Width = max(0, inner.Width-1)
 	}
 
 	if b.borders.intersects(BordersTop) || b.hasTitleAtPosition(TitlePositionTop) {
-		inner.Y = min(inner.Y, inner.Bottom())
+		inner.Y = min(inner.Y+1, inner.Bottom())
 		inner.Height = max(0, inner.Height-1)
 	}
 

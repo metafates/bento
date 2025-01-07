@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/metafates/bento"
+	"github.com/metafates/bento/blockwidget"
 	"github.com/metafates/bento/textwidget"
 )
 
@@ -15,6 +16,13 @@ type Model struct{}
 
 // Draw implements bento.Model.
 func (m *Model) Draw(frame *bento.Frame) {
+	block := blockwidget.
+		NewBlock().
+		WithTitle(blockwidget.NewTitleString("Example")).
+		WithPadding(blockwidget.NewPadding(3))
+
+	area := block.Inner(frame.Area())
+
 	chunks := bento.Layout{
 		Direction: bento.DirectionVertical,
 		Constraints: []bento.Constraint{
@@ -23,10 +31,11 @@ func (m *Model) Draw(frame *bento.Frame) {
 			bento.ConstraintPercentage(25),
 			bento.ConstraintPercentage(25),
 		},
-	}.Split(frame.Area())
+	}.Split(area)
 
 	w := textwidget.NewTextString("Hello, world!")
 
+	frame.RenderWidget(block, frame.Area())
 	frame.RenderWidget(w.WithAlignment(bento.AlignmentLeft), chunks[0])
 	frame.RenderWidget(w.WithAlignment(bento.AlignmentCenter), chunks[1])
 	frame.RenderWidget(w.WithAlignment(bento.AlignmentRight), chunks[2])
