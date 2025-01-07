@@ -13,18 +13,20 @@ import (
 var _ TerminalBackend = (*DefaultBackend)(nil)
 
 type DefaultBackend struct {
-	input  io.Reader
-	tty    *os.File
-	ttyBuf *bufio.Writer
+	colorProfile termenv.Profile
+	input        io.Reader
+	tty          *os.File
+	ttyBuf       *bufio.Writer
 
 	termState ansi.State
 }
 
 func NewDefaultBackend() DefaultBackend {
 	return DefaultBackend{
-		input:  os.Stdin,
-		tty:    os.Stdout,
-		ttyBuf: bufio.NewWriter(os.Stdout),
+		colorProfile: termenv.NewOutput(os.Stdout).ColorProfile(),
+		input:        os.Stdin,
+		tty:          os.Stdout,
+		ttyBuf:       bufio.NewWriter(os.Stdout),
 	}
 }
 
@@ -99,15 +101,15 @@ func (d *DefaultBackend) Draw(cells []PositionedCell) error {
 	)
 
 	var (
-		fg termenv.Color = ansi.ResetColor{}
-		bg termenv.Color = ansi.ResetColor{}
+		fg Color = ResetColor{}
+		bg Color = ResetColor{}
 	)
 
 	for _, pc := range cells {
 		x, y := pc.Position.X, pc.Position.Y
 		cell := pc.Cell
 
-		if lastPos == nil || lastPos.X+1 != x || lastPos.Y != y {
+		if !(lastPos != nil && lastPos.X+1 == x && lastPos.Y == y) {
 			if err := d.queue(ansi.MoveTo{
 				Column: x,
 				Row:    y,
@@ -132,9 +134,10 @@ func (d *DefaultBackend) Draw(cells []PositionedCell) error {
 		}
 
 		if cell.Style.Foreground.Color() != fg || cell.Style.Background.Color() != bg {
+			// panic(fmt.Sprintf("here %+v", lastPos))
 			if err := d.queue(ansi.SetColors(ansi.Colors{
-				Foreground: fg,
-				Background: bg,
+				Foreground: d.colorProfile.Convert(fg),
+				Background: d.colorProfile.Convert(bg),
 			})); err != nil {
 				return fmt.Errorf("queue: %w", err)
 			}
@@ -150,8 +153,8 @@ func (d *DefaultBackend) Draw(cells []PositionedCell) error {
 
 	if err := d.queue(
 		ansi.SetColors(ansi.Colors{
-			Foreground: ansi.ResetColor{},
-			Background: ansi.ResetColor{},
+			Foreground: ResetColor{},
+			Background: ResetColor{},
 		}),
 		ansi.SetAttribute(ansi.AttrReset),
 	); err != nil {
@@ -311,10 +314,8 @@ func (d _StyleDiff) queue(w io.Writer) error {
 		cmds = append(cmds, ansi.SetAttribute(ansi.AttrRapidBlink))
 	}
 
-	for _, c := range cmds {
-		if err := queue(w, c); err != nil {
-			return fmt.Errorf("queue: %w", err)
-		}
+	if err := queue(w, cmds...); err != nil {
+		return fmt.Errorf("queue: %w", err)
 	}
 
 	return nil

@@ -48,6 +48,24 @@ func (l Layout) Split(area Rect) []Rect {
 	return segments
 }
 
+func (l Layout) Split2(area Rect) (a, b Rect) {
+	r := l.Split(area)
+
+	return r[0], r[1]
+}
+
+func (l Layout) Split3(area Rect) (a, b, c Rect) {
+	r := l.Split(area)
+
+	return r[0], r[1], r[2]
+}
+
+func (l Layout) Split4(area Rect) (a, b, c, d Rect) {
+	r := l.Split(area)
+
+	return r[0], r[1], r[2], r[3]
+}
+
 func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 	solver := casso.NewSolver()
 

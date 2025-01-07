@@ -46,6 +46,11 @@ func (a SetAttribute) WriteANSI(w io.Writer) error {
 	return write(w, CSI+sgr+"m")
 }
 
+type Color interface {
+	// Sequence returns the ANSI Sequence for the color.
+	Sequence(bg bool) string
+}
+
 type Colors struct {
 	Foreground, Background termenv.Color
 }
@@ -57,11 +62,11 @@ type SetColors Colors
 func (c SetColors) WriteANSI(w io.Writer) error {
 	switch {
 	case c.Foreground != nil && c.Background != nil:
-		return write(w, termenv.CSI+c.Foreground.Sequence(false)+";"+c.Background.Sequence(true)+"m")
+		return write(w, CSI+c.Foreground.Sequence(false)+";"+c.Background.Sequence(true)+"m")
 	case c.Foreground == nil && c.Background != nil:
-		return write(w, termenv.CSI+c.Foreground.Sequence(false)+"m")
+		return write(w, CSI+c.Foreground.Sequence(false)+"m")
 	case c.Foreground != nil && c.Background == nil:
-		return write(w, termenv.CSI+c.Background.Sequence(true)+"m")
+		return write(w, CSI+c.Background.Sequence(true)+"m")
 	default:
 		return nil
 	}
