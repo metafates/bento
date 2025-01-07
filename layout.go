@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/metafates/bento/casso"
+	"github.com/metafates/bento/internal/casso"
 )
 
 const _floatPrecisionMultiplier float64 = 100.0
