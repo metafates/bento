@@ -271,7 +271,7 @@ func configureFillConstraints(
 		}
 	}
 
-	if len(validConstraints) == 0 {
+	if len(validConstraints) < 2 {
 		return nil
 	}
 
