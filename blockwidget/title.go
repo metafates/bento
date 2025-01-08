@@ -37,3 +37,23 @@ func (t Title) WithAlignment(alignment bento.Alignment) Title {
 	t.Alignment = alignment
 	return t
 }
+
+func (t Title) Top() Title {
+	return t.WithPosition(TitlePositionTop)
+}
+
+func (t Title) Bottom() Title {
+	return t.WithPosition(TitlePositionBottom)
+}
+
+func (t Title) Right() Title {
+	return t.WithAlignment(bento.AlignmentRight)
+}
+
+func (t Title) Left() Title {
+	return t.WithAlignment(bento.AlignmentLeft)
+}
+
+func (t Title) Center() Title {
+	return t.WithAlignment(bento.AlignmentCenter)
+}

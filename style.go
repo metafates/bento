@@ -89,6 +89,70 @@ func (s Style) Dim() Style {
 	return s.WithModifier(ModifierDim)
 }
 
+func (s Style) Black() Style {
+	return s.WithForeground(termenv.ANSIBlack)
+}
+
+func (s Style) Red() Style {
+	return s.WithForeground(termenv.ANSIRed)
+}
+
+func (s Style) Green() Style {
+	return s.WithForeground(termenv.ANSIGreen)
+}
+
+func (s Style) Yellow() Style {
+	return s.WithForeground(termenv.ANSIYellow)
+}
+
+func (s Style) Blue() Style {
+	return s.WithForeground(termenv.ANSIBlue)
+}
+
+func (s Style) Magenta() Style {
+	return s.WithForeground(termenv.ANSIMagenta)
+}
+
+func (s Style) Cyan() Style {
+	return s.WithForeground(termenv.ANSICyan)
+}
+
+func (s Style) White() Style {
+	return s.WithForeground(termenv.ANSIWhite)
+}
+
+func (s Style) BrightBlack() Style {
+	return s.WithForeground(termenv.ANSIBrightBlack)
+}
+
+func (s Style) BrightRed() Style {
+	return s.WithForeground(termenv.ANSIBrightRed)
+}
+
+func (s Style) BrightGreen() Style {
+	return s.WithForeground(termenv.ANSIBrightGreen)
+}
+
+func (s Style) BrightYellow() Style {
+	return s.WithForeground(termenv.ANSIBrightYellow)
+}
+
+func (s Style) BrightBlue() Style {
+	return s.WithForeground(termenv.ANSIBrightBlue)
+}
+
+func (s Style) BrightMagenta() Style {
+	return s.WithForeground(termenv.ANSIBrightMagenta)
+}
+
+func (s Style) BrightCyan() Style {
+	return s.WithForeground(termenv.ANSIBrightCyan)
+}
+
+func (s Style) BrightWhite() Style {
+	return s.WithForeground(termenv.ANSIBrightWhite)
+}
+
 func (s Style) WithModifier(modifier Modifier) Style {
 	s.subModifier = bit.Difference(s.subModifier, modifier)
 	s.addModifier = bit.Union(s.addModifier, modifier)

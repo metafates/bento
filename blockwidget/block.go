@@ -37,11 +37,11 @@ func NewBlock() Block {
 }
 
 func (b Block) Rounded() Block {
-	return b.WithBorders().WithBorderType(BorderTypeRounded)
+	return b.WithBorderType(BorderTypeRounded)
 }
 
-func (b Block) Plain() Block {
-	return b.WithBorders().WithBorderType(BorderTypePlain)
+func (b Block) Squared() Block {
+	return b.WithBorderType(BorderTypePlain)
 }
 
 func (b Block) WithTitlesStyle(style bento.Style) Block {
@@ -97,6 +97,11 @@ func (b Block) WithBorderType(borderType BorderType) Block {
 
 func (b Block) WithPadding(padding Padding) Block {
 	b.padding = padding
+	return b
+}
+
+func (b Block) WithBorderStyle(style bento.Style) Block {
+	b.borderStyle = style
 	return b
 }
 

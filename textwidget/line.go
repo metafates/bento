@@ -115,7 +115,7 @@ func (l Line) Right() Line {
 	return l.WithAlignment(bento.AlignmentRight)
 }
 
-func (l Line) Centered() Line {
+func (l Line) Center() Line {
 	return l.WithAlignment(bento.AlignmentCenter)
 }
 

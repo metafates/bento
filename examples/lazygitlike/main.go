@@ -12,7 +12,47 @@ import (
 
 var _ bento.Model = (*Model)(nil)
 
-type Model struct{}
+type Panel int
+
+const (
+	PanelStatus Panel = iota + 1
+	PanelFiles
+	PanelBranches
+	PanelCommits
+	PanelStash
+	PanelCommandLog
+	PanelInfo
+)
+
+func (p Panel) Next() Panel {
+	panic("TODO")
+}
+
+func (p Panel) Title() string {
+	switch p {
+	case PanelBranches:
+		return "Branches"
+	case PanelCommits:
+		return "Commits"
+	case PanelFiles:
+		return "Files"
+	case PanelStash:
+		return "Stash"
+	case PanelStatus:
+		return "Status"
+	case PanelCommandLog:
+		return "Command log"
+	case PanelInfo:
+		return "Info"
+	default:
+		panic(fmt.Sprintf("unexpected Panel: %#v", p))
+	}
+}
+
+type Model struct {
+	size        bento.Size
+	activePanel Panel
+}
 
 // Draw implements bento.Model.
 func (m *Model) Draw(frame *bento.Frame) {
@@ -33,11 +73,20 @@ func (m *Model) Draw(frame *bento.Frame) {
 }
 
 func (m *Model) drawFootnote(frame *bento.Frame, area bento.Rect) {
-	help := textwidget.NewLineString("help").Left()
-	version := textwidget.NewLineString("version").Right()
+	left := textwidget.NewLine(
+		textwidget.NewSpan("Quit: q / ctrl+c").WithStyle(bento.NewStyle().Blue()),
+	).Left()
 
-	frame.RenderWidget(help, area)
-	frame.RenderWidget(version, area)
+	right := textwidget.NewLine(
+		textwidget.NewSpan("Foo").WithStyle(bento.NewStyle().Underlined().Magenta()),
+		textwidget.NewSpan(" "),
+		textwidget.NewSpan("Bar").WithStyle(bento.NewStyle().Underlined().Yellow()),
+		textwidget.NewSpan(" "),
+		textwidget.NewSpan("0.0.1"),
+	).Right()
+
+	frame.RenderWidget(left, area)
+	frame.RenderWidget(right, area)
 }
 
 func (m *Model) drawPrimary(frame *bento.Frame, area bento.Rect) {
@@ -91,36 +140,36 @@ func (m *Model) drawSidebar(frame *bento.Frame, area bento.Rect) {
 }
 
 func (m *Model) drawStatus(frame *bento.Frame, area bento.Rect) {
-	block := blockwidget.NewBlock().WithTitleString("Status").Plain()
+	block := m.newBlock(PanelStatus, "")
 
 	innerArea := block.Inner(area)
 
-	status := textwidget.NewLineString("some status here")
+	status := textwidget.NewLineString(fmt.Sprintf("%dx%d", m.size.Width, m.size.Height))
 
 	frame.RenderWidget(block, area)
 	frame.RenderWidget(status, innerArea)
 }
 
 func (m *Model) drawFiles(frame *bento.Frame, area bento.Rect) {
-	block := blockwidget.NewBlock().WithTitleString("Files").Plain()
+	block := m.newBlock(PanelFiles, "1 of 10")
 
 	frame.RenderWidget(block, area)
 }
 
 func (m *Model) drawBranches(frame *bento.Frame, area bento.Rect) {
-	block := blockwidget.NewBlock().WithTitleString("Branches").Plain()
+	block := m.newBlock(PanelBranches, "1 of 2")
 
 	frame.RenderWidget(block, area)
 }
 
 func (m *Model) drawCommits(frame *bento.Frame, area bento.Rect) {
-	block := blockwidget.NewBlock().WithTitleString("Commits").Plain()
+	block := m.newBlock(PanelCommits, "1 of 42")
 
 	frame.RenderWidget(block, area)
 }
 
 func (m *Model) drawStash(frame *bento.Frame, area bento.Rect) {
-	block := blockwidget.NewBlock().WithTitleString("Stash").Plain()
+	block := m.newBlock(PanelStash, "1 of 1")
 
 	frame.RenderWidget(block, area)
 }
@@ -133,7 +182,7 @@ func (m *Model) drawRight(frame *bento.Frame, area bento.Rect) {
 		Vertical().
 		WithConstraints(
 			bento.ConstraintFill(1),
-			bento.ConstraintLength(10),
+			bento.ConstraintLength(m.commandLogHeight()),
 		).
 		Split(area).
 		Assign(&infoArea, &commandLogArea)
@@ -142,16 +191,42 @@ func (m *Model) drawRight(frame *bento.Frame, area bento.Rect) {
 	m.renderCommandLog(frame, commandLogArea)
 }
 
+func (m *Model) commandLogHeight() int {
+	if m.size.Height <= 40 {
+		return 3
+	}
+
+	return 10
+}
+
 func (m *Model) renderInfoArea(frame *bento.Frame, area bento.Rect) {
-	block := blockwidget.NewBlock().WithTitleString("Info").Plain()
+	block := m.newBlock(PanelInfo, "")
 
 	frame.RenderWidget(block, area)
 }
 
 func (m *Model) renderCommandLog(frame *bento.Frame, area bento.Rect) {
-	block := blockwidget.NewBlock().WithTitleString("Command log").Plain()
+	block := m.newBlock(PanelCommandLog, "")
 
 	frame.RenderWidget(block, area)
+}
+
+func (m *Model) newBlock(panel Panel, footer string) blockwidget.Block {
+	block := blockwidget.
+		NewBlock().
+		WithBorders().
+		Rounded().
+		WithTitle(blockwidget.NewTitleString(panel.Title()).Top().Left())
+
+	if m.activePanel == panel {
+		block = block.WithBorderStyle(bento.NewStyle().Green())
+	}
+
+	if footer == "" {
+		return block
+	}
+
+	return block.WithTitle(blockwidget.NewTitleString(footer).Bottom().Right())
 }
 
 // Init implements bento.Model.
@@ -162,10 +237,14 @@ func (m *Model) Init() bento.Cmd {
 // Update implements bento.Model.
 func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 	switch msg := msg.(type) {
+	case bento.WindowSizeMsg:
+		m.size = bento.Size(msg)
 	case bento.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, bento.Quit
+		case "tab":
+			m.activePanel = m.activePanel.Next()
 		}
 	}
 
@@ -173,7 +252,9 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 }
 
 func run() error {
-	app, err := bento.NewApp(context.Background(), &Model{})
+	app, err := bento.NewApp(context.Background(), &Model{
+		activePanel: PanelFiles,
+	})
 	if err != nil {
 		return fmt.Errorf("new app: %w", err)
 	}

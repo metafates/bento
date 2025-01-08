@@ -36,6 +36,18 @@ func (t Text) WithAlignment(alignment bento.Alignment) Text {
 	return t
 }
 
+func (t Text) Left() Text {
+	return t.WithAlignment(bento.AlignmentLeft)
+}
+
+func (t Text) Right() Text {
+	return t.WithAlignment(bento.AlignmentRight)
+}
+
+func (t Text) Center() Text {
+	return t.WithAlignment(bento.AlignmentCenter)
+}
+
 // Render implements bento.Widget.
 func (t Text) Render(area bento.Rect, buffer *bento.Buffer) {
 	area = area.Intersection(buffer.Area)
