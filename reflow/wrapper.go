@@ -186,13 +186,15 @@ func (ww *WordWrapper) NextLine() (WrappedLine, bool) {
 			}, true
 		}
 
-		if len(ww.inputLines) > 0 {
-			// TODO: use iterators
-			inputLine := ww.inputLines[0]
-			ww.inputLines = ww.inputLines[1:]
-
-			ww.currentAlignment = inputLine.Alignment
-			ww.processInput(inputLine.Graphemes)
+		if len(ww.inputLines) == 0 {
+			return WrappedLine{}, false
 		}
+
+		// TODO: use iterators
+		inputLine := ww.inputLines[0]
+		ww.inputLines = ww.inputLines[1:]
+
+		ww.currentAlignment = inputLine.Alignment
+		ww.processInput(inputLine.Graphemes)
 	}
 }

@@ -42,11 +42,14 @@ func (lt *LineTruncator) NextLine() (WrappedLine, bool) {
 	horizontalOffset := lt.horizontalOffset
 	currentAlignment := bento.AlignmentLeft
 
-	for _, line := range lt.inputLines {
-		currnetLine := line.Graphemes
+	var lastIndex int
+	for i, line := range lt.inputLines {
+		lastIndex = i
+		currentLine := line.Graphemes
 		alignment := line.Alignment
+		linesExhausted = false
 
-		for _, grapheme := range currnetLine {
+		for _, grapheme := range currentLine {
 			if grapheme.Width > lt.maxLineWidth {
 				continue
 			}
@@ -79,6 +82,8 @@ func (lt *LineTruncator) NextLine() (WrappedLine, bool) {
 			})
 		}
 	}
+
+	lt.inputLines = lt.inputLines[min(len(lt.inputLines), lastIndex+1):]
 
 	if linesExhausted {
 		return WrappedLine{}, false

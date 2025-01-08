@@ -20,15 +20,24 @@ type Paragraph struct {
 	Alignment bento.Alignment
 }
 
-func NewParagraph() Paragraph {
+func NewParagraphString(s string) Paragraph {
+	return NewParagraph(textwidget.NewTextString(s))
+}
+
+func NewParagraph(text textwidget.Text) Paragraph {
 	return Paragraph{
 		Block:     nil,
 		Style:     bento.NewStyle(),
 		Wrap:      nil,
-		Text:      textwidget.Text{},
+		Text:      text,
 		Scroll:    bento.Position{},
 		Alignment: bento.AlignmentLeft,
 	}
+}
+
+func (p Paragraph) WithWrap(wrap Wrap) Paragraph {
+	p.Wrap = &wrap
+	return p
 }
 
 func (p Paragraph) Render(area bento.Rect, buffer *bento.Buffer) {
@@ -49,7 +58,7 @@ func (p Paragraph) render(textArea bento.Rect, buffer *bento.Buffer) {
 
 	buffer.SetStyle(textArea, p.Style)
 
-	var styled []reflow.InputLine
+	styled := make([]reflow.InputLine, 0, len(p.Text.Lines))
 
 	for _, line := range p.Text.Lines {
 		graphemes := line.StyledGraphemes(p.Text.Style)

@@ -4,11 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strconv"
+	"strings"
 
 	"github.com/metafates/bento"
-	"github.com/metafates/bento/blockwidget"
-	"github.com/metafates/bento/textwidget"
+	"github.com/metafates/bento/paragraphwidget"
 )
 
 var _ bento.Model = (*Model)(nil)
@@ -19,53 +18,58 @@ type Model struct {
 
 // Draw implements bento.Model.
 func (m *Model) Draw(frame *bento.Frame) {
-	mainBlock := blockwidget.
-		NewBlock().
-		WithTitle(blockwidget.NewTitleString("Example")).
-		WithPadding(blockwidget.NewPadding(5)).
-		Plain()
+	// mainBlock := blockwidget.
+	// 	NewBlock().
+	// 	WithTitle(blockwidget.NewTitleString("Example")).
+	// 	WithPadding(blockwidget.NewPadding(5)).
+	// 	Plain()
+	//
+	// statusBlock := blockwidget.NewBlock().Plain().WithTitle(blockwidget.NewTitleString("Status"))
+	//
+	// var mainArea, statusArea bento.Rect
+	//
+	// bento.
+	// 	NewLayout().
+	// 	Vertical().
+	// 	WithConstraints(
+	// 		bento.ConstraintMin(3),
+	// 		bento.ConstraintLength(3),
+	// 	).
+	// 	Split(frame.Area()).
+	// 	Assign(&mainArea, &statusArea)
+	//
+	// mainInnerArea := mainBlock.Inner(mainArea)
+	//
+	// textChunks := bento.Layout{
+	// 	Direction: bento.DirectionVertical,
+	// 	Constraints: []bento.Constraint{
+	// 		bento.ConstraintPercentage(25),
+	// 		bento.ConstraintPercentage(25),
+	// 		bento.ConstraintPercentage(25),
+	// 		bento.ConstraintPercentage(25),
+	// 	},
+	// }.Split(mainInnerArea)
+	//
+	// style := bento.NewStyle().Italic()
+	//
+	// span := textwidget.NewSpan("Hello, World! " + strconv.Itoa(m.count)).WithStyle(style)
+	//
+	// w := textwidget.NewText(textwidget.NewLine(span))
+	//
+	// statusBlockInnerArea := statusBlock.Inner(statusArea)
 
-	statusBlock := blockwidget.NewBlock().Plain().WithTitle(blockwidget.NewTitleString("Status"))
+	// frame.RenderWidget(mainBlock, mainArea)
+	// frame.RenderWidget(w.WithAlignment(bento.AlignmentLeft), textChunks[0])
+	// frame.RenderWidget(w.WithAlignment(bento.AlignmentCenter), textChunks[1])
+	// frame.RenderWidget(w.WithAlignment(bento.AlignmentRight), textChunks[2])
+	// frame.RenderWidget(w.WithAlignment(bento.AlignmentLeft), textChunks[3])
+	// frame.RenderWidget(statusBlock, statusArea)
+	// frame.RenderWidget(textwidget.NewTextString("Ready"), statusBlockInnerArea)
 
-	var mainArea, statusArea bento.Rect
+	s := strings.Repeat("Lorem ipsum dolor sit amet", 20)
+	paragraph := paragraphwidget.NewParagraphString(s).WithWrap(paragraphwidget.NewWrap().WithTrim(true))
 
-	bento.
-		NewLayout().
-		Vertical().
-		WithConstraints(
-			bento.ConstraintMin(3),
-			bento.ConstraintLength(3),
-		).
-		Split(frame.Area()).
-		Assign(&mainArea, &statusArea)
-
-	mainInnerArea := mainBlock.Inner(mainArea)
-
-	textChunks := bento.Layout{
-		Direction: bento.DirectionVertical,
-		Constraints: []bento.Constraint{
-			bento.ConstraintPercentage(25),
-			bento.ConstraintPercentage(25),
-			bento.ConstraintPercentage(25),
-			bento.ConstraintPercentage(25),
-		},
-	}.Split(mainInnerArea)
-
-	style := bento.NewStyle().Italic()
-
-	span := textwidget.NewSpan("Hello, World! " + strconv.Itoa(m.count)).WithStyle(style)
-
-	w := textwidget.NewText(textwidget.NewLine(span))
-
-	statusBlockInnerArea := statusBlock.Inner(statusArea)
-
-	frame.RenderWidget(mainBlock, mainArea)
-	frame.RenderWidget(w.WithAlignment(bento.AlignmentLeft), textChunks[0])
-	frame.RenderWidget(w.WithAlignment(bento.AlignmentCenter), textChunks[1])
-	frame.RenderWidget(w.WithAlignment(bento.AlignmentRight), textChunks[2])
-	frame.RenderWidget(w.WithAlignment(bento.AlignmentLeft), textChunks[3])
-	frame.RenderWidget(statusBlock, statusArea)
-	frame.RenderWidget(textwidget.NewTextString("Ready"), statusBlockInnerArea)
+	frame.RenderWidget(paragraph, frame.Area())
 }
 
 // Init implements bento.Model.
