@@ -89,6 +89,18 @@ func NewLineString(s string) Line {
 	return NewLine(spans...)
 }
 
+func (l Line) StyledGraphemes(baseStyle bento.Style) []StyledGrapheme {
+	style := baseStyle.Patched(l.Style)
+
+	graphemes := make([]StyledGrapheme, 0, len(l.Spans))
+
+	for _, s := range l.Spans {
+		graphemes = append(graphemes, s.StyledGraphemes(style)...)
+	}
+
+	return graphemes
+}
+
 func (l Line) WithStyle(style bento.Style) Line {
 	l.Style = style
 	return l

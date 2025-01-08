@@ -192,3 +192,24 @@ type StyledGrapheme struct {
 	Symbol string
 	Width  int
 }
+
+func (s StyledGrapheme) IsWhitespace() bool {
+	symbol := s.Symbol
+
+	const (
+		zwsp = "\u200b"
+		nbsp = "\u00a0"
+	)
+
+	if symbol == zwsp {
+		return true
+	}
+
+	for _, r := range symbol {
+		if !unicode.IsSpace(r) {
+			return false
+		}
+	}
+
+	return symbol != nbsp
+}
