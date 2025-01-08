@@ -7,75 +7,151 @@ import (
 
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/blockwidget"
-	"github.com/metafates/bento/paragraphwidget"
+	"github.com/metafates/bento/textwidget"
 )
 
 var _ bento.Model = (*Model)(nil)
 
-type Model struct {
-	count int
-}
+type Model struct{}
 
 // Draw implements bento.Model.
 func (m *Model) Draw(frame *bento.Frame) {
-	// mainBlock := blockwidget.
-	// 	NewBlock().
-	// 	WithTitle(blockwidget.NewTitleString("Example")).
-	// 	WithPadding(blockwidget.NewPadding(5)).
-	// 	Plain()
-	//
-	// statusBlock := blockwidget.NewBlock().Plain().WithTitle(blockwidget.NewTitleString("Status"))
-	//
-	// var mainArea, statusArea bento.Rect
-	//
-	// bento.
-	// 	NewLayout().
-	// 	Vertical().
-	// 	WithConstraints(
-	// 		bento.ConstraintMin(3),
-	// 		bento.ConstraintLength(3),
-	// 	).
-	// 	Split(frame.Area()).
-	// 	Assign(&mainArea, &statusArea)
-	//
-	// mainInnerArea := mainBlock.Inner(mainArea)
-	//
-	// textChunks := bento.Layout{
-	// 	Direction: bento.DirectionVertical,
-	// 	Constraints: []bento.Constraint{
-	// 		bento.ConstraintPercentage(25),
-	// 		bento.ConstraintPercentage(25),
-	// 		bento.ConstraintPercentage(25),
-	// 		bento.ConstraintPercentage(25),
-	// 	},
-	// }.Split(mainInnerArea)
-	//
-	// style := bento.NewStyle().Italic()
-	//
-	// span := textwidget.NewSpan("Hello, World! " + strconv.Itoa(m.count)).WithStyle(style)
-	//
-	// w := textwidget.NewText(textwidget.NewLine(span))
-	//
-	// statusBlockInnerArea := statusBlock.Inner(statusArea)
+	var primaryArea, footnoteArea bento.Rect
 
-	// frame.RenderWidget(mainBlock, mainArea)
-	// frame.RenderWidget(w.WithAlignment(bento.AlignmentLeft), textChunks[0])
-	// frame.RenderWidget(w.WithAlignment(bento.AlignmentCenter), textChunks[1])
-	// frame.RenderWidget(w.WithAlignment(bento.AlignmentRight), textChunks[2])
-	// frame.RenderWidget(w.WithAlignment(bento.AlignmentLeft), textChunks[3])
-	// frame.RenderWidget(statusBlock, statusArea)
-	// frame.RenderWidget(textwidget.NewTextString("Ready"), statusBlockInnerArea)
+	bento.
+		NewLayout().
+		Vertical().
+		WithConstraints(
+			bento.ConstraintFill(1),
+			bento.ConstraintLength(1),
+		).
+		Split(frame.Area()).
+		Assign(&primaryArea, &footnoteArea)
 
-	block := blockwidget.
-		NewBlock().
-		Rounded().
-		WithTitleString("Paragraph")
+	m.drawPrimary(frame, primaryArea)
+	m.drawFootnote(frame, footnoteArea)
+}
 
-	s := "This is a very long text that should be wrapped and wrapped correctly. So What do I say here...\nAnd new line hmmm weird"
+func (m *Model) drawFootnote(frame *bento.Frame, area bento.Rect) {
+	help := textwidget.NewLineString("help").Left()
+	version := textwidget.NewLineString("version").Right()
 
-	paragraph := paragraphwidget.NewParagraphString(s).WithBlock(block).WithWrap(paragraphwidget.NewWrap())
+	frame.RenderWidget(help, area)
+	frame.RenderWidget(version, area)
+}
 
-	frame.RenderWidget(paragraph, frame.Area())
+func (m *Model) drawPrimary(frame *bento.Frame, area bento.Rect) {
+	var sidebarArea, rightArea bento.Rect
+
+	bento.
+		NewLayout().
+		Horizontal().
+		WithConstraints(
+			bento.ConstraintFill(1),
+			bento.ConstraintFill(2),
+		).
+		Split(area).
+		Assign(&sidebarArea, &rightArea)
+
+	m.drawSidebar(frame, sidebarArea)
+	m.drawRight(frame, rightArea)
+}
+
+func (m *Model) drawSidebar(frame *bento.Frame, area bento.Rect) {
+	var statusArea,
+		filesArea,
+		branchesArea,
+		commitsArea,
+		stashArea bento.Rect
+
+	bento.
+		NewLayout().
+		Vertical().
+		WithConstraints(
+			bento.ConstraintLength(3),
+			bento.ConstraintFill(1),
+			bento.ConstraintFill(1),
+			bento.ConstraintFill(1),
+			bento.ConstraintLength(3),
+		).
+		Split(area).
+		Assign(
+			&statusArea,
+			&filesArea,
+			&branchesArea,
+			&commitsArea,
+			&stashArea,
+		)
+
+	m.drawStatus(frame, statusArea)
+	m.drawFiles(frame, filesArea)
+	m.drawBranches(frame, branchesArea)
+	m.drawCommits(frame, commitsArea)
+	m.drawStash(frame, stashArea)
+}
+
+func (m *Model) drawStatus(frame *bento.Frame, area bento.Rect) {
+	block := blockwidget.NewBlock().WithTitleString("Status").Plain()
+
+	innerArea := block.Inner(area)
+
+	status := textwidget.NewLineString("some status here")
+
+	frame.RenderWidget(block, area)
+	frame.RenderWidget(status, innerArea)
+}
+
+func (m *Model) drawFiles(frame *bento.Frame, area bento.Rect) {
+	block := blockwidget.NewBlock().WithTitleString("Files").Plain()
+
+	frame.RenderWidget(block, area)
+}
+
+func (m *Model) drawBranches(frame *bento.Frame, area bento.Rect) {
+	block := blockwidget.NewBlock().WithTitleString("Branches").Plain()
+
+	frame.RenderWidget(block, area)
+}
+
+func (m *Model) drawCommits(frame *bento.Frame, area bento.Rect) {
+	block := blockwidget.NewBlock().WithTitleString("Commits").Plain()
+
+	frame.RenderWidget(block, area)
+}
+
+func (m *Model) drawStash(frame *bento.Frame, area bento.Rect) {
+	block := blockwidget.NewBlock().WithTitleString("Stash").Plain()
+
+	frame.RenderWidget(block, area)
+}
+
+func (m *Model) drawRight(frame *bento.Frame, area bento.Rect) {
+	var infoArea, commandLogArea bento.Rect
+
+	bento.
+		NewLayout().
+		Vertical().
+		WithConstraints(
+			bento.ConstraintFill(1),
+			bento.ConstraintLength(10),
+		).
+		Split(area).
+		Assign(&infoArea, &commandLogArea)
+
+	m.renderInfoArea(frame, infoArea)
+	m.renderCommandLog(frame, commandLogArea)
+}
+
+func (m *Model) renderInfoArea(frame *bento.Frame, area bento.Rect) {
+	block := blockwidget.NewBlock().WithTitleString("Info").Plain()
+
+	frame.RenderWidget(block, area)
+}
+
+func (m *Model) renderCommandLog(frame *bento.Frame, area bento.Rect) {
+	block := blockwidget.NewBlock().WithTitleString("Command log").Plain()
+
+	frame.RenderWidget(block, area)
 }
 
 // Init implements bento.Model.
@@ -88,9 +164,7 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 	switch msg := msg.(type) {
 	case bento.KeyMsg:
 		switch msg.String() {
-		case "a":
-			m.count++
-		case "ctrl+c":
+		case "ctrl+c", "q":
 			return m, bento.Quit
 		}
 	}

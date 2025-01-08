@@ -111,6 +111,18 @@ func (l Line) WithAlignment(alignment bento.Alignment) Line {
 	return l
 }
 
+func (l Line) Right() Line {
+	return l.WithAlignment(bento.AlignmentRight)
+}
+
+func (l Line) Centered() Line {
+	return l.WithAlignment(bento.AlignmentCenter)
+}
+
+func (l Line) Left() Line {
+	return l.WithAlignment(bento.AlignmentLeft)
+}
+
 func (l Line) Render(area bento.Rect, buffer *bento.Buffer) {
 	l.renderWithAlignment(area, buffer, bento.AlignmentNone)
 }
