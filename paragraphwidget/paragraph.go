@@ -96,9 +96,7 @@ func (p Paragraph) render(textArea bento.Rect, buffer *bento.Buffer) {
 func (p Paragraph) renderText(composer reflow.LineComposer, area bento.Rect, buffer *bento.Buffer) {
 	var y int
 
-	var i int
 	for {
-		i++
 		currentLine, ok := composer.NextLine()
 		if !ok {
 			break

@@ -51,3 +51,12 @@ func (t Text) Render(area bento.Rect, buffer *bento.Buffer) {
 		line.renderWithAlignment(lineArea, buffer, t.Alignment)
 	}
 }
+
+func AppendTextSpans(text *Text, spans ...Span) {
+	if len(text.Lines) > 0 {
+		last := len(text.Lines) - 1
+		text.Lines[last].Spans = append(text.Lines[last].Spans, spans...)
+	} else {
+		text.Lines = append(text.Lines, NewLine(spans...))
+	}
+}

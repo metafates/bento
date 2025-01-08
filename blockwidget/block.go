@@ -68,6 +68,11 @@ func (b Block) WithTitle(title Title) Block {
 	return b
 }
 
+func (b Block) WithTitlePosition(position TitlePosition) Block {
+	b.titlesPosition = position
+	return b
+}
+
 func (b Block) WithTitleString(title string) Block {
 	return b.WithTitle(NewTitleString(title))
 }
