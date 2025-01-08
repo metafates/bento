@@ -68,6 +68,10 @@ func (b Block) WithTitle(title Title) Block {
 	return b
 }
 
+func (b Block) WithTitleString(title string) Block {
+	return b.WithTitle(NewTitleString(title))
+}
+
 func (b Block) WithBorders(borders ...Borders) Block {
 	if len(borders) == 0 {
 		b.borders = BordersAll

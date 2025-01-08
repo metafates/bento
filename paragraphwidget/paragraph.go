@@ -35,6 +35,11 @@ func NewParagraph(text textwidget.Text) Paragraph {
 	}
 }
 
+func (p Paragraph) WithBlock(block blockwidget.Block) Paragraph {
+	p.Block = &block
+	return p
+}
+
 func (p Paragraph) WithWrap(wrap Wrap) Paragraph {
 	p.Wrap = &wrap
 	return p
@@ -91,7 +96,9 @@ func (p Paragraph) render(textArea bento.Rect, buffer *bento.Buffer) {
 func (p Paragraph) renderText(composer reflow.LineComposer, area bento.Rect, buffer *bento.Buffer) {
 	var y int
 
+	var i int
 	for {
+		i++
 		currentLine, ok := composer.NextLine()
 		if !ok {
 			break

@@ -74,6 +74,7 @@ func (ww *WordWrapper) processInput(lineSymbols []textwidget.StyledGrapheme) {
 			if len(pendingLine) > 0 || !ww.trim {
 				pendingLine = append(pendingLine, ww.pendingWhitespace.Dump()...)
 				lineWidth += whitespaceWidth
+				ww.pendingWhitespace.Clear()
 			}
 
 			pendingLine = append(pendingLine, ww.pendingWord...)
@@ -92,7 +93,7 @@ func (ww *WordWrapper) processInput(lineSymbols []textwidget.StyledGrapheme) {
 		if lineFull || pendingWordOverflow {
 			remainingWidth := max(0, ww.maxLineWidth-lineWidth)
 
-			ww.wrappedLines.PushBack(pendingLine)
+			ww.wrappedLines.PushBack(slices.Clone(pendingLine))
 			clear(pendingLine)
 
 			lineWidth = 0
@@ -137,6 +138,7 @@ func (ww *WordWrapper) processInput(lineSymbols []textwidget.StyledGrapheme) {
 
 	if len(pendingLine) > 0 || !ww.trim {
 		pendingLine = append(pendingLine, ww.pendingWhitespace.Dump()...)
+		ww.pendingWhitespace.Clear()
 	}
 
 	pendingLine = append(pendingLine, ww.pendingWord...)

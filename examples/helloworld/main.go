@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/metafates/bento"
+	"github.com/metafates/bento/blockwidget"
 	"github.com/metafates/bento/paragraphwidget"
 )
 
@@ -66,8 +66,14 @@ func (m *Model) Draw(frame *bento.Frame) {
 	// frame.RenderWidget(statusBlock, statusArea)
 	// frame.RenderWidget(textwidget.NewTextString("Ready"), statusBlockInnerArea)
 
-	s := strings.Repeat("Lorem ipsum dolor sit amet", 20)
-	paragraph := paragraphwidget.NewParagraphString(s).WithWrap(paragraphwidget.NewWrap().WithTrim(true))
+	block := blockwidget.
+		NewBlock().
+		Rounded().
+		WithTitleString("Paragraph")
+
+	s := "This is a very long text that should be wrapped and wrapped correctly. So What do I say here...\nAnd new line hmmm weird"
+
+	paragraph := paragraphwidget.NewParagraphString(s).WithBlock(block).WithWrap(paragraphwidget.NewWrap())
 
 	frame.RenderWidget(paragraph, frame.Area())
 }
