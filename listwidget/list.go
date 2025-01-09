@@ -105,7 +105,9 @@ func (l List) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State
 
 	selectionSpacing := l.highlightSpacing.shouldAdd(state.selected != nil)
 
-	for i, item := range skipTake(l.items, state.offset, lastVisibleIndex-firstVisibleIndex) {
+	for i, item := range take(skip(l.items, state.offset), lastVisibleIndex-firstVisibleIndex) {
+		i += state.offset
+
 		var x, y int
 
 		switch l.direction {
@@ -233,7 +235,7 @@ func (l List) getItemsBounds(selected *int, offset, maxHeight int) (int, int) {
 
 	// Calculate the last visible index and total height of the items
 	// that will fit in the available space
-	for _, item := range l.items[offset:] {
+	for _, item := range skip(l.items, offset) {
 		if heightFromOffset+item.Height() > maxHeight {
 			break
 		}
@@ -244,7 +246,7 @@ func (l List) getItemsBounds(selected *int, offset, maxHeight int) (int, int) {
 	}
 
 	// Get the selected index and apply scroll_padding to it, but still honor the offset if
-	// nothing is selected. This allows for the list to stay at a position after select()ing
+	// nothing is selected. This allows for the list to stay at a position after selecting
 	// None.
 	indexToDisplay := offset
 	if selected != nil {
@@ -314,7 +316,7 @@ func (l List) applyScrollPaddingToSelectedIndex(selected int, maxHeight, firstVi
 		from := max(0, selected-scrollPadding)
 		to := min(lastValidIndex, selected+scrollPadding)
 
-		for i := from; i < to; i++ {
+		for i := from; i <= to; i++ {
 			heightAroundSelected += l.items[i].Height()
 		}
 
@@ -336,9 +338,16 @@ func (l List) applyScrollPaddingToSelectedIndex(selected int, maxHeight, firstVi
 	return min(res, lastValidIndex)
 }
 
-func skipTake[S ~[]T, T any](slice S, skip, take int) S {
-	slice = slice[min(len(slice)-1, skip):]
-	slice = slice[:max(len(slice), take)]
+func take[S ~[]T, T any](slice S, take int) S {
+	take = min(take, len(slice))
 
-	return slice
+	return slice[:take]
+}
+
+func skip[S ~[]T, T any](slice S, skip int) S {
+	if skip >= len(slice) {
+		return nil
+	}
+
+	return slice[skip:]
 }

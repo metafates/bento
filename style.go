@@ -93,64 +93,128 @@ func (s Style) Black() Style {
 	return s.WithForeground(termenv.ANSIBlack)
 }
 
+func (s Style) OnBlack() Style {
+	return s.WithBackground(termenv.ANSIBlack)
+}
+
 func (s Style) Red() Style {
 	return s.WithForeground(termenv.ANSIRed)
+}
+
+func (s Style) OnRed() Style {
+	return s.WithBackground(termenv.ANSIRed)
 }
 
 func (s Style) Green() Style {
 	return s.WithForeground(termenv.ANSIGreen)
 }
 
+func (s Style) OnGreen() Style {
+	return s.WithBackground(termenv.ANSIGreen)
+}
+
 func (s Style) Yellow() Style {
 	return s.WithForeground(termenv.ANSIYellow)
+}
+
+func (s Style) OnYellow() Style {
+	return s.WithBackground(termenv.ANSIYellow)
 }
 
 func (s Style) Blue() Style {
 	return s.WithForeground(termenv.ANSIBlue)
 }
 
+func (s Style) OnBlue() Style {
+	return s.WithBackground(termenv.ANSIBlue)
+}
+
 func (s Style) Magenta() Style {
 	return s.WithForeground(termenv.ANSIMagenta)
+}
+
+func (s Style) OnMagenta() Style {
+	return s.WithBackground(termenv.ANSIMagenta)
 }
 
 func (s Style) Cyan() Style {
 	return s.WithForeground(termenv.ANSICyan)
 }
 
+func (s Style) OnCyan() Style {
+	return s.WithBackground(termenv.ANSICyan)
+}
+
 func (s Style) White() Style {
 	return s.WithForeground(termenv.ANSIWhite)
+}
+
+func (s Style) OnWhite() Style {
+	return s.WithBackground(termenv.ANSIWhite)
 }
 
 func (s Style) BrightBlack() Style {
 	return s.WithForeground(termenv.ANSIBrightBlack)
 }
 
+func (s Style) OnBrightBlack() Style {
+	return s.WithBackground(termenv.ANSIBrightBlack)
+}
+
 func (s Style) BrightRed() Style {
 	return s.WithForeground(termenv.ANSIBrightRed)
+}
+
+func (s Style) OnBrightRed() Style {
+	return s.WithBackground(termenv.ANSIBrightRed)
 }
 
 func (s Style) BrightGreen() Style {
 	return s.WithForeground(termenv.ANSIBrightGreen)
 }
 
+func (s Style) OnBrightGreen() Style {
+	return s.WithBackground(termenv.ANSIBrightGreen)
+}
+
 func (s Style) BrightYellow() Style {
 	return s.WithForeground(termenv.ANSIBrightYellow)
+}
+
+func (s Style) OnBrightYellow() Style {
+	return s.WithBackground(termenv.ANSIBrightYellow)
 }
 
 func (s Style) BrightBlue() Style {
 	return s.WithForeground(termenv.ANSIBrightBlue)
 }
 
+func (s Style) OnBrightBlue() Style {
+	return s.WithBackground(termenv.ANSIBrightBlue)
+}
+
 func (s Style) BrightMagenta() Style {
 	return s.WithForeground(termenv.ANSIBrightMagenta)
+}
+
+func (s Style) OnBrightMagenta() Style {
+	return s.WithBackground(termenv.ANSIBrightMagenta)
 }
 
 func (s Style) BrightCyan() Style {
 	return s.WithForeground(termenv.ANSIBrightCyan)
 }
 
+func (s Style) OnBrightCyan() Style {
+	return s.WithBackground(termenv.ANSIBrightCyan)
+}
+
 func (s Style) BrightWhite() Style {
 	return s.WithForeground(termenv.ANSIBrightWhite)
+}
+
+func (s Style) OnBrightWhite() Style {
+	return s.WithBackground(termenv.ANSIBrightWhite)
 }
 
 func (s Style) WithModifier(modifier Modifier) Style {

@@ -128,6 +128,11 @@ func (b *Buffer) CellAt(position Position) *Cell {
 	return &b.Content[b.indexOf(position)]
 }
 
+// indexOf returns the (global) coordinates of a cell given its index
+//
+// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
+//
+// Panics when given an index that is outside the Buffer's content.
 func (b *Buffer) indexOf(position Position) int {
 	if !b.Area.Contains(position) {
 		panic("position out of bounds")
