@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/blockwidget"
 	"github.com/metafates/bento/listwidget"
 	"github.com/metafates/bento/paragraphwidget"
 	"github.com/metafates/bento/popupwidget"
+	"github.com/metafates/bento/textwidget"
 )
 
 var _ bento.Model = (*Model)(nil)
@@ -29,7 +31,10 @@ func (m *Model) Draw(frame *bento.Frame) {
 	var items []listwidget.Item
 
 	for i := 0; i < 100; i++ {
-		items = append(items, listwidget.NewItemString(fmt.Sprintf("Item #%d", i)))
+		items = append(items, listwidget.NewItem(textwidget.NewText(
+			textwidget.NewLineString("Item #"+strconv.Itoa(i+1)).WithStyle(bento.NewStyle().Bold()),
+			textwidget.NewLineString("Description").WithStyle(bento.NewStyle().Italic().Dim()),
+		)))
 	}
 
 	list := listwidget.
@@ -42,7 +47,7 @@ func (m *Model) Draw(frame *bento.Frame) {
 
 	if m.showPopup {
 		popup := popupwidget.New(paragraphwidget.NewParagraphString("Hello, world!").Center()).WithBlock(blockwidget.NewBlock().WithBorders().WithTitleString("Popup"))
-		popup = popup.Top().Center().WithHeight(bento.ConstraintLength(3)).WithWidth(bento.ConstraintPercentage(30))
+		popup = popup.Top().Right().WithHeight(bento.ConstraintLength(3)).WithWidth(bento.ConstraintPercentage(30))
 
 		frame.RenderWidget(popup, frame.Area())
 	}

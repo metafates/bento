@@ -1171,7 +1171,46 @@ func TestEdgeCases(t *testing.T) {
 	}
 }
 
+func TestFlexConstraint(t *testing.T) {
+	testCases := []struct {
+		name        string
+		constraints []bento.Constraint
+		want        [][]int
+		flex        bento.Flex
+	}{
+		{
+			name: "length center",
+			constraints: []bento.Constraint{
+				bento.ConstraintLength(50),
+			},
+			want: [][]int{{50, 100}},
+			flex: bento.FlexEnd,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			rect := bento.Rect{
+				Width:  100,
+				Height: 1,
+			}
+
+			rects := bento.NewLayout(tc.constraints...).Horizontal().WithFlex(tc.flex).Split(rect)
+
+			ranges := make([][]int, 0, len(rects))
+
+			for _, r := range rects {
+				ranges = append(ranges, []int{r.Left(), r.Right()})
+			}
+
+			require.Equal(t, tc.want, ranges)
+		})
+	}
+}
+
 func letters(t *testing.T, flex bento.Flex, constraints []bento.Constraint, width int, expected string) {
+	t.Helper()
+
 	area := bento.Rect{Width: width, Height: 1}
 
 	layout := bento.Layout{
