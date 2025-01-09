@@ -15,30 +15,25 @@ var _ bento.Model = (*Model)(nil)
 type Panel int
 
 const (
-	PanelStatus Panel = iota + 1
+	PanelStatus Panel = iota
 	PanelFiles
 	PanelBranches
 	PanelCommits
 	PanelStash
-	PanelCommandLog
 	PanelInfo
+	PanelCommandLog
 )
 
 func (p Panel) Next() Panel {
-	switch p {
-	case PanelStatus:
-		return PanelFiles
-	case PanelFiles:
-		return PanelBranches
-	case PanelBranches:
-		return PanelCommits
-	case PanelCommits:
+	return (p + 1) % PanelInfo
+}
+
+func (p Panel) Prev() Panel {
+	if p-1 < 0 {
 		return PanelStash
-	case PanelStash:
-		return PanelStatus
-	default:
-		panic("TODO")
 	}
+
+	return p - 1
 }
 
 func (p Panel) Title() string {
@@ -119,6 +114,77 @@ func (m *Model) drawPrimary(frame *bento.Frame, area bento.Rect) {
 	m.drawRight(frame, rightArea)
 }
 
+const (
+	HeightMedium = 30
+	HeightSmall  = 22
+)
+
+func (m *Model) filesConstraint() bento.Constraint {
+	if m.size.Height > HeightMedium || m.activePanel == PanelFiles {
+		return bento.ConstraintFill(1)
+	}
+
+	if m.size.Height > HeightSmall {
+		return bento.ConstraintLength(3)
+	}
+
+	return bento.ConstraintLength(1)
+}
+
+func (m *Model) branchesConstraint() bento.Constraint {
+	if m.size.Height > HeightMedium || m.activePanel == PanelBranches {
+		return bento.ConstraintFill(1)
+	}
+
+	if m.size.Height > HeightSmall {
+		return bento.ConstraintLength(3)
+	}
+
+	return bento.ConstraintLength(1)
+}
+
+func (m *Model) commitsConstraint() bento.Constraint {
+	if m.size.Height > HeightMedium || m.activePanel == PanelCommits {
+		return bento.ConstraintFill(1)
+	}
+
+	if m.size.Height > HeightSmall {
+		return bento.ConstraintLength(3)
+	}
+
+	return bento.ConstraintLength(1)
+}
+
+func (m *Model) statusConstraint() bento.Constraint {
+	if m.size.Height > HeightMedium {
+		return bento.ConstraintLength(3)
+	}
+
+	if m.activePanel == PanelStatus {
+		return bento.ConstraintFill(1)
+	}
+
+	if m.size.Height > HeightSmall {
+		return bento.ConstraintLength(3)
+	}
+
+	return bento.ConstraintLength(1)
+}
+
+func (m *Model) stashConstraint() bento.Constraint {
+	isActive := m.activePanel == PanelStash
+
+	if m.size.Height > HeightMedium || (m.size.Height > HeightSmall && !isActive) {
+		return bento.ConstraintLength(3)
+	}
+
+	if isActive {
+		return bento.ConstraintFill(1)
+	}
+
+	return bento.ConstraintLength(1)
+}
+
 func (m *Model) drawSidebar(frame *bento.Frame, area bento.Rect) {
 	var statusArea,
 		filesArea,
@@ -130,11 +196,11 @@ func (m *Model) drawSidebar(frame *bento.Frame, area bento.Rect) {
 		NewLayout().
 		Vertical().
 		WithConstraints(
-			bento.ConstraintLength(3),
-			bento.ConstraintFill(1),
-			bento.ConstraintFill(1),
-			bento.ConstraintFill(1),
-			bento.ConstraintLength(3),
+			m.statusConstraint(),
+			m.filesConstraint(),
+			m.branchesConstraint(),
+			m.commitsConstraint(),
+			m.stashConstraint(),
 		).
 		Split(area).
 		Assign(
@@ -232,7 +298,7 @@ func (m *Model) newBlock(panel Panel, footer string) blockwidget.Block {
 		WithTitle(blockwidget.NewTitleString(panel.Title()).Top().Left())
 
 	if m.activePanel == panel {
-		block = block.WithBorderStyle(bento.NewStyle().Green())
+		block = block.WithBorderStyle(bento.NewStyle().Bold().Green())
 	}
 
 	if footer == "" {
@@ -256,6 +322,8 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, bento.Quit
+		case "shift+tab":
+			m.activePanel = m.activePanel.Prev()
 		case "tab":
 			m.activePanel = m.activePanel.Next()
 		}
