@@ -25,7 +25,20 @@ const (
 )
 
 func (p Panel) Next() Panel {
-	panic("TODO")
+	switch p {
+	case PanelStatus:
+		return PanelFiles
+	case PanelFiles:
+		return PanelBranches
+	case PanelBranches:
+		return PanelCommits
+	case PanelCommits:
+		return PanelStash
+	case PanelStash:
+		return PanelStatus
+	default:
+		panic("TODO")
+	}
 }
 
 func (p Panel) Title() string {
