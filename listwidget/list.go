@@ -332,7 +332,7 @@ func (l List) applyScrollPaddingToSelectedIndex(selected int, maxHeight, firstVi
 	if min(lastValidIndex, selected+scrollPadding) >= lastVisibleIndex {
 		res = selected + scrollPadding
 	} else if max(0, selected-scrollPadding) < firstVisibleIndex {
-		res = min(0, selected-scrollPadding)
+		res = max(0, selected-scrollPadding)
 	}
 
 	return min(res, lastValidIndex)
