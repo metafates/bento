@@ -19,18 +19,29 @@ var _ bento.Model = (*Model)(nil)
 type Model struct {
 	listState listwidget.State
 	showPopup bool
+
+	currentItem *int
+	itemsCount  int
 }
 
 func (m *Model) Draw(frame *bento.Frame) {
+	var bottomTitle string
+	if m.currentItem != nil {
+		bottomTitle = strconv.Itoa(*m.currentItem) + " of "
+	}
+
+	bottomTitle += strconv.Itoa(m.itemsCount) + " items"
+
 	block := blockwidget.
 		NewBlock().
 		WithBorders().
 		Rounded().
-		WithTitle(blockwidget.NewTitleString("List"))
+		WithTitle(blockwidget.NewTitleString("List")).
+		WithTitle(blockwidget.NewTitleString(bottomTitle).Bottom().Right())
 
 	var items []listwidget.Item
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < m.itemsCount; i++ {
 		items = append(items, listwidget.NewItem(textwidget.NewText(
 			textwidget.NewLineString("Item #"+strconv.Itoa(i+1)).WithStyle(bento.NewStyle().Bold()),
 			textwidget.NewLineString("Description").WithStyle(bento.NewStyle().Italic().Dim()),
@@ -47,7 +58,11 @@ func (m *Model) Draw(frame *bento.Frame) {
 
 	if m.showPopup {
 		popup := popupwidget.New(paragraphwidget.NewParagraphString("Hello, world!").Center()).WithBlock(blockwidget.NewBlock().WithBorders().WithTitleString("Popup"))
-		popup = popup.Top().Right().WithHeight(bento.ConstraintLength(3)).WithWidth(bento.ConstraintPercentage(30))
+		popup = popup.
+			Bottom().
+			Right().
+			WithWidth(bento.ConstraintPercentage(30)).
+			WithMargin(bento.NewMargin(2, 4, 2, 2))
 
 		frame.RenderWidget(popup, frame.Area())
 	}
@@ -82,11 +97,18 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 		}
 	}
 
+	index, ok := m.listState.Selected()
+	if ok {
+		index = min(m.itemsCount-1, index)
+		index++
+		m.currentItem = &index
+	}
+
 	return m, nil
 }
 
 func run() error {
-	model := Model{listState: listwidget.NewState()}
+	model := Model{listState: listwidget.NewState(), itemsCount: 100}
 
 	app, err := bento.NewApp(context.Background(), &model)
 	if err != nil {

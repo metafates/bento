@@ -38,18 +38,18 @@ func (r Rect) Position() Position {
 }
 
 func (r Rect) Inner(margin Margin) Rect {
-	doubleHorizontal := margin.Horizontal * 2
-	doubleVertical := margin.Vertical * 2
+	horizontal := margin.Right + margin.Left
+	vertical := margin.Top + margin.Bottom
 
-	if r.Width < doubleHorizontal || r.Height < doubleVertical {
+	if r.Width < horizontal || r.Height < vertical {
 		return Rect{}
 	}
 
 	return Rect{
-		X:      r.X + margin.Horizontal,
-		Y:      r.Y + margin.Vertical,
-		Width:  max(0, r.Width-doubleHorizontal),
-		Height: max(0, r.Height-doubleVertical),
+		X:      r.X + margin.Left,
+		Y:      r.Y + margin.Top,
+		Width:  max(0, r.Width-horizontal),
+		Height: max(0, r.Height-vertical),
 	}
 }
 

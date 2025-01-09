@@ -1,54 +1,25 @@
 package blockwidget
 
-type Padding struct {
-	Top, Right, Bottom, Left int
-}
+import "github.com/metafates/bento"
+
+type Padding bento.Margin
 
 func NewPadding(sides ...int) Padding {
-	switch len(sides) {
-	case 0:
-		return Padding{}
-	case 1:
-		side := sides[0]
-		return Padding{Top: side, Right: side, Bottom: side, Left: side}
-	case 2:
-		horizontal := sides[0]
-		vertical := sides[1]
-
-		return Padding{
-			Top:    horizontal,
-			Right:  vertical,
-			Bottom: horizontal,
-			Left:   vertical,
-		}
-	case 4:
-		return Padding{
-			Top:    sides[0],
-			Right:  sides[1],
-			Bottom: sides[2],
-			Left:   sides[3],
-		}
-	default:
-		panic("unexpected sides count")
-	}
+	return Padding(bento.NewMargin(sides...))
 }
 
 func (p Padding) WithTop(s int) Padding {
-	p.Top = s
-	return p
+	return Padding(bento.Margin(p).WithTop(s))
 }
 
 func (p Padding) WithRight(s int) Padding {
-	p.Right = s
-	return p
+	return Padding(bento.Margin(p).WithRight(s))
 }
 
 func (p Padding) WithBottom(s int) Padding {
-	p.Bottom = s
-	return p
+	return Padding(bento.Margin(p).WithBottom(s))
 }
 
 func (p Padding) WithLeft(s int) Padding {
-	p.Bottom = s
-	return p
+	return Padding(bento.Margin(p).WithLeft(s))
 }

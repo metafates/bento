@@ -14,6 +14,7 @@ type Popup struct {
 	Style                bento.Style
 	Width, Height        bento.Constraint
 	Content              bento.Widget
+	Margin               bento.Margin
 }
 
 func New(content bento.Widget) Popup {
@@ -24,6 +25,7 @@ func New(content bento.Widget) Popup {
 		Style:      bento.NewStyle(),
 		Width:      bento.ConstraintPercentage(60),
 		Height:     bento.ConstraintPercentage(20),
+		Margin:     bento.Margin{},
 		Content:    content,
 	}
 }
@@ -45,6 +47,11 @@ func (p Popup) WithHeight(height bento.Constraint) Popup {
 
 func (p Popup) WithWidth(width bento.Constraint) Popup {
 	p.Width = width
+	return p
+}
+
+func (p Popup) WithMargin(margin bento.Margin) Popup {
+	p.Margin = margin
 	return p
 }
 
@@ -79,8 +86,8 @@ func (p Popup) Right() Popup {
 }
 
 func (p Popup) Render(area bento.Rect, buffer *bento.Buffer) {
-	vertical := bento.NewLayout(p.Height).Vertical().WithFlex(p.Vertical)
-	horizontal := bento.NewLayout(p.Width).Horizontal().WithFlex(p.Horizontal)
+	vertical := bento.NewLayout(p.Height).Vertical().WithMargin(p.Margin).WithFlex(p.Vertical)
+	horizontal := bento.NewLayout(p.Width).Horizontal().WithMargin(p.Margin).WithFlex(p.Horizontal)
 
 	area = vertical.Split(area).Unwrap()
 	area = horizontal.Split(area).Unwrap()

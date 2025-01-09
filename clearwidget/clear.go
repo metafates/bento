@@ -1,6 +1,8 @@
 package clearwidget
 
-import "github.com/metafates/bento"
+import (
+	"github.com/metafates/bento"
+)
 
 var _ bento.Widget = (*Clear)(nil)
 
