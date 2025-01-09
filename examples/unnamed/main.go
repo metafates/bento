@@ -8,16 +8,23 @@ import (
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/blockwidget"
 	"github.com/metafates/bento/listwidget"
+	"github.com/metafates/bento/paragraphwidget"
+	"github.com/metafates/bento/popupwidget"
 )
 
 var _ bento.Model = (*Model)(nil)
 
 type Model struct {
 	listState listwidget.State
+	showPopup bool
 }
 
 func (m *Model) Draw(frame *bento.Frame) {
-	block := blockwidget.NewBlock().WithBorders().Rounded().WithTitle(blockwidget.NewTitleString("List"))
+	block := blockwidget.
+		NewBlock().
+		WithBorders().
+		Rounded().
+		WithTitle(blockwidget.NewTitleString("List"))
 
 	var items []listwidget.Item
 
@@ -32,6 +39,13 @@ func (m *Model) Draw(frame *bento.Frame) {
 		WithBlock(block).WithHighlightStyle(bento.NewStyle().Black().OnBlue())
 
 	bento.RenderStatefulWidget(frame, list, frame.Area(), &m.listState)
+
+	if m.showPopup {
+		popup := popupwidget.New(paragraphwidget.NewParagraphString("Hello, world!").Center()).WithBlock(blockwidget.NewBlock().WithBorders().WithTitleString("Popup"))
+		popup = popup.Top().Center().WithHeight(bento.ConstraintLength(3)).WithWidth(bento.ConstraintPercentage(30))
+
+		frame.RenderWidget(popup, frame.Area())
+	}
 }
 
 func (m *Model) Init() bento.Cmd {
@@ -42,10 +56,16 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 	switch msg := msg.(type) {
 	case bento.KeyMsg:
 		switch msg.String() {
+		case " ":
+			m.showPopup = !m.showPopup
 		case "ctrl+u":
 			m.listState.ScrollUpBy(8)
 		case "ctrl+d":
 			m.listState.ScrollDownBy(8)
+		case "G":
+			m.listState.SelectLast()
+		case "g":
+			m.listState.SelectFirst()
 		case "j", "down":
 			m.listState.SelectNext()
 		case "k", "up":

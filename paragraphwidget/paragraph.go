@@ -35,6 +35,21 @@ func NewParagraph(text textwidget.Text) Paragraph {
 	}
 }
 
+func (p Paragraph) Right() Paragraph {
+	p.Alignment = bento.AlignmentRight
+	return p
+}
+
+func (p Paragraph) Left() Paragraph {
+	p.Alignment = bento.AlignmentLeft
+	return p
+}
+
+func (p Paragraph) Center() Paragraph {
+	p.Alignment = bento.AlignmentCenter
+	return p
+}
+
 func (p Paragraph) WithBlock(block blockwidget.Block) Paragraph {
 	p.Block = &block
 	return p

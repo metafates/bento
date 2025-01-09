@@ -46,6 +46,7 @@ func (lt *LineTruncator) NextLine() (WrappedLine, bool) {
 	for i, line := range lt.inputLines {
 		lastIndex = i
 		currentLine := line.Graphemes
+		currentAlignment = line.Alignment
 		alignment := line.Alignment
 		linesExhausted = false
 
