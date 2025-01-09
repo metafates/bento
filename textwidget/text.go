@@ -26,6 +26,14 @@ func NewText(lines ...Line) Text {
 	}
 }
 
+func (t Text) Height() int {
+	return len(t.Lines)
+}
+
+func (t Text) Width() int {
+	return t.Lines.Width()
+}
+
 func (t Text) WithStyle(style bento.Style) Text {
 	t.Style = style
 	return t
