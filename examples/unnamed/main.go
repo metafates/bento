@@ -59,10 +59,10 @@ func (m *Model) Draw(frame *bento.Frame) {
 	if m.showPopup {
 		popup := popupwidget.New(paragraphwidget.NewParagraphString("Hello, world!").Center()).WithBlock(blockwidget.NewBlock().WithBorders().WithTitleString("Popup"))
 		popup = popup.
-			Bottom().
+			Top().
 			Right().
-			WithWidth(bento.ConstraintPercentage(30)).
-			WithMargin(bento.NewMargin(2, 4, 2, 2))
+			WithHeight(bento.ConstraintLength(3)).
+			WithWidth(bento.ConstraintLength(30))
 
 		frame.RenderWidget(popup, frame.Area())
 	}
@@ -102,6 +102,8 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 		index = min(m.itemsCount-1, index)
 		index++
 		m.currentItem = &index
+	} else {
+		m.currentItem = nil
 	}
 
 	return m, nil
