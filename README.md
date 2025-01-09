@@ -1,4 +1,6 @@
-# Bento 🍱
+# 🍱 Bento 
+
+<img align="right" width="250" src="https://github.com/user-attachments/assets/120b3882-0ed7-4b69-b5aa-2b75d83abe8a">
 
 > Work in progress
 
