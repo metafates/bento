@@ -27,7 +27,7 @@ type Model struct {
 func (m *Model) Draw(frame *bento.Frame) {
 	var bottomTitle string
 	if m.currentItem != nil {
-		bottomTitle = strconv.Itoa(*m.currentItem) + " of "
+		bottomTitle = strconv.Itoa(*m.currentItem+1) + " of "
 	}
 
 	bottomTitle += strconv.Itoa(m.itemsCount) + " items"
@@ -97,10 +97,8 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 		}
 	}
 
-	index, ok := m.listState.Selected()
+	index, ok := m.listState.SelectedWithLimit(m.itemsCount - 1)
 	if ok {
-		index = min(m.itemsCount-1, index)
-		index++
 		m.currentItem = &index
 	} else {
 		m.currentItem = nil

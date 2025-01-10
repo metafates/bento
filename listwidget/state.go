@@ -77,11 +77,37 @@ func (s *State) Unselect() {
 }
 
 // Selected returns index of the selected item.
-// Returns ok = false if no item is selected
+// Returns ok = false if no item is selected.
+//
+// NOTE: Returned index may be greater, than you would expect, since it is trimmed only after [List.RenderStateful] call
+//
+// Use [State.SelectedWithLimit] if you know the limit or [GetSelectedItem] to select an item from the slice
 func (s *State) Selected() (index int, ok bool) {
 	if s.selected == nil {
 		return 0, false
 	}
 
 	return *s.selected, true
+}
+
+// SelectedWithLimit returns index of the selected item wrapped at the limit
+//
+// See: [State.Selected]
+func (s *State) SelectedWithLimit(limit int) (index int, ok bool) {
+	index, ok = s.Selected()
+	if !ok {
+		return 0, false
+	}
+
+	return min(limit, index), true
+}
+
+func GetSelectedItem[S ~[]E, E any](state State, slice S) (element E, ok bool) {
+	index, ok := state.SelectedWithLimit(len(slice) - 1)
+	if !ok {
+		var e E
+		return e, false
+	}
+
+	return slice[index], true
 }
