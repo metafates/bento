@@ -34,17 +34,17 @@ func (m *Model) Draw(frame *bento.Frame) {
 
 	block := blockwidget.
 		NewBlock().
-		WithBorders().
+		WithBorderSides().
 		Rounded().
-		WithTitle(blockwidget.NewTitleString("List")).
-		WithTitle(blockwidget.NewTitleString(bottomTitle).Bottom().Right())
+		WithTitle(blockwidget.NewTitleStr("List")).
+		WithTitle(blockwidget.NewTitleStr(bottomTitle).Bottom().Right())
 
 	var items []listwidget.Item
 
 	for i := 0; i < m.itemsCount; i++ {
 		items = append(items, listwidget.NewItem(textwidget.NewText(
-			textwidget.NewLineString("Item #"+strconv.Itoa(i+1)).WithStyle(bento.NewStyle().Bold()),
-			textwidget.NewLineString("Description").WithStyle(bento.NewStyle().Italic().Dim()),
+			textwidget.NewLineStr("Item #"+strconv.Itoa(i+1)).WithStyle(bento.NewStyle().Bold()),
+			textwidget.NewLineStr("Description").WithStyle(bento.NewStyle().Italic().Dim()),
 		)))
 	}
 
@@ -57,8 +57,11 @@ func (m *Model) Draw(frame *bento.Frame) {
 	bento.RenderStatefulWidget(frame, list, frame.Area(), &m.listState)
 
 	if m.showPopup {
-		popup := popupwidget.New(paragraphwidget.NewParagraphString("Hello, world!").Center()).WithBlock(blockwidget.NewBlock().WithBorders().WithTitleString("Popup"))
-		popup = popup.
+		paragraph := paragraphwidget.NewParagraphStr("Hello, world!").Center()
+
+		popup := popupwidget.
+			New(paragraph).
+			WithBlock(blockwidget.NewBlock().WithBorderSides().Thick().WithTitleStr("Popup")).
 			Top().
 			Right().
 			WithHeight(bento.ConstraintLength(3)).

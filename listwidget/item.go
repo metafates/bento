@@ -10,8 +10,8 @@ type Item struct {
 	content textwidget.Text
 }
 
-func NewItemString(text string) Item {
-	return NewItem(textwidget.NewTextString(text))
+func NewItemStr(text string) Item {
+	return NewItem(textwidget.NewTextStr(text))
 }
 
 func NewItem(text textwidget.Text) Item {

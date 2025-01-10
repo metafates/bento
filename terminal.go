@@ -63,7 +63,7 @@ func NewTerminal(backend TerminalBackend, viewport Viewport) (*Terminal, error) 
 			return nil, fmt.Errorf("get size: %w", err)
 		}
 
-		area = Rect{Width: size.Width, Height: size.Height}
+		area = NewRect(size.Width, size.Height)
 	case ViewportFixed:
 		area = Rect(v)
 	}

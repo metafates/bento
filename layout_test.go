@@ -1230,10 +1230,10 @@ func letters(t *testing.T, flex bento.Flex, constraints []bento.Constraint, widt
 
 		s := strings.Repeat(string(c), area.Width)
 
-		textwidget.NewText(textwidget.NewLinesString(s)...).Render(area, buffer)
+		textwidget.NewText(textwidget.NewLinesStr(s)...).Render(area, buffer)
 	}
 
-	want := textwidget.NewLinesString(expected).NewBuffer()
+	want := textwidget.NewLinesStr(expected).NewBuffer()
 
 	require.Equal(t, want, buffer)
 }

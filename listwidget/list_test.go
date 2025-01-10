@@ -10,13 +10,13 @@ import (
 
 func TestSelectedItemEnsuresVisibleOffsetBeforeRange(t *testing.T) {
 	items := []Item{
-		NewItemString("Item 0"),
-		NewItemString("Item 1"),
-		NewItemString("Item 2"),
-		NewItemString("Item 3"),
-		NewItemString("Item 4"),
-		NewItemString("Item 5"),
-		NewItemString("Item 6"),
+		NewItemStr("Item 0"),
+		NewItemStr("Item 1"),
+		NewItemStr("Item 2"),
+		NewItemStr("Item 3"),
+		NewItemStr("Item 4"),
+		NewItemStr("Item 5"),
+		NewItemStr("Item 6"),
 	}
 
 	list := NewList(items...).WithHighlightSymbol(">>")
@@ -26,7 +26,7 @@ func TestSelectedItemEnsuresVisibleOffsetBeforeRange(t *testing.T) {
 
 	buffer := statefulWidget(list, &state, 10, 3)
 
-	want := textwidget.NewLinesString(
+	want := textwidget.NewLinesStr(
 		">>Item 1  ",
 		"  Item 2  ",
 		"  Item 3  ",

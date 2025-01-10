@@ -223,7 +223,7 @@ func (m *Model) drawStatus(frame *bento.Frame, area bento.Rect) {
 
 	innerArea := block.Inner(area)
 
-	status := textwidget.NewLineString(fmt.Sprintf("%dx%d", m.size.Width, m.size.Height))
+	status := textwidget.NewLineStr(fmt.Sprintf("%dx%d", m.size.Width, m.size.Height))
 
 	frame.RenderWidget(block, area)
 	frame.RenderWidget(status, innerArea)
@@ -293,9 +293,9 @@ func (m *Model) renderCommandLog(frame *bento.Frame, area bento.Rect) {
 func (m *Model) newBlock(panel Panel, footer string) blockwidget.Block {
 	block := blockwidget.
 		NewBlock().
-		WithBorders().
+		WithBorderSides().
 		Rounded().
-		WithTitle(blockwidget.NewTitleString(panel.Title()).Top().Left())
+		WithTitle(blockwidget.NewTitleStr(panel.Title()).Top().Left())
 
 	if m.activePanel == panel {
 		block = block.WithBorderStyle(bento.NewStyle().Bold().Green())
@@ -305,7 +305,7 @@ func (m *Model) newBlock(panel Panel, footer string) blockwidget.Block {
 		return block
 	}
 
-	return block.WithTitle(blockwidget.NewTitleString(footer).Bottom().Right())
+	return block.WithTitle(blockwidget.NewTitleStr(footer).Bottom().Right())
 }
 
 // Init implements bento.Model.

@@ -20,8 +20,8 @@ type Paragraph struct {
 	Alignment bento.Alignment
 }
 
-func NewParagraphString(s string) Paragraph {
-	return NewParagraph(textwidget.NewTextString(s))
+func NewParagraphStr(s string) Paragraph {
+	return NewParagraph(textwidget.NewTextStr(s))
 }
 
 func NewParagraph(text textwidget.Text) Paragraph {
@@ -55,7 +55,7 @@ func (p Paragraph) WithBlock(block blockwidget.Block) Paragraph {
 	return p
 }
 
-func (p Paragraph) WithWrap(wrap Wrap) Paragraph {
+func (p Paragraph) Wrapped(wrap Wrap) Paragraph {
 	p.Wrap = &wrap
 	return p
 }

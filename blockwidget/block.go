@@ -15,12 +15,12 @@ type Block struct {
 	titlesAlignment bento.Alignment
 	titlesPosition  TitlePosition
 
-	borders     Borders
+	borders     Side
 	borderStyle bento.Style
 	borderSet   BorderSet
 
 	style   bento.Style
-	padding Padding
+	padding bento.Padding
 }
 
 func NewBlock() Block {
@@ -28,11 +28,11 @@ func NewBlock() Block {
 		titles:          nil,
 		titlesStyle:     bento.Style{},
 		titlesAlignment: bento.AlignmentLeft,
-		borders:         BordersNone,
+		borders:         SideNone,
 		borderStyle:     bento.NewStyle(),
-		borderSet:       BorderTypePlain.Set(),
+		borderSet:       BorderTypeSharp.Set(),
 		style:           bento.NewStyle(),
-		padding:         Padding{},
+		padding:         bento.NewPadding(),
 	}
 }
 
@@ -40,8 +40,16 @@ func (b Block) Rounded() Block {
 	return b.WithBorderType(BorderTypeRounded)
 }
 
-func (b Block) Squared() Block {
-	return b.WithBorderType(BorderTypePlain)
+func (b Block) Sharp() Block {
+	return b.WithBorderType(BorderTypeSharp)
+}
+
+func (b Block) Thick() Block {
+	return b.WithBorderType(BorderTypeThick)
+}
+
+func (b Block) Double() Block {
+	return b.WithBorderType(BorderTypeDouble)
 }
 
 func (b Block) WithTitlesStyle(style bento.Style) Block {
@@ -73,13 +81,13 @@ func (b Block) WithTitlePosition(position TitlePosition) Block {
 	return b
 }
 
-func (b Block) WithTitleString(title string) Block {
-	return b.WithTitle(NewTitleString(title))
+func (b Block) WithTitleStr(title string) Block {
+	return b.WithTitle(NewTitleStr(title))
 }
 
-func (b Block) WithBorders(borders ...Borders) Block {
+func (b Block) WithBorderSides(borders ...Side) Block {
 	if len(borders) == 0 {
-		b.borders = BordersAll
+		b.borders = SideAll
 		return b
 	}
 
@@ -95,7 +103,7 @@ func (b Block) WithBorderType(borderType BorderType) Block {
 	return b
 }
 
-func (b Block) WithPadding(padding Padding) Block {
+func (b Block) WithPadding(padding bento.Padding) Block {
 	b.padding = padding
 	return b
 }
@@ -108,21 +116,21 @@ func (b Block) WithBorderStyle(style bento.Style) Block {
 func (b Block) Inner(area bento.Rect) bento.Rect {
 	inner := area
 
-	if b.borders.intersects(BordersLeft) {
+	if b.borders.intersects(SideLeft) {
 		inner.X = min(inner.X+1, inner.Right())
 		inner.Width = max(0, inner.Width-1)
 	}
 
-	if b.borders.intersects(BordersTop) || b.hasTitleAtPosition(TitlePositionTop) {
+	if b.borders.intersects(SideTop) || b.hasTitleAtPosition(TitlePositionTop) {
 		inner.Y = min(inner.Y+1, inner.Bottom())
 		inner.Height = max(0, inner.Height-1)
 	}
 
-	if b.borders.intersects(BordersRight) {
+	if b.borders.intersects(SideRight) {
 		inner.Width = max(0, inner.Width-1)
 	}
 
-	if b.borders.intersects(BordersBottom) || b.hasTitleAtPosition(TitlePositionBottom) {
+	if b.borders.intersects(SideBottom) || b.hasTitleAtPosition(TitlePositionBottom) {
 		inner.Height = max(0, inner.Height-1)
 	}
 
@@ -175,7 +183,7 @@ func (b Block) renderBorders(area bento.Rect, buffer *bento.Buffer) {
 }
 
 func (b Block) renderLeftSide(area bento.Rect, buffer *bento.Buffer) {
-	if b.borders.contains(BordersLeft) {
+	if b.borders.contains(SideLeft) {
 		for y := area.Top(); y < area.Bottom(); y++ {
 			buffer.
 				CellAt(bento.Position{
@@ -189,7 +197,7 @@ func (b Block) renderLeftSide(area bento.Rect, buffer *bento.Buffer) {
 }
 
 func (b Block) renderTopSide(area bento.Rect, buffer *bento.Buffer) {
-	if b.borders.contains(BordersTop) {
+	if b.borders.contains(SideTop) {
 		for x := area.Left(); x < area.Right(); x++ {
 			buffer.
 				CellAt(bento.Position{
@@ -203,7 +211,7 @@ func (b Block) renderTopSide(area bento.Rect, buffer *bento.Buffer) {
 }
 
 func (b Block) renderRightSide(area bento.Rect, buffer *bento.Buffer) {
-	if b.borders.contains(BordersRight) {
+	if b.borders.contains(SideRight) {
 		x := area.Right() - 1
 
 		for y := area.Top(); y < area.Bottom(); y++ {
@@ -219,7 +227,7 @@ func (b Block) renderRightSide(area bento.Rect, buffer *bento.Buffer) {
 }
 
 func (b Block) renderBottomSide(area bento.Rect, buffer *bento.Buffer) {
-	if b.borders.contains(BordersBottom) {
+	if b.borders.contains(SideBottom) {
 		y := area.Bottom() - 1
 
 		for x := area.Left(); x < area.Right(); x++ {
@@ -235,7 +243,7 @@ func (b Block) renderBottomSide(area bento.Rect, buffer *bento.Buffer) {
 }
 
 func (b Block) renderBottomRightCorner(area bento.Rect, buffer *bento.Buffer) {
-	if b.borders.contains(BordersRight | BordersBottom) {
+	if b.borders.contains(SideRight | SideBottom) {
 		buffer.
 			CellAt(bento.Position{
 				X: area.Right() - 1,
@@ -247,7 +255,7 @@ func (b Block) renderBottomRightCorner(area bento.Rect, buffer *bento.Buffer) {
 }
 
 func (b Block) renderTopRightCorner(area bento.Rect, buffer *bento.Buffer) {
-	if b.borders.contains(BordersRight | BordersTop) {
+	if b.borders.contains(SideRight | SideTop) {
 		buffer.
 			CellAt(bento.Position{
 				X: area.Right() - 1,
@@ -259,7 +267,7 @@ func (b Block) renderTopRightCorner(area bento.Rect, buffer *bento.Buffer) {
 }
 
 func (b Block) renderBottomLeftCorner(area bento.Rect, buffer *bento.Buffer) {
-	if b.borders.contains(BordersLeft | BordersBottom) {
+	if b.borders.contains(SideLeft | SideBottom) {
 		buffer.
 			CellAt(bento.Position{
 				X: area.Left(),
@@ -271,7 +279,7 @@ func (b Block) renderBottomLeftCorner(area bento.Rect, buffer *bento.Buffer) {
 }
 
 func (b Block) renderTopLeftCorner(area bento.Rect, buffer *bento.Buffer) {
-	if b.borders.contains(BordersLeft | BordersTop) {
+	if b.borders.contains(SideLeft | SideTop) {
 		buffer.
 			CellAt(bento.Position{
 				X: area.Left(),
@@ -420,11 +428,11 @@ func (b Block) filterTitles(position TitlePosition, alignment bento.Alignment) [
 func (b Block) titlesArea(area bento.Rect, position TitlePosition) bento.Rect {
 	var leftBorder, rightBorder int
 
-	if b.borders.contains(BordersLeft) {
+	if b.borders.contains(SideLeft) {
 		leftBorder = 1
 	}
 
-	if b.borders.contains(BordersRight) {
+	if b.borders.contains(SideRight) {
 		rightBorder = 1
 	}
 

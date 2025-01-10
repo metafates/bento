@@ -15,18 +15,18 @@ func NewLines(lines ...Line) Lines {
 	return lines
 }
 
-func NewLinesString(s ...string) Lines {
+func NewLinesStr(s ...string) Lines {
 	var lines []Line
 
 	joined := strings.Join(s, "\n")
 
 	if joined == "" {
-		lines = []Line{NewLineString("")}
+		lines = []Line{NewLineStr("")}
 	} else {
 		scanner := bufio.NewScanner(strings.NewReader(joined))
 
 		for scanner.Scan() {
-			line := NewLineString(scanner.Text())
+			line := NewLineStr(scanner.Text())
 
 			lines = append(lines, line)
 		}
@@ -75,7 +75,7 @@ func NewLine(spans ...Span) Line {
 	}
 }
 
-func NewLineString(s string) Line {
+func NewLineStr(s string) Line {
 	lines := bufio.NewScanner(strings.NewReader(s))
 
 	var spans []Span

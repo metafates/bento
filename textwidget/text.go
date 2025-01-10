@@ -12,8 +12,8 @@ type Text struct {
 	Alignment bento.Alignment
 }
 
-func NewTextString(s string) Text {
-	lines := NewLinesString(s)
+func NewTextStr(s string) Text {
+	lines := NewLinesStr(s)
 
 	return NewText(lines...)
 }

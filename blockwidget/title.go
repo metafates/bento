@@ -24,8 +24,8 @@ func NewTitle(line textwidget.Line) Title {
 	}
 }
 
-func NewTitleString(title string) Title {
-	return NewTitle(textwidget.NewLineString(title))
+func NewTitleStr(title string) Title {
+	return NewTitle(textwidget.NewLineStr(title))
 }
 
 func (t Title) WithPosition(position TitlePosition) Title {

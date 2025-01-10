@@ -6,6 +6,16 @@ type Rect struct {
 	Width, Height int
 }
 
+func NewRect(width, height int) Rect {
+	return Rect{Width: width, Height: height}
+}
+
+func (r Rect) Positioned(x, y int) Rect {
+	r.X = x
+	r.Y = y
+	return r
+}
+
 func (r Rect) IsEmpty() bool {
 	return r.Width == 0 || r.Height == 0
 }
@@ -37,17 +47,17 @@ func (r Rect) Position() Position {
 	}
 }
 
-func (r Rect) Inner(margin Margin) Rect {
-	horizontal := margin.Right + margin.Left
-	vertical := margin.Top + margin.Bottom
+func (r Rect) Inner(padding Padding) Rect {
+	horizontal := padding.Right + padding.Left
+	vertical := padding.Top + padding.Bottom
 
 	if r.Width < horizontal || r.Height < vertical {
 		return Rect{}
 	}
 
 	return Rect{
-		X:      r.X + margin.Left,
-		Y:      r.Y + margin.Top,
+		X:      r.X + padding.Left,
+		Y:      r.Y + padding.Top,
 		Width:  max(0, r.Width-horizontal),
 		Height: max(0, r.Height-vertical),
 	}

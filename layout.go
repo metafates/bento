@@ -52,7 +52,7 @@ func (s Splitted) Unwrap4() (a, b, c, d Rect) {
 type Layout struct {
 	Direction   Direction
 	Constraints []Constraint
-	Margin      Margin
+	Padding     Padding
 	Flex        Flex
 	Spacing     Spacing
 }
@@ -61,7 +61,7 @@ func NewLayout(constraints ...Constraint) Layout {
 	return Layout{
 		Direction:   DirectionVertical,
 		Constraints: constraints,
-		Margin:      Margin{},
+		Padding:     NewPadding(),
 		Flex:        FlexLegacy,
 		Spacing:     SpacingSpace(0),
 	}
@@ -80,8 +80,8 @@ func (l Layout) WithDirection(direction Direction) Layout {
 	return l
 }
 
-func (l Layout) WithMargin(margin Margin) Layout {
-	l.Margin = margin
+func (l Layout) WithPadding(padding Padding) Layout {
+	l.Padding = padding
 	return l
 }
 
@@ -118,7 +118,7 @@ func (l Layout) Split(area Rect) Splitted {
 func (l Layout) split(area Rect) (segments []Rect, spacers []Rect, err error) {
 	solver := casso.NewSolver()
 
-	innerArea := area.Inner(l.Margin)
+	innerArea := area.Inner(l.Padding)
 
 	var areaStart, areaEnd float64
 
