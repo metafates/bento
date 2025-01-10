@@ -73,6 +73,10 @@ func NewStyle() Style {
 	}
 }
 
+func (s Style) Reversed() Style {
+	return s.WithModifier(ModifierReversed)
+}
+
 func (s Style) Italic() Style {
 	return s.WithModifier(ModifierItalic)
 }

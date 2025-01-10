@@ -5,6 +5,7 @@ import (
 
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/blockwidget"
+	"github.com/metafates/bento/internal/sliceutil"
 	"github.com/rivo/uniseg"
 )
 
@@ -105,7 +106,7 @@ func (l List) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State
 
 	selectionSpacing := l.highlightSpacing.shouldAdd(state.selected != nil)
 
-	for i, item := range take(skip(l.items, state.offset), lastVisibleIndex-firstVisibleIndex) {
+	for i, item := range sliceutil.Take(sliceutil.Skip(l.items, state.offset), lastVisibleIndex-firstVisibleIndex) {
 		i += state.offset
 
 		var x, y int
@@ -235,7 +236,7 @@ func (l List) getItemsBounds(selected *int, offset, maxHeight int) (int, int) {
 
 	// Calculate the last visible index and total height of the items
 	// that will fit in the available space
-	for _, item := range skip(l.items, offset) {
+	for _, item := range sliceutil.Skip(l.items, offset) {
 		if heightFromOffset+item.Height() > maxHeight {
 			break
 		}
@@ -336,18 +337,4 @@ func (l List) applyScrollPaddingToSelectedIndex(selected int, maxHeight, firstVi
 	}
 
 	return min(res, lastValidIndex)
-}
-
-func take[S ~[]T, T any](slice S, take int) S {
-	take = min(take, len(slice))
-
-	return slice[:take]
-}
-
-func skip[S ~[]T, T any](slice S, skip int) S {
-	if skip >= len(slice) {
-		return nil
-	}
-
-	return slice[skip:]
 }
