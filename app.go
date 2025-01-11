@@ -24,9 +24,10 @@ type Msg any
 type Cmd func() Msg
 
 type Model interface {
+	Widget
+
 	Init() Cmd
 	Update(msg Msg) (Model, Cmd)
-	Draw(frame *Frame)
 }
 
 type _Input interface {
@@ -190,7 +191,7 @@ func (a *appRunner) Run() (model Model, err error) {
 		}()
 	}
 
-	a.draw(model.Draw)
+	a.draw(model)
 
 	err = a.initCancelReader()
 	if err != nil {
@@ -213,7 +214,7 @@ func (a *appRunner) Run() (model Model, err error) {
 		return model, err
 	}
 
-	a.draw(model.Draw)
+	a.draw(model)
 
 	if err := a.shutdown(); err != nil {
 		return model, fmt.Errorf("shutdown: %w", err)
@@ -329,7 +330,7 @@ func (a *appRunner) eventLoop(model Model, cmds chan Cmd) (Model, error) {
 			var cmd Cmd
 			model, cmd = model.Update(msg) // run update
 			cmds <- cmd
-			a.draw(model.Draw)
+			a.draw(model)
 		}
 	}
 }
@@ -350,8 +351,8 @@ func (a *appRunner) shutdown() error {
 	return a.restore()
 }
 
-func (a *appRunner) draw(draw func(*Frame)) {
-	_, err := a.terminal.Draw(draw)
+func (a *appRunner) draw(widget Widget) {
+	_, err := a.terminal.Draw(widget)
 	if err != nil {
 		a.errs <- err
 	}

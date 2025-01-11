@@ -23,7 +23,7 @@ type Model struct {
 	itemsCount  int
 }
 
-func (m *Model) Draw(frame *bento.Frame) {
+func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 	var bottomTitle string
 	if m.currentItem != nil {
 		bottomTitle = strconv.Itoa(*m.currentItem+1) + " of "
@@ -53,7 +53,7 @@ func (m *Model) Draw(frame *bento.Frame) {
 		WithHighlightSpacing(listwidget.HighlightSpacingAlways).
 		WithBlock(block).WithHighlightStyle(bento.NewStyle().Black().OnBlue())
 
-	bento.RenderStatefulWidget(frame, list, frame.Area(), &m.listState)
+	list.RenderStateful(area, buffer, &m.listState)
 
 	if m.showPopup {
 		paragraph := paragraphwidget.NewParagraphStr("Hello, world!").Center()
@@ -66,7 +66,7 @@ func (m *Model) Draw(frame *bento.Frame) {
 			WithHeight(bento.ConstraintLength(3)).
 			WithWidth(bento.ConstraintLength(30))
 
-		frame.RenderWidget(popup, frame.Area())
+		popup.Render(area, buffer)
 	}
 }
 

@@ -68,6 +68,11 @@ func NewList(items ...Item) List {
 	}
 }
 
+func (l List) WithScrollPadding(padding int) List {
+	l.scrollPadding = padding
+	return l
+}
+
 // RenderStateful implements bento.StatefulWidget.
 func (l List) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State) {
 	buffer.SetStyle(area, l.style)
