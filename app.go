@@ -165,6 +165,8 @@ func (a *appRunner) Run() (model Model, err error) {
 		}
 	}()
 
+	defer a.recoverFromPanic()
+
 	err = a.init()
 	if err != nil {
 		return a.initialModel, fmt.Errorf("init: %w", err)

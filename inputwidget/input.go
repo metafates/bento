@@ -4,10 +4,12 @@ import (
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/blockwidget"
 	"github.com/metafates/bento/internal/grapheme"
+	"github.com/metafates/bento/internal/sliceutil"
 	"github.com/metafates/bento/textwidget"
+	"github.com/rivo/uniseg"
 )
 
-var _ bento.StatefulWidget[State] = (*Input)(nil)
+var _ bento.StatefulWidget[*State] = (*Input)(nil)
 
 type Input struct {
 	block            *blockwidget.Block
@@ -111,7 +113,7 @@ func (i Input) WithAlignment(alignment bento.Alignment) Input {
 	return i
 }
 
-func (i Input) RenderStateful(area bento.Rect, buffer *bento.Buffer, state State) {
+func (i Input) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State) {
 	buffer.SetStyle(area, i.style)
 
 	if i.block != nil {
@@ -126,7 +128,18 @@ func (i Input) RenderStateful(area bento.Rect, buffer *bento.Buffer, state State
 		Split(area).
 		Unwrap()
 
-	before, cursor, after := i.split(state)
+	inputWidth := area.Width - uniseg.StringWidth(i.prompt) - 1 // 1 for cursor
+	firstVisibleIndex, lastVisibleIndex := state.getBounds(inputWidth)
+
+	state.offset = firstVisibleIndex
+
+	tempState := State{
+		cursor:    state.cursor - state.offset,
+		graphemes: sliceutil.Take(sliceutil.Skip(state.graphemes, state.offset), lastVisibleIndex-firstVisibleIndex),
+		offset:    state.offset,
+	}
+
+	before, cursor, after := i.split(tempState)
 
 	if i.showCursor {
 		cursor = cursor.WithStylePatch(i.cursorStyle)

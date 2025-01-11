@@ -5,6 +5,7 @@ import (
 
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/internal/grapheme"
+	"github.com/metafates/bento/internal/sliceutil"
 	"github.com/rivo/uniseg"
 )
 
@@ -12,6 +13,8 @@ type State struct {
 	cursor int
 
 	graphemes grapheme.Graphemes
+
+	offset int
 }
 
 func NewState() State {
@@ -37,6 +40,7 @@ func (s *State) MoveCursorRight() {
 
 func (s *State) MoveCursorBegin() {
 	s.setCursor(0)
+	s.offset = 0
 }
 
 func (s *State) MoveCursorEnd() {
@@ -180,4 +184,65 @@ func (s *State) splitAtCursor() (before grapheme.Graphemes, under grapheme.Graph
 	}
 
 	return before, under, after
+}
+
+func (s *State) getBounds(maxWidth int) (int, int) {
+	if len(s.graphemes) == 0 {
+		return 0, 0
+	}
+
+	offset := min(s.offset, max(0, len(s.graphemes)-1))
+
+	firstVisibleIndex := offset
+	lastVisibleIndex := offset
+
+	var widthFromOffset int
+
+	for _, g := range sliceutil.Skip(s.graphemes, offset) {
+		if widthFromOffset+g.Width() > maxWidth {
+			break
+		}
+
+		widthFromOffset += g.Width()
+
+		lastVisibleIndex++
+	}
+
+	indexToDisplay := offset
+	if s.cursor != 0 {
+		indexToDisplay = min(s.cursor-1, lastVisibleIndex)
+	}
+
+	for indexToDisplay >= lastVisibleIndex {
+		widthFromOffset += s.graphemes[lastVisibleIndex].Width()
+
+		lastVisibleIndex++
+
+		for widthFromOffset > maxWidth {
+			widthFromOffset = max(0, widthFromOffset-s.graphemes[firstVisibleIndex].Width())
+
+			firstVisibleIndex++
+		}
+	}
+
+	for indexToDisplay < firstVisibleIndex {
+		firstVisibleIndex--
+
+		widthFromOffset += s.graphemes[firstVisibleIndex].Width()
+
+		for widthFromOffset > maxWidth {
+			lastVisibleIndex--
+
+			widthFromOffset = max(0, widthFromOffset-s.graphemes[lastVisibleIndex].Width())
+		}
+	}
+
+	if s.cursor-firstVisibleIndex >= lastVisibleIndex {
+		diff := s.cursor - lastVisibleIndex
+
+		firstVisibleIndex += diff
+		lastVisibleIndex += diff
+	}
+
+	return firstVisibleIndex, lastVisibleIndex
 }

@@ -26,7 +26,7 @@ func (m *Model) Draw(frame *bento.Frame) {
 
 	fill := fillwidget.New("⣿").WithStyle(bento.NewStyle().Dim())
 	frame.RenderWidget(fill, frame.Area())
-	bento.RenderStatefulWidget(frame, popup, frame.Area(), m.input)
+	bento.RenderStatefulWidget(frame, popup, frame.Area(), &m.input)
 }
 
 // Init implements bento.Model.
