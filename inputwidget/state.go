@@ -66,9 +66,25 @@ func (s *State) Append(content string) {
 }
 
 func (s *State) DeleteWordUnderCursor() {
-	// before, under, after := s.splitAtCursor()
+	before, under, after := s.splitAtCursor()
 
-	// current := under
+	current := under
+
+	for !current.IsEmpty() && current.IsWhitespace() {
+		s.MoveCursorLeft()
+
+		if len(before) == 0 {
+			current = grapheme.Grapheme{}
+			before = nil
+			break
+		}
+
+		current = before[len(before)-1]
+		before = before[:len(before)-1]
+	}
+
+	s.graphemes = append(before, current)
+	s.graphemes = append(s.graphemes, after...)
 }
 
 func (s *State) DeleteUnderCursor() {
@@ -99,6 +115,9 @@ func (s *State) HandleKey(key bento.Key) {
 	case bento.KeyCtrlE:
 		s.MoveCursorEnd()
 
+	case bento.KeyCtrlW:
+		s.DeleteWordUnderCursor()
+
 	case bento.KeyRunes, bento.KeySpace:
 		s.Append(string(key.Runes))
 	}
@@ -117,10 +136,11 @@ func (s *State) splitAtCursor() (before _Graphemes, under grapheme.Grapheme, aft
 	}
 
 	before = sliceutil.Take(s.graphemes, s.Cursor-1)
-	under = s.graphemes[s.Cursor-1]
-	after = sliceutil.Skip(s.graphemes, s.Cursor)
 
-	// panic(fmt.Sprintf("%s %s %s", before, under, after))
+	if len(s.graphemes) > s.Cursor-1 {
+		under = s.graphemes[s.Cursor-1]
+		after = sliceutil.Skip(s.graphemes, s.Cursor)
+	}
 
 	return before, under, after
 }

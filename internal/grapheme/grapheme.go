@@ -26,6 +26,10 @@ func (g Grapheme) Width() int {
 	return g.width
 }
 
+func (g Grapheme) IsEmpty() bool {
+	return g.symbol == ""
+}
+
 func (g Grapheme) IsWhitespace() bool {
 	symbol := g.symbol
 
