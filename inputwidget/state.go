@@ -60,6 +60,11 @@ func (s *State) DeleteLine() {
 func (s *State) DeleteWordUnderCursor() {
 	current := s.underCursor()
 
+	// exit early
+	if current.IsEmpty() {
+		return
+	}
+
 	if current.IsWhitespace() {
 		s.deleteWhile(func(g grapheme.Grapheme) bool { return g.IsWhitespace() })
 	}
