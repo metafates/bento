@@ -19,6 +19,7 @@ type Input struct {
 	vertical         bento.Flex
 	prompt           string
 	promptStyle      bento.Style
+	showCursor       bool
 }
 
 func NewInput() Input {
@@ -32,6 +33,7 @@ func NewInput() Input {
 		vertical:         bento.FlexLegacy,
 		prompt:           "",
 		promptStyle:      bento.NewStyle(),
+		showCursor:       true,
 	}
 }
 
@@ -42,6 +44,16 @@ func (i Input) WithPrompt(prompt string) Input {
 
 func (i Input) WithPromptStyle(style bento.Style) Input {
 	i.promptStyle = style
+	return i
+}
+
+func (i Input) Focused() Input {
+	i.showCursor = true
+	return i
+}
+
+func (i Input) Blurred() Input {
+	i.showCursor = false
 	return i
 }
 
@@ -115,8 +127,13 @@ func (i Input) RenderStateful(area bento.Rect, buffer *bento.Buffer, state State
 		Unwrap()
 
 	before, cursor, after := i.split(state)
-	if cursor.Content == "" {
-		cursor.Content = " "
+
+	if i.showCursor {
+		cursor = cursor.WithStylePatch(i.cursorStyle)
+
+		if cursor.Content == "" {
+			cursor.Content = " "
+		}
 	}
 
 	var prompt textwidget.Span
@@ -128,7 +145,7 @@ func (i Input) RenderStateful(area bento.Rect, buffer *bento.Buffer, state State
 	line := textwidget.NewLine(
 		prompt,
 		before,
-		cursor.WithStylePatch(i.cursorStyle),
+		cursor,
 		after,
 	).WithAlignment(i.alignment)
 
