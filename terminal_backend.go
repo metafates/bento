@@ -19,7 +19,7 @@ type TerminalBackend interface {
 	ShowCursor() error
 	GetCursorPosition() (Position, error)
 	SetCursorPosition(position Position) error
-	GetSize() (Size, error)
+	GetSize() (Size, bool, error)
 	Flush() error
 
 	ClearAll() error
@@ -49,7 +49,7 @@ type DefaultBackend struct {
 	output       io.Writer
 	outputBuf    *bufio.Writer
 
-	termState ansi.State
+	prevInputState, prevOutputState ansi.State
 }
 
 func NewDefaultBackend(input io.Reader, output io.Writer) DefaultBackend {
@@ -82,55 +82,26 @@ func (d *DefaultBackend) Read(p []byte) (n int, err error) {
 	return d.input.Read(p)
 }
 
-func (d *DefaultBackend) EnableRawMode() error {
-	if d.isRawMode() {
-		return nil
-	}
-
-	fd, ok := d.inputFd()
-	if !ok {
-		return nil
-	}
-
-	if !term.IsTerminal(fd) {
-		return nil
-	}
-
-	state, err := ansi.EnableRawMode(fd)
-	if err != nil {
-		return fmt.Errorf("enable raw mode: %w", err)
-	}
-
-	d.termState = state
-
-	return nil
-}
-
 func (d *DefaultBackend) DisableRawMode() error {
-	if !d.isRawMode() {
-		return nil
+	if d.input != nil && d.prevInputState != nil {
+		fd, ok := d.inputFd()
+		if ok {
+			if err := term.Restore(fd, d.prevInputState); err != nil {
+				return fmt.Errorf("restore input: %w", err)
+			}
+		}
 	}
 
-	fd, ok := d.inputFd()
-	if !ok {
-		return nil
+	if d.output != nil && d.prevOutputState != nil {
+		fd, ok := d.outputFd()
+		if ok {
+			if err := term.Restore(fd, d.prevOutputState); err != nil {
+				return fmt.Errorf("restore output: %w", err)
+			}
+		}
 	}
-
-	if !term.IsTerminal(fd) {
-		return nil
-	}
-
-	if err := ansi.Restore(fd, d.termState); err != nil {
-		return fmt.Errorf("restore: %w", err)
-	}
-
-	d.termState = nil
 
 	return nil
-}
-
-func (d *DefaultBackend) isRawMode() bool {
-	return d.termState != nil
 }
 
 // ClearAfterCursor implements TerminalBackend.
@@ -247,23 +218,23 @@ func (d *DefaultBackend) GetCursorPosition() (Position, error) {
 }
 
 // GetSize implements TerminalBackend.
-func (d *DefaultBackend) GetSize() (Size, error) {
+func (d *DefaultBackend) GetSize() (Size, bool, error) {
 	file, ok := d.output.(term.File)
 	if !ok {
-		return Size{}, nil
+		return Size{}, false, nil
 	}
 
 	fd := file.Fd()
 
 	width, height, err := ansi.GetSize(fd)
 	if err != nil {
-		return Size{}, fmt.Errorf("get size: %w", err)
+		return Size{}, false, fmt.Errorf("get size: %w", err)
 	}
 
 	return Size{
 		Width:  width,
 		Height: height,
-	}, nil
+	}, true, nil
 }
 
 // HideCursor implements TerminalBackend.

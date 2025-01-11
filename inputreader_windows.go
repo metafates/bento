@@ -22,7 +22,7 @@ type conInputReader struct {
 	originalMode uint32
 }
 
-var _ cancelreader.CancelReader = &conInputReader{}
+var _ cancelreader.CancelReader = (*conInputReader)(nil)
 
 func newInputReader(r io.Reader) (cancelreader.CancelReader, error) {
 	fallback := func(io.Reader) (cancelreader.CancelReader, error) {

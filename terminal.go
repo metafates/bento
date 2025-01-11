@@ -34,7 +34,7 @@ func NewTerminal(backend TerminalBackend, viewport Viewport) (*Terminal, error) 
 
 	switch v := viewport.(type) {
 	case ViewportFullscreen, ViewportInline:
-		size, err := backend.GetSize()
+		size, _, err := backend.GetSize()
 		if err != nil {
 			return nil, fmt.Errorf("get size: %w", err)
 		}
@@ -226,26 +226,6 @@ func (t *Terminal) PreviousBuffer() *Buffer {
 	return &t.buffers[1-t.current]
 }
 
-func (t *Terminal) Autoresize() error {
-	switch t.viewport.(type) {
-	case ViewportFullscreen, ViewportInline:
-		size, err := t.Size()
-		if err != nil {
-			return fmt.Errorf("size: %w", err)
-		}
-
-		area := Rect{Width: size.Width, Height: size.Height}
-
-		if area != t.lastKnownArea {
-			t.Resize(area)
-		}
-
-		return nil
-	default:
-		return nil
-	}
-}
-
 func (t *Terminal) Resize(area Rect) error {
 	var nextArea Rect
 
@@ -305,7 +285,7 @@ func (t *Terminal) SwapBuffers() {
 	t.current = 1 - t.current
 }
 
-func (t *Terminal) Size() (Size, error) {
+func (t *Terminal) Size() (Size, bool, error) {
 	return t.backend.GetSize()
 }
 

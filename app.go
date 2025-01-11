@@ -52,7 +52,7 @@ func (_InputDefault) getInput() (io.Reader, func() error, error) {
 		return input, nil, nil
 	}
 
-	tty, err := openInputTTY()
+	tty, err := openTTY()
 	if err != nil {
 		return nil, nil, fmt.Errorf("open tty: %w", err)
 	}
@@ -64,7 +64,7 @@ type _InputTTY struct{}
 
 func (_InputTTY) getInput() (io.Reader, func() error, error) {
 	// Open a new TTY, by request
-	f, err := openInputTTY()
+	f, err := openTTY()
 	if err != nil {
 		return nil, nil, fmt.Errorf("open tty: %w", err)
 	}
@@ -154,9 +154,6 @@ type appRunner struct {
 	msgs     chan Msg
 	errs     chan error
 	finished chan struct{}
-
-	ttyOutput, ttyInput                     term.File
-	previousOutputState, previousInputState *term.State
 
 	closeInput func() error
 }
@@ -371,7 +368,9 @@ func (a *appRunner) init() error {
 }
 
 func (a *appRunner) restore() error {
-	a.restoreTerminalState()
+	if err := a.restoreTerminal(); err != nil {
+		return fmt.Errorf("restore terminal: %w", err)
+	}
 
 	if err := a.terminal.LeaveAlternateScreen(); err != nil {
 		return fmt.Errorf("leave alt screen buffer: %w", err)
