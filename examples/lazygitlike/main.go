@@ -61,8 +61,7 @@ type Model struct {
 	activePanel Panel
 }
 
-// Draw implements bento.Model.
-func (m *Model) Draw(frame *bento.Frame) {
+func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 	var primaryArea, footnoteArea bento.Rect
 
 	bento.
@@ -72,14 +71,14 @@ func (m *Model) Draw(frame *bento.Frame) {
 			bento.ConstraintFill(1),
 			bento.ConstraintLength(1),
 		).
-		Split(frame.Area()).
+		Split(area).
 		Assign(&primaryArea, &footnoteArea)
 
-	m.drawPrimary(frame, primaryArea)
-	m.drawFootnote(frame, footnoteArea)
+	m.drawPrimary(primaryArea, buffer)
+	m.drawFootnote(footnoteArea, buffer)
 }
 
-func (m *Model) drawFootnote(frame *bento.Frame, area bento.Rect) {
+func (m *Model) drawFootnote(area bento.Rect, buffer *bento.Buffer) {
 	left := textwidget.NewLine(
 		textwidget.NewSpan("Quit: q / ctrl+c").WithStyle(bento.NewStyle().Blue()),
 	).Left()
@@ -92,11 +91,11 @@ func (m *Model) drawFootnote(frame *bento.Frame, area bento.Rect) {
 		textwidget.NewSpan("0.0.1"),
 	).Right()
 
-	frame.RenderWidget(left, area)
-	frame.RenderWidget(right, area)
+	left.Render(area, buffer)
+	right.Render(area, buffer)
 }
 
-func (m *Model) drawPrimary(frame *bento.Frame, area bento.Rect) {
+func (m *Model) drawPrimary(area bento.Rect, buffer *bento.Buffer) {
 	var sidebarArea, rightArea bento.Rect
 
 	bento.
@@ -109,8 +108,8 @@ func (m *Model) drawPrimary(frame *bento.Frame, area bento.Rect) {
 		Split(area).
 		Assign(&sidebarArea, &rightArea)
 
-	m.drawSidebar(frame, sidebarArea)
-	m.drawRight(frame, rightArea)
+	m.drawSidebar(sidebarArea, buffer)
+	m.drawRight(rightArea, buffer)
 }
 
 const (
@@ -184,7 +183,7 @@ func (m *Model) stashConstraint() bento.Constraint {
 	return bento.ConstraintLength(1)
 }
 
-func (m *Model) drawSidebar(frame *bento.Frame, area bento.Rect) {
+func (m *Model) drawSidebar(area bento.Rect, buffer *bento.Buffer) {
 	var statusArea,
 		filesArea,
 		branchesArea,
@@ -210,49 +209,49 @@ func (m *Model) drawSidebar(frame *bento.Frame, area bento.Rect) {
 			&stashArea,
 		)
 
-	m.drawStatus(frame, statusArea)
-	m.drawFiles(frame, filesArea)
-	m.drawBranches(frame, branchesArea)
-	m.drawCommits(frame, commitsArea)
-	m.drawStash(frame, stashArea)
+	m.drawStatus(statusArea, buffer)
+	m.drawFiles(filesArea, buffer)
+	m.drawBranches(branchesArea, buffer)
+	m.drawCommits(commitsArea, buffer)
+	m.drawStash(stashArea, buffer)
 }
 
-func (m *Model) drawStatus(frame *bento.Frame, area bento.Rect) {
+func (m *Model) drawStatus(area bento.Rect, buffer *bento.Buffer) {
 	block := m.newBlock(PanelStatus, "")
 
 	innerArea := block.Inner(area)
 
 	status := textwidget.NewLineStr(fmt.Sprintf("%dx%d", m.size.Width, m.size.Height))
 
-	frame.RenderWidget(block, area)
-	frame.RenderWidget(status, innerArea)
+	block.Render(area, buffer)
+	status.Render(innerArea, buffer)
 }
 
-func (m *Model) drawFiles(frame *bento.Frame, area bento.Rect) {
+func (m *Model) drawFiles(area bento.Rect, buffer *bento.Buffer) {
 	block := m.newBlock(PanelFiles, "1 of 10")
 
-	frame.RenderWidget(block, area)
+	block.Render(area, buffer)
 }
 
-func (m *Model) drawBranches(frame *bento.Frame, area bento.Rect) {
+func (m *Model) drawBranches(area bento.Rect, buffer *bento.Buffer) {
 	block := m.newBlock(PanelBranches, "1 of 2")
 
-	frame.RenderWidget(block, area)
+	block.Render(area, buffer)
 }
 
-func (m *Model) drawCommits(frame *bento.Frame, area bento.Rect) {
+func (m *Model) drawCommits(area bento.Rect, buffer *bento.Buffer) {
 	block := m.newBlock(PanelCommits, "1 of 42")
 
-	frame.RenderWidget(block, area)
+	block.Render(area, buffer)
 }
 
-func (m *Model) drawStash(frame *bento.Frame, area bento.Rect) {
+func (m *Model) drawStash(area bento.Rect, buffer *bento.Buffer) {
 	block := m.newBlock(PanelStash, "1 of 1")
 
-	frame.RenderWidget(block, area)
+	block.Render(area, buffer)
 }
 
-func (m *Model) drawRight(frame *bento.Frame, area bento.Rect) {
+func (m *Model) drawRight(area bento.Rect, buffer *bento.Buffer) {
 	var infoArea, commandLogArea bento.Rect
 
 	bento.
@@ -265,8 +264,8 @@ func (m *Model) drawRight(frame *bento.Frame, area bento.Rect) {
 		Split(area).
 		Assign(&infoArea, &commandLogArea)
 
-	m.renderInfoArea(frame, infoArea)
-	m.renderCommandLog(frame, commandLogArea)
+	m.renderInfoArea(infoArea, buffer)
+	m.renderCommandLog(commandLogArea, buffer)
 }
 
 func (m *Model) commandLogHeight() int {
@@ -277,16 +276,16 @@ func (m *Model) commandLogHeight() int {
 	return 10
 }
 
-func (m *Model) renderInfoArea(frame *bento.Frame, area bento.Rect) {
+func (m *Model) renderInfoArea(area bento.Rect, buffer *bento.Buffer) {
 	block := m.newBlock(PanelInfo, "")
 
-	frame.RenderWidget(block, area)
+	block.Render(area, buffer)
 }
 
-func (m *Model) renderCommandLog(frame *bento.Frame, area bento.Rect) {
+func (m *Model) renderCommandLog(area bento.Rect, buffer *bento.Buffer) {
 	block := m.newBlock(PanelCommandLog, "")
 
-	frame.RenderWidget(block, area)
+	block.Render(area, buffer)
 }
 
 func (m *Model) newBlock(panel Panel, footer string) blockwidget.Block {

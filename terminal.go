@@ -117,14 +117,14 @@ func (t *Terminal) DisableRawMode() error {
 	return t.backend.DisableRawMode()
 }
 
-func (t *Terminal) Draw(draw func(frame *Frame)) (CompletedFrame, error) {
+func (t *Terminal) Draw(widget Widget) (CompletedFrame, error) {
 	// if err := t.Autoresize(); err != nil {
 	// 	return CompletedFrame{}, fmt.Errorf("autoresize: %w", err)
 	// }
 
 	frame := t.GetFrame()
 
-	draw(&frame)
+	frame.RenderWidget(widget, frame.Area())
 
 	if err := t.Flush(); err != nil {
 		return CompletedFrame{}, fmt.Errorf("flush: %w", err)

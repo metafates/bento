@@ -17,16 +17,16 @@ type Model struct {
 	input inputwidget.State
 }
 
-// Draw implements bento.Model.
-func (m *Model) Draw(frame *bento.Frame) {
+func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 	block := blockwidget.NewBlock().Bordered().Thick().WithTitleStr("Input")
 	input := inputwidget.NewInput().WithPlaceholder("Placeholder...").WithPrompt("> ")
 
 	popup := popupwidget.NewStateful(input).WithBlock(block).WithHeight(bento.ConstraintLength(3))
 
 	fill := fillwidget.New("⣿").WithStyle(bento.NewStyle().Dim())
-	frame.RenderWidget(fill, frame.Area())
-	bento.RenderStatefulWidget(frame, popup, frame.Area(), &m.input)
+
+	fill.Render(area, buffer)
+	popup.RenderStateful(area, buffer, &m.input)
 }
 
 // Init implements bento.Model.
