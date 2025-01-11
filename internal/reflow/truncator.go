@@ -2,6 +2,7 @@ package reflow
 
 import (
 	"github.com/metafates/bento"
+	"github.com/metafates/bento/internal/grapheme"
 	"github.com/metafates/bento/textwidget"
 	"github.com/rivo/uniseg"
 )
@@ -50,36 +51,34 @@ func (lt *LineTruncator) NextLine() (WrappedLine, bool) {
 		alignment := line.Alignment
 		linesExhausted = false
 
-		for _, grapheme := range currentLine {
-			if grapheme.Width > lt.maxLineWidth {
+		for _, g := range currentLine {
+			if g.Width() > lt.maxLineWidth {
 				continue
 			}
 
-			if currentLineWidth+grapheme.Width > lt.maxLineWidth {
+			if currentLineWidth+g.Width() > lt.maxLineWidth {
 				break
 			}
 
 			var symbol string
 
 			if horizontalOffset == 0 || alignment != bento.AlignmentLeft {
-				symbol = grapheme.Symbol
+				symbol = g.String()
 			} else {
-				width := grapheme.Width
+				width := g.Width()
 
 				if width > horizontalOffset {
-					symbol = trimOffset(grapheme.Symbol, horizontalOffset)
+					symbol = trimOffset(g.String(), horizontalOffset)
 					horizontalOffset = 0
 				} else {
 					horizontalOffset -= width
 				}
 			}
 
-			symbolWidth := uniseg.StringWidth(symbol)
-			currentLineWidth += symbolWidth
+			currentLineWidth += uniseg.StringWidth(symbol)
 			lt.currentLine = append(lt.currentLine, textwidget.StyledGrapheme{
-				Style:  grapheme.Style,
-				Symbol: symbol,
-				Width:  symbolWidth,
+				Style:    g.Style,
+				Grapheme: grapheme.New(symbol),
 			})
 		}
 	}

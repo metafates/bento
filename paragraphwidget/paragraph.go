@@ -121,13 +121,13 @@ func (p Paragraph) renderText(composer reflow.LineComposer, area bento.Rect, buf
 			x := getLineOffset(currentLine.Width, area.Width, currentLine.Alignment)
 
 			for _, grapheme := range currentLine.Line {
-				width := grapheme.Width
+				width := grapheme.Width()
 
 				if width == 0 {
 					continue
 				}
 
-				symbol := grapheme.Symbol
+				symbol := grapheme.String()
 				if len(symbol) == 0 {
 					symbol = " "
 				}

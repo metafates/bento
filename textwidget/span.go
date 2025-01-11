@@ -4,6 +4,7 @@ import (
 	"unicode"
 
 	"github.com/metafates/bento"
+	"github.com/metafates/bento/internal/grapheme"
 	"github.com/rivo/uniseg"
 )
 
@@ -40,7 +41,7 @@ func (s Span) Render(area bento.Rect, buffer *bento.Buffer) {
 	x, y := area.X, area.Y
 
 	for i, grapheme := range s.StyledGraphemes(bento.NewStyle()) {
-		symbolWidth := grapheme.Width
+		symbolWidth := grapheme.Width()
 
 		nextX := x + symbolWidth
 		if nextX > area.Right() {
@@ -50,17 +51,17 @@ func (s Span) Render(area bento.Rect, buffer *bento.Buffer) {
 		switch {
 		case i == 0:
 			// the first grapheme is always set on the cell
-			buffer.CellAt(bento.Position{X: x, Y: y}).SetSymbol(grapheme.Symbol).SetStyle(grapheme.Style)
+			buffer.CellAt(bento.Position{X: x, Y: y}).SetSymbol(grapheme.String()).SetStyle(grapheme.Style)
 		case x == area.X:
 			// there is one or more zero-width graphemes in the first cell, so the first cell
 			// must be appended to.
-			buffer.CellAt(bento.Position{X: x, Y: y}).AppendSymbol(grapheme.Symbol).SetStyle(grapheme.Style)
+			buffer.CellAt(bento.Position{X: x, Y: y}).AppendSymbol(grapheme.String()).SetStyle(grapheme.Style)
 		case symbolWidth == 0:
 			// append zero-width graphemes to the previous cell
-			buffer.CellAt(bento.Position{X: x - 1, Y: y}).AppendSymbol(grapheme.Symbol).SetStyle(grapheme.Style)
+			buffer.CellAt(bento.Position{X: x - 1, Y: y}).AppendSymbol(grapheme.String()).SetStyle(grapheme.Style)
 		default:
 			// just a normal grapheme (not first, not zero-width, not overflowing the area)
-			buffer.CellAt(bento.Position{X: x, Y: y}).SetSymbol(grapheme.Symbol).SetStyle(grapheme.Style)
+			buffer.CellAt(bento.Position{X: x, Y: y}).SetSymbol(grapheme.String()).SetStyle(grapheme.Style)
 		}
 
 		for xHidden := x + 1; xHidden < nextX; xHidden++ {
@@ -87,9 +88,8 @@ graphemes:
 		}
 
 		result = append(result, StyledGrapheme{
-			Style:  style,
-			Symbol: graphemes.Str(),
-			Width:  graphemes.Width(),
+			Style:    style,
+			Grapheme: grapheme.New(graphemes.Str()),
 		})
 	}
 
@@ -188,28 +188,7 @@ func unicodeTruncateStart(s string, maxWidth int) (string, int) {
 }
 
 type StyledGrapheme struct {
-	Style  bento.Style
-	Symbol string
-	Width  int
-}
+	grapheme.Grapheme
 
-func (s StyledGrapheme) IsWhitespace() bool {
-	symbol := s.Symbol
-
-	const (
-		zwsp = "\u200b"
-		nbsp = "\u00a0"
-	)
-
-	if symbol == zwsp {
-		return true
-	}
-
-	for _, r := range symbol {
-		if !unicode.IsSpace(r) {
-			return false
-		}
-	}
-
-	return symbol != nbsp
+	Style bento.Style
 }

@@ -56,9 +56,9 @@ func (ww *WordWrapper) processInput(lineSymbols []textwidget.StyledGrapheme) {
 	ww.pendingWhitespace.Clear()
 	clear(pendingLine)
 
-	for _, grapheme := range lineSymbols {
-		isWhitespace := grapheme.IsWhitespace()
-		symbolWidth := grapheme.Width
+	for _, g := range lineSymbols {
+		isWhitespace := g.IsWhitespace()
+		symbolWidth := g.Width()
 
 		if symbolWidth > ww.maxLineWidth {
 			continue
@@ -104,7 +104,7 @@ func (ww *WordWrapper) processInput(lineSymbols []textwidget.StyledGrapheme) {
 					break
 				}
 
-				width := grapheme.Width
+				width := grapheme.Width()
 
 				if width > remainingWidth {
 					break
@@ -123,10 +123,10 @@ func (ww *WordWrapper) processInput(lineSymbols []textwidget.StyledGrapheme) {
 
 		if isWhitespace {
 			whitespaceWidth += symbolWidth
-			ww.pendingWhitespace.PushBack(grapheme)
+			ww.pendingWhitespace.PushBack(g)
 		} else {
 			wordWidth += symbolWidth
-			ww.pendingWord = append(ww.pendingWord, grapheme)
+			ww.pendingWord = append(ww.pendingWord, g)
 		}
 
 		nonWhitespacePrevious = !isWhitespace
@@ -176,7 +176,7 @@ func (ww *WordWrapper) NextLine() (WrappedLine, bool) {
 			var lineWidth int
 
 			for _, g := range line {
-				lineWidth += g.Width
+				lineWidth += g.Width()
 			}
 
 			ww.replaceCurrentLine(line)

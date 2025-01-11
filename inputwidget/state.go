@@ -5,14 +5,25 @@ import (
 	"strings"
 
 	"github.com/metafates/bento"
+	"github.com/metafates/bento/internal/grapheme"
 	"github.com/metafates/bento/internal/sliceutil"
 	"github.com/rivo/uniseg"
 )
 
-type _Graphemes []string
+type _Graphemes []grapheme.Grapheme
 
 func (g _Graphemes) String() string {
-	return strings.Join(g, "")
+	var b strings.Builder
+
+	for _, gr := range g {
+		b.Grow(len(gr.String()))
+	}
+
+	for _, gr := range g {
+		b.WriteString(gr.String())
+	}
+
+	return b.String()
 }
 
 type State struct {
@@ -42,16 +53,22 @@ func (s *State) MoveCursorBegin() {
 }
 
 func (s *State) MoveCursorEnd() {
-	s.Cursor = len(s.graphemes) + 1
+	s.Cursor = len(s.graphemes)
 }
 
 func (s *State) Append(content string) {
 	graphemes := uniseg.NewGraphemes(content)
 
 	for graphemes.Next() {
-		s.graphemes = slices.Insert(s.graphemes, s.Cursor, graphemes.Str())
+		s.graphemes = slices.Insert(s.graphemes, s.Cursor, grapheme.New(graphemes.Str()))
 		s.MoveCursorRight()
 	}
+}
+
+func (s *State) DeleteWordUnderCursor() {
+	// before, under, after := s.splitAtCursor()
+
+	// current := under
 }
 
 func (s *State) DeleteUnderCursor() {
@@ -94,9 +111,9 @@ func (s *State) clampCursor(cursor int) int {
 	return cursor
 }
 
-func (s *State) splitAtCursor() (before _Graphemes, under string, after _Graphemes) {
+func (s *State) splitAtCursor() (before _Graphemes, under grapheme.Grapheme, after _Graphemes) {
 	if len(s.graphemes) == 0 || s.Cursor == 0 {
-		return nil, "", s.graphemes
+		return nil, grapheme.Grapheme{}, s.graphemes
 	}
 
 	before = sliceutil.Take(s.graphemes, s.Cursor-1)

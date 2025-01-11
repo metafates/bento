@@ -14,6 +14,7 @@ type Input struct {
 	alignment        bento.Alignment
 	placeholder      string
 	placeholderStyle bento.Style
+	cursorStyle      bento.Style
 }
 
 func NewInput() Input {
@@ -23,6 +24,7 @@ func NewInput() Input {
 		alignment:        bento.AlignmentLeft,
 		placeholder:      "",
 		placeholderStyle: bento.NewStyle(),
+		cursorStyle:      bento.NewStyle().Reversed(),
 	}
 }
 
@@ -39,13 +41,13 @@ func (i Input) RenderStateful(area bento.Rect, buffer *bento.Buffer, state State
 
 	cursor := " "
 	if len(after) > 0 {
-		cursor = after[0]
+		cursor = after[0].String()
 		after = after[1:]
 	}
 
 	line := textwidget.NewLine(
 		textwidget.NewSpan(before.String()),
-		textwidget.NewSpan(cursor).WithStyle(bento.NewStyle().Reversed()),
+		textwidget.NewSpan(cursor).WithStyle(i.cursorStyle),
 		textwidget.NewSpan(after.String()),
 	)
 
