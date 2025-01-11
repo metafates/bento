@@ -22,9 +22,6 @@ type MouseEvent struct {
 	Ctrl   bool
 	Action MouseAction
 	Button MouseButton
-
-	// Deprecated: Use MouseAction & MouseButton instead.
-	Type MouseEventType
 }
 
 // IsWheel returns true if the mouse event is a wheel event.
@@ -133,29 +130,6 @@ var mouseButtons = map[MouseButton]string{
 	MouseButton11:         "button 11",
 }
 
-// MouseEventType indicates the type of mouse event occurring.
-//
-// Deprecated: Use MouseAction & MouseButton instead.
-type MouseEventType int
-
-// Mouse event types.
-//
-// Deprecated: Use MouseAction & MouseButton instead.
-const (
-	MouseUnknown MouseEventType = iota
-	MouseLeft
-	MouseRight
-	MouseMiddle
-	MouseRelease // mouse button release (X10 only)
-	MouseWheelUp
-	MouseWheelDown
-	MouseWheelLeft
-	MouseWheelRight
-	MouseBackward
-	MouseForward
-	MouseMotion
-)
-
 // Parse SGR-encoded mouse events; SGR extended mouse events. SGR mouse events
 // look like:
 //
@@ -187,7 +161,6 @@ func parseSGRMouseEvent(buf []byte) MouseEvent {
 	// Motion can be reported as a release event in some terminals (Windows Terminal)
 	if m.Action != MouseActionMotion && !m.IsWheel() && release {
 		m.Action = MouseActionRelease
-		m.Type = MouseRelease
 	}
 
 	x, _ := strconv.Atoi(px)
@@ -263,46 +236,6 @@ func parseMouseButton(b int, isSGR bool) MouseEvent {
 	m.Alt = e&bitAlt != 0
 	m.Ctrl = e&bitCtrl != 0
 	m.Shift = e&bitShift != 0
-
-	// backward compatibility
-	switch {
-	case m.Button == MouseButtonLeft && m.Action == MouseActionPress:
-		m.Type = MouseLeft
-	case m.Button == MouseButtonMiddle && m.Action == MouseActionPress:
-		m.Type = MouseMiddle
-	case m.Button == MouseButtonRight && m.Action == MouseActionPress:
-		m.Type = MouseRight
-	case m.Button == MouseButtonNone && m.Action == MouseActionRelease:
-		m.Type = MouseRelease
-	case m.Button == MouseButtonWheelUp && m.Action == MouseActionPress:
-		m.Type = MouseWheelUp
-	case m.Button == MouseButtonWheelDown && m.Action == MouseActionPress:
-		m.Type = MouseWheelDown
-	case m.Button == MouseButtonWheelLeft && m.Action == MouseActionPress:
-		m.Type = MouseWheelLeft
-	case m.Button == MouseButtonWheelRight && m.Action == MouseActionPress:
-		m.Type = MouseWheelRight
-	case m.Button == MouseButtonBackward && m.Action == MouseActionPress:
-		m.Type = MouseBackward
-	case m.Button == MouseButtonForward && m.Action == MouseActionPress:
-		m.Type = MouseForward
-	case m.Action == MouseActionMotion:
-		m.Type = MouseMotion
-		switch m.Button { //nolint:exhaustive
-		case MouseButtonLeft:
-			m.Type = MouseLeft
-		case MouseButtonMiddle:
-			m.Type = MouseMiddle
-		case MouseButtonRight:
-			m.Type = MouseRight
-		case MouseButtonBackward:
-			m.Type = MouseBackward
-		case MouseButtonForward:
-			m.Type = MouseForward
-		}
-	default:
-		m.Type = MouseUnknown
-	}
 
 	return m
 }

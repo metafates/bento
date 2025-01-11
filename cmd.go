@@ -18,7 +18,7 @@ type (
 	sequenceMsg []Cmd
 )
 
-// Quit is a special command that tells the Bubble Tea program to exit.
+// Quit is a special command that tells the Bento app to exit.
 func Quit() Msg {
 	return QuitMsg{}
 }

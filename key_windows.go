@@ -64,9 +64,7 @@ func readConInputs(ctx context.Context, msgsch chan<- Msg, con windows.Handle) e
 				}
 			case coninput.MouseEventRecord:
 				event := mouseEvent(ps, e)
-				if event.Type != MouseUnknown {
-					msgs = append(msgs, event)
-				}
+				msgs = append(msgs, event)
 				ps = e.ButtonState
 			case coninput.FocusEventRecord, coninput.MenuEventRecord:
 				// ignore
@@ -140,41 +138,21 @@ func mouseEvent(p coninput.ButtonState, e coninput.MouseEventRecord) MouseMsg {
 	switch e.EventFlags {
 	case coninput.CLICK, coninput.DOUBLE_CLICK:
 		ev.Button, ev.Action = mouseEventButton(p, e.ButtonState)
-		if ev.Action == MouseActionRelease {
-			ev.Type = MouseRelease
-		}
-		switch ev.Button {
-		case MouseButtonLeft:
-			ev.Type = MouseLeft
-		case MouseButtonMiddle:
-			ev.Type = MouseMiddle
-		case MouseButtonRight:
-			ev.Type = MouseRight
-		case MouseButtonBackward:
-			ev.Type = MouseBackward
-		case MouseButtonForward:
-			ev.Type = MouseForward
-		}
 	case coninput.MOUSE_WHEELED:
 		if e.WheelDirection > 0 {
 			ev.Button = MouseButtonWheelUp
-			ev.Type = MouseWheelUp
 		} else {
 			ev.Button = MouseButtonWheelDown
-			ev.Type = MouseWheelDown
 		}
 	case coninput.MOUSE_HWHEELED:
 		if e.WheelDirection > 0 {
 			ev.Button = MouseButtonWheelRight
-			ev.Type = MouseWheelRight
 		} else {
 			ev.Button = MouseButtonWheelLeft
-			ev.Type = MouseWheelLeft
 		}
 	case coninput.MOUSE_MOVED:
 		ev.Button, _ = mouseEventButton(p, e.ButtonState)
 		ev.Action = MouseActionMotion
-		ev.Type = MouseMotion
 	}
 
 	return ev
