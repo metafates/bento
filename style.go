@@ -1,6 +1,8 @@
 package bento
 
 import (
+	"fmt"
+
 	"github.com/metafates/bento/internal/bit"
 	"github.com/muesli/termenv"
 )
@@ -91,6 +93,14 @@ func (s Style) Underlined() Style {
 
 func (s Style) Dim() Style {
 	return s.WithModifier(ModifierDim)
+}
+
+func (s Style) RGB(r, g, b uint8) Style {
+	return s.WithForeground(termenv.RGBColor(fmt.Sprintf("#%02x%02x%02x", r, g, b)))
+}
+
+func (s Style) OnRGB(r, g, b uint8) Style {
+	return s.WithBackground(termenv.RGBColor(fmt.Sprintf("#%02x%02x%02x", r, g, b)))
 }
 
 func (s Style) Black() Style {
