@@ -85,11 +85,17 @@ func (b Block) WithTitleStr(title string) Block {
 	return b.WithTitle(NewTitleStr(title))
 }
 
+func (b Block) Bordered() Block {
+	return b.WithBorderSides()
+}
+
 func (b Block) WithBorderSides(borders ...Side) Block {
 	if len(borders) == 0 {
 		b.borders = SideAll
 		return b
 	}
+
+	b.borders = SideNone
 
 	for _, border := range borders {
 		b.borders = bit.Union(b.borders, border)

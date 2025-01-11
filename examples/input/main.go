@@ -6,7 +6,10 @@ import (
 	"log"
 
 	"github.com/metafates/bento"
+	"github.com/metafates/bento/blockwidget"
+	"github.com/metafates/bento/fillwidget"
 	"github.com/metafates/bento/inputwidget"
+	"github.com/metafates/bento/popupwidget"
 )
 
 var _ bento.Model = (*Model)(nil)
@@ -17,9 +20,14 @@ type Model struct {
 
 // Draw implements bento.Model.
 func (m *Model) Draw(frame *bento.Frame) {
-	input := inputwidget.NewInput()
+	block := blockwidget.NewBlock().Bordered().Thick().WithTitleStr("Input")
+	input := inputwidget.NewInput().WithPlaceholder("Placeholder...").WithPrompt("> ")
 
-	bento.RenderStatefulWidget(frame, input, frame.Area(), m.input)
+	popup := popupwidget.NewStateful(input).WithBlock(block).WithHeight(bento.ConstraintLength(3))
+
+	fill := fillwidget.New("⣿").WithStyle(bento.NewStyle().Dim())
+	frame.RenderWidget(fill, frame.Area())
+	bento.RenderStatefulWidget(frame, popup, frame.Area(), m.input)
 }
 
 // Init implements bento.Model.

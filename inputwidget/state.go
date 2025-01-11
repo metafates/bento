@@ -2,33 +2,16 @@ package inputwidget
 
 import (
 	"slices"
-	"strings"
 
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/internal/grapheme"
 	"github.com/rivo/uniseg"
 )
 
-type _Graphemes []grapheme.Grapheme
-
-func (g _Graphemes) String() string {
-	var b strings.Builder
-
-	for _, gr := range g {
-		b.Grow(len(gr.String()))
-	}
-
-	for _, gr := range g {
-		b.WriteString(gr.String())
-	}
-
-	return b.String()
-}
-
 type State struct {
 	cursor int
 
-	graphemes _Graphemes
+	graphemes grapheme.Graphemes
 }
 
 func NewState() State {
@@ -165,7 +148,21 @@ func (s *State) underCursor() grapheme.Grapheme {
 	return s.graphemes[s.cursor-1]
 }
 
-func (s *State) splitAtCursor() (before _Graphemes, under grapheme.Grapheme, after _Graphemes) {
+func (s *State) isEmpty() bool {
+	if s.graphemes == nil {
+		return true
+	}
+
+	for _, g := range s.graphemes {
+		if !g.IsEmpty() {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (s *State) splitAtCursor() (before grapheme.Graphemes, under grapheme.Grapheme, after grapheme.Graphemes) {
 	if len(s.graphemes) == 0 || s.cursor == 0 {
 		return nil, grapheme.Empty(), s.graphemes
 	}
