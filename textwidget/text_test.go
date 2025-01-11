@@ -18,7 +18,7 @@ func TestText_Render(t *testing.T) {
 
 		buffer := bento.NewBufferEmpty(area)
 
-		text.Render(area, buffer)
+		text.Render(area, &buffer)
 
 		want := NewLinesStr("foo  ").NewBuffer()
 
@@ -38,7 +38,7 @@ func TestText_Render(t *testing.T) {
 			Height: 1,
 		}
 
-		NewTextStr("Hello, World!").Render(outOfBoundsArea, smallBuffer)
+		NewTextStr("Hello, World!").Render(outOfBoundsArea, &smallBuffer)
 
 		require.Equal(t, bento.NewBufferEmpty(smallBuffer.Area), smallBuffer)
 	})
@@ -53,7 +53,7 @@ func TestText_Render(t *testing.T) {
 
 		buffer := bento.NewBufferEmpty(area)
 
-		text.Render(area, buffer)
+		text.Render(area, &buffer)
 
 		want := NewLinesStr("  foo").NewBuffer()
 
@@ -90,7 +90,7 @@ func TestText_Render(t *testing.T) {
 
 				buffer := bento.NewBufferEmpty(area)
 
-				text.Render(area, buffer)
+				text.Render(area, &buffer)
 
 				want := NewLinesStr(tc.want).NewBuffer()
 
@@ -106,7 +106,7 @@ func TestText_Render(t *testing.T) {
 
 		buffer := bento.NewBufferEmpty(area)
 
-		text.Render(area, buffer)
+		text.Render(area, &buffer)
 
 		want := NewLinesStr("56789").NewBuffer()
 
@@ -120,7 +120,7 @@ func TestText_Render(t *testing.T) {
 
 		buffer := bento.NewBufferEmpty(area)
 
-		text.Render(area, buffer)
+		text.Render(area, &buffer)
 
 		want := NewLinesStr("34567").NewBuffer()
 
@@ -134,7 +134,7 @@ func TestText_Render(t *testing.T) {
 
 		buffer := bento.NewBufferEmpty(area)
 
-		text.Render(area, buffer)
+		text.Render(area, &buffer)
 
 		want := NewLinesStr("234567").NewBuffer()
 
@@ -150,7 +150,7 @@ func TestText_Render(t *testing.T) {
 		area := bento.Rect{Width: 5, Height: 2}
 		buffer := bento.NewBufferEmpty(area)
 
-		text.Render(area, buffer)
+		text.Render(area, &buffer)
 
 		want := NewLinesStr("  foo", " bar ").NewBuffer()
 
@@ -164,7 +164,7 @@ func TestText_Render(t *testing.T) {
 
 		line := NewLineStr("foo").WithStyle(bento.NewStyle().WithBackground(termenv.ANSIBlue))
 
-		NewText(line).Render(area, buffer)
+		NewText(line).Render(area, &buffer)
 
 		want := NewLinesStr("foo  ").NewBuffer()
 		want.SetStyle(bento.Rect{Width: 3, Height: 1}, bento.NewStyle().WithBackground(termenv.ANSIBlue))
@@ -177,7 +177,7 @@ func TestText_Render(t *testing.T) {
 
 		NewText(
 			NewLineStr("foobar").WithStyle(bento.NewStyle().WithBackground(termenv.ANSIBlue)),
-		).Render(bento.Rect{Width: 3, Height: 1}, buffer)
+		).Render(bento.Rect{Width: 3, Height: 1}, &buffer)
 
 		want := NewLinesStr("foo   ").NewBuffer()
 		want.SetStyle(bento.Rect{Width: 3, Height: 1}, bento.NewStyle().WithBackground(termenv.ANSIBlue))

@@ -35,7 +35,7 @@ func NewLinesStr(s ...string) Lines {
 	return Lines(lines)
 }
 
-func (l Lines) NewBuffer() *bento.Buffer {
+func (l Lines) NewBuffer() bento.Buffer {
 	height := len(l)
 	width := l.Width()
 
@@ -45,7 +45,7 @@ func (l Lines) NewBuffer() *bento.Buffer {
 	})
 
 	for y, line := range l {
-		setLine(0, y, buffer, &line, width)
+		setLine(0, y, &buffer, &line, width)
 	}
 
 	return buffer

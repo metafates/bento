@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 
@@ -333,14 +332,7 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 }
 
 func run() error {
-	app, err := bento.NewApp(context.Background(), &Model{
-		activePanel: PanelFiles,
-	})
-	if err != nil {
-		return fmt.Errorf("new app: %w", err)
-	}
-
-	_, err = app.Run()
+	_, err := bento.NewApp(&Model{activePanel: PanelFiles}).Run()
 	if err != nil {
 		return fmt.Errorf("run: %w", err)
 	}

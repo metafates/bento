@@ -1,10 +1,8 @@
 package ansi
 
-import (
-	"golang.org/x/term"
-)
+import "github.com/charmbracelet/x/term"
 
-func GetSize(fd int) (width, height int, err error) {
+func GetSize(fd uintptr) (width, height int, err error) {
 	return term.GetSize(fd)
 }
 

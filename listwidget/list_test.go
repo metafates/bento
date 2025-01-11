@@ -35,10 +35,10 @@ func TestSelectedItemEnsuresVisibleOffsetBeforeRange(t *testing.T) {
 	require.Equal(t, want, buffer)
 }
 
-func statefulWidget(widget List, state *State, width, height int) *bento.Buffer {
+func statefulWidget(widget List, state *State, width, height int) bento.Buffer {
 	buffer := bento.NewBufferEmpty(bento.Rect{Width: width, Height: height})
 
-	widget.RenderStateful(buffer.Area, buffer, state)
+	widget.RenderStateful(buffer.Area, &buffer, state)
 
 	return buffer
 }

@@ -14,11 +14,11 @@ type Buffer struct {
 	Content []Cell
 }
 
-func NewBufferEmpty(area Rect) *Buffer {
+func NewBufferEmpty(area Rect) Buffer {
 	return NewBufferFilled(area, NewEmptyCell())
 }
 
-func NewBufferFilled(area Rect, cell Cell) *Buffer {
+func NewBufferFilled(area Rect, cell Cell) Buffer {
 	size := area.Area()
 
 	content := make([]Cell, 0, size)
@@ -26,7 +26,7 @@ func NewBufferFilled(area Rect, cell Cell) *Buffer {
 		content = append(content, cell)
 	}
 
-	return &Buffer{
+	return Buffer{
 		Area:    area,
 		Content: content,
 	}

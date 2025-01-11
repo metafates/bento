@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 
@@ -53,12 +52,7 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 func run() error {
 	model := Model{input: inputwidget.NewState()}
 
-	app, err := bento.NewApp(context.Background(), &model)
-	if err != nil {
-		return fmt.Errorf("new app: %w", err)
-	}
-
-	_, err = app.Run()
+	_, err := bento.NewApp(&model).Run()
 	if err != nil {
 		return fmt.Errorf("app run: %w", err)
 	}

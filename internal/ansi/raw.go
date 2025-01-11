@@ -3,12 +3,12 @@ package ansi
 import (
 	"fmt"
 
-	"golang.org/x/term"
+	"github.com/charmbracelet/x/term"
 )
 
 type State = *term.State
 
-func EnableRawMode(fd int) (State, error) {
+func EnableRawMode(fd uintptr) (State, error) {
 	state, err := term.MakeRaw(fd)
 	if err != nil {
 		return nil, fmt.Errorf("make raw: %w", err)
@@ -17,6 +17,6 @@ func EnableRawMode(fd int) (State, error) {
 	return state, nil
 }
 
-func Restore(fd int, state State) error {
+func Restore(fd uintptr, state State) error {
 	return term.Restore(fd, state)
 }

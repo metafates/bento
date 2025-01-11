@@ -4,31 +4,77 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os"
 
+	"github.com/charmbracelet/x/term"
 	"github.com/metafates/bento/internal/ansi"
 	"github.com/metafates/bento/internal/bit"
 	"github.com/muesli/termenv"
 )
+
+type TerminalBackend interface {
+	io.Reader
+
+	Draw(cells []PositionedCell) error
+	HideCursor() error
+	ShowCursor() error
+	GetCursorPosition() (Position, error)
+	SetCursorPosition(position Position) error
+	GetSize() (Size, error)
+	Flush() error
+
+	ClearAll() error
+	ClearAfterCursor() error
+	ClearBeforeCursor() error
+	ClearCurrentLine() error
+	ClearUntilNewLine() error
+
+	EnableRawMode() error
+	DisableRawMode() error
+
+	EnableAlternateScreen() error
+	LeaveAlternateScreen() error
+
+	EnableBracketedPaste() error
+	DisableBracketedPaste() error
+
+	Input() io.Reader
+	Output() io.Writer
+}
 
 var _ TerminalBackend = (*DefaultBackend)(nil)
 
 type DefaultBackend struct {
 	colorProfile termenv.Profile
 	input        io.Reader
-	tty          *os.File
-	ttyBuf       *bufio.Writer
+	output       io.Writer
+	outputBuf    *bufio.Writer
 
 	termState ansi.State
 }
 
-func NewDefaultBackend() DefaultBackend {
+func NewDefaultBackend(input io.Reader, output io.Writer) DefaultBackend {
 	return DefaultBackend{
-		colorProfile: termenv.NewOutput(os.Stdout).ColorProfile(),
-		input:        os.Stdin,
-		tty:          os.Stdout,
-		ttyBuf:       bufio.NewWriter(os.Stdout),
+		colorProfile: termenv.NewOutput(output).ColorProfile(),
+		input:        input,
+		output:       output,
+		outputBuf:    bufio.NewWriter(output),
 	}
+}
+
+func (d *DefaultBackend) EnableBracketedPaste() error {
+	return d.execute(ansi.EnableBracketedPaste{})
+}
+
+func (d *DefaultBackend) DisableBracketedPaste() error {
+	return d.execute(ansi.DisableBracketedPaste{})
+}
+
+func (d *DefaultBackend) Output() io.Writer {
+	return d.output
+}
+
+func (d *DefaultBackend) Input() io.Reader {
+	return d.input
 }
 
 // Read implements TerminalBackend.
@@ -41,7 +87,16 @@ func (d *DefaultBackend) EnableRawMode() error {
 		return nil
 	}
 
-	state, err := ansi.EnableRawMode(int(d.fd()))
+	fd, ok := d.inputFd()
+	if !ok {
+		return nil
+	}
+
+	if !term.IsTerminal(fd) {
+		return nil
+	}
+
+	state, err := ansi.EnableRawMode(fd)
 	if err != nil {
 		return fmt.Errorf("enable raw mode: %w", err)
 	}
@@ -56,7 +111,16 @@ func (d *DefaultBackend) DisableRawMode() error {
 		return nil
 	}
 
-	if err := ansi.Restore(int(d.fd()), d.termState); err != nil {
+	fd, ok := d.inputFd()
+	if !ok {
+		return nil
+	}
+
+	if !term.IsTerminal(fd) {
+		return nil
+	}
+
+	if err := ansi.Restore(fd, d.termState); err != nil {
 		return fmt.Errorf("restore: %w", err)
 	}
 
@@ -127,7 +191,7 @@ func (d *DefaultBackend) Draw(cells []PositionedCell) error {
 				To:   cell.Modifier,
 			}
 
-			if err := diff.queue(d.ttyBuf); err != nil {
+			if err := diff.queue(d.outputBuf); err != nil {
 				return fmt.Errorf("queue: %w", err)
 			}
 
@@ -166,7 +230,7 @@ func (d *DefaultBackend) Draw(cells []PositionedCell) error {
 
 // Flush implements TerminalBackend.
 func (d *DefaultBackend) Flush() error {
-	return d.ttyBuf.Flush()
+	return d.outputBuf.Flush()
 }
 
 // GetCursorPosition implements TerminalBackend.
@@ -184,9 +248,14 @@ func (d *DefaultBackend) GetCursorPosition() (Position, error) {
 
 // GetSize implements TerminalBackend.
 func (d *DefaultBackend) GetSize() (Size, error) {
-	fd := d.tty.Fd()
+	file, ok := d.output.(term.File)
+	if !ok {
+		return Size{}, nil
+	}
 
-	width, height, err := ansi.GetSize(int(fd))
+	fd := file.Fd()
+
+	width, height, err := ansi.GetSize(fd)
 	if err != nil {
 		return Size{}, fmt.Errorf("get size: %w", err)
 	}
@@ -224,7 +293,7 @@ func (d *DefaultBackend) ShowCursor() error {
 }
 
 func (d *DefaultBackend) queue(commands ...ansi.Command) error {
-	return queue(d.ttyBuf, commands...)
+	return queue(d.outputBuf, commands...)
 }
 
 func (d *DefaultBackend) execute(commands ...ansi.Command) error {
@@ -239,8 +308,22 @@ func (d *DefaultBackend) execute(commands ...ansi.Command) error {
 	return nil
 }
 
-func (d *DefaultBackend) fd() uintptr {
-	return d.tty.Fd()
+func (d *DefaultBackend) outputFd() (uintptr, bool) {
+	file, ok := d.output.(term.File)
+	if !ok {
+		return 0, false
+	}
+
+	return file.Fd(), true
+}
+
+func (d *DefaultBackend) inputFd() (uintptr, bool) {
+	file, ok := d.input.(term.File)
+	if !ok {
+		return 0, false
+	}
+
+	return file.Fd(), true
 }
 
 type _StyleModifierDiff struct {

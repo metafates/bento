@@ -138,6 +138,18 @@ func (LeaveAlternateScreen) WriteANSI(w io.Writer) error {
 	return write(w, CSI+"?1049l")
 }
 
+type EnableBracketedPaste struct{}
+
+func (EnableBracketedPaste) WriteANSI(w io.Writer) error {
+	return write(w, CSI+"?2004h")
+}
+
+type DisableBracketedPaste struct{}
+
+func (DisableBracketedPaste) WriteANSI(w io.Writer) error {
+	return write(w, CSI+"?2004l")
+}
+
 func write(w io.Writer, a ...any) error {
 	_, err := fmt.Fprint(w, a...)
 

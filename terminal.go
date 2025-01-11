@@ -11,30 +11,6 @@ type PositionedCell struct {
 	Position Position
 }
 
-type TerminalBackend interface {
-	io.Reader
-
-	Draw(cells []PositionedCell) error
-	HideCursor() error
-	ShowCursor() error
-	GetCursorPosition() (Position, error)
-	SetCursorPosition(position Position) error
-	GetSize() (Size, error)
-	Flush() error
-
-	ClearAll() error
-	ClearAfterCursor() error
-	ClearBeforeCursor() error
-	ClearCurrentLine() error
-	ClearUntilNewLine() error
-
-	EnableRawMode() error
-	DisableRawMode() error
-
-	EnableAlternateScreen() error
-	LeaveAlternateScreen() error
-}
-
 var _ io.Reader = (*Terminal)(nil)
 
 type Terminal struct {
@@ -89,8 +65,8 @@ func NewTerminal(backend TerminalBackend, viewport Viewport) (*Terminal, error) 
 		viewport:     viewport,
 		viewportArea: viewportArea,
 		buffers: [2]Buffer{
-			*NewBufferEmpty(viewportArea),
-			*NewBufferEmpty(viewportArea),
+			NewBufferEmpty(viewportArea),
+			NewBufferEmpty(viewportArea),
 		},
 		current:            0,
 		lastKnownArea:      area,
@@ -100,9 +76,29 @@ func NewTerminal(backend TerminalBackend, viewport Viewport) (*Terminal, error) 
 	}, nil
 }
 
+func (t *Terminal) Viewport() Viewport {
+	return t.viewport
+}
+
+func (t *Terminal) Input() io.Reader {
+	return t.backend.Input()
+}
+
+func (t *Terminal) Output() io.Writer {
+	return t.backend.Output()
+}
+
 // Read implements io.Reader.
 func (t *Terminal) Read(p []byte) (n int, err error) {
 	return t.backend.Read(p)
+}
+
+func (t *Terminal) DisableBracketedPaste() error {
+	return t.backend.DisableBracketedPaste()
+}
+
+func (t *Terminal) EnableBracketedPaste() error {
+	return t.backend.EnableBracketedPaste()
 }
 
 func (t *Terminal) EnableAlternateScreen() error {
