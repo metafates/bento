@@ -6,7 +6,6 @@ import (
 
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/internal/grapheme"
-	"github.com/metafates/bento/internal/sliceutil"
 	"github.com/rivo/uniseg"
 )
 
@@ -27,7 +26,7 @@ func (g _Graphemes) String() string {
 }
 
 type State struct {
-	Cursor int
+	cursor int
 
 	graphemes _Graphemes
 }
@@ -40,44 +39,62 @@ func (s *State) String() string {
 	return s.graphemes.String()
 }
 
+func (s *State) setCursor(cursor int) {
+	cursor = s.clampCursor(cursor)
+	s.cursor = cursor
+}
+
 func (s *State) MoveCursorLeft() {
-	s.Cursor = s.clampCursor(s.Cursor - 1)
+	s.setCursor(s.cursor - 1)
 }
 
 func (s *State) MoveCursorRight() {
-	s.Cursor = s.clampCursor(s.Cursor + 1)
+	s.setCursor(s.cursor + 1)
 }
 
 func (s *State) MoveCursorBegin() {
-	s.Cursor = 0
+	s.setCursor(0)
 }
 
 func (s *State) MoveCursorEnd() {
-	s.Cursor = len(s.graphemes)
+	s.setCursor(len(s.graphemes))
 }
 
 func (s *State) Append(content string) {
 	graphemes := uniseg.NewGraphemes(content)
 
 	for graphemes.Next() {
-		s.graphemes = slices.Insert(s.graphemes, s.Cursor, grapheme.New(graphemes.Str()))
+		s.graphemes = slices.Insert(s.graphemes, s.cursor, grapheme.New(graphemes.Str()))
 		s.MoveCursorRight()
 	}
 }
 
+func (s *State) DeleteLine() {
+	s.graphemes = nil
+	s.cursor = 0
+}
+
 func (s *State) DeleteWordUnderCursor() {
+	current := s.underCursor()
+
+	if current.IsWhitespace() {
+		s.deleteWhile(func(g grapheme.Grapheme) bool { return g.IsWhitespace() })
+	}
+
+	s.deleteWhile(func(g grapheme.Grapheme) bool { return !g.IsEmpty() && !g.IsWhitespace() })
+}
+
+func (s *State) deleteWhile(cond func(g grapheme.Grapheme) bool) {
 	before, under, after := s.splitAtCursor()
 
 	current := under
 
-	for !current.IsEmpty() && current.IsWhitespace() {
-		s.MoveCursorLeft()
-
+	for cond(current) {
 		if len(before) == 0 {
 			current = grapheme.Grapheme{}
-			before = nil
 			break
 		}
+		s.MoveCursorLeft()
 
 		current = before[len(before)-1]
 		before = before[:len(before)-1]
@@ -88,14 +105,18 @@ func (s *State) DeleteWordUnderCursor() {
 }
 
 func (s *State) DeleteUnderCursor() {
-	if s.Cursor == 0 {
-		return
-	}
-
 	before, _, after := s.splitAtCursor()
 
 	s.graphemes = append(before, after...)
 	s.MoveCursorLeft()
+}
+
+func (s *State) MoveWordRight() {
+	// TODO
+}
+
+func (s *State) MoveWordLeft() {
+	// TODO
 }
 
 func (s *State) HandleKey(key bento.Key) {
@@ -103,10 +124,16 @@ func (s *State) HandleKey(key bento.Key) {
 	case bento.KeyLeft:
 		s.MoveCursorLeft()
 
+	case bento.KeyShiftLeft:
+		s.MoveWordLeft()
+
 	case bento.KeyRight:
 		s.MoveCursorRight()
 
-	case bento.KeyBackspace:
+	case bento.KeyShiftRight:
+		s.MoveWordRight()
+
+	case bento.KeyBackspace, bento.KeyDelete:
 		s.DeleteUnderCursor()
 
 	case bento.KeyCtrlA:
@@ -130,16 +157,24 @@ func (s *State) clampCursor(cursor int) int {
 	return cursor
 }
 
-func (s *State) splitAtCursor() (before _Graphemes, under grapheme.Grapheme, after _Graphemes) {
-	if len(s.graphemes) == 0 || s.Cursor == 0 {
-		return nil, grapheme.Grapheme{}, s.graphemes
+func (s *State) underCursor() grapheme.Grapheme {
+	if len(s.graphemes) == 0 || s.cursor == 0 {
+		return grapheme.Empty()
 	}
 
-	before = sliceutil.Take(s.graphemes, s.Cursor-1)
+	return s.graphemes[s.cursor-1]
+}
 
-	if len(s.graphemes) > s.Cursor-1 {
-		under = s.graphemes[s.Cursor-1]
-		after = sliceutil.Skip(s.graphemes, s.Cursor)
+func (s *State) splitAtCursor() (before _Graphemes, under grapheme.Grapheme, after _Graphemes) {
+	if len(s.graphemes) == 0 || s.cursor == 0 {
+		return nil, grapheme.Empty(), s.graphemes
+	}
+
+	before = s.graphemes[:s.cursor-1]
+	under = s.graphemes[s.cursor-1]
+
+	if len(s.graphemes) > s.cursor {
+		after = s.graphemes[s.cursor:]
 	}
 
 	return before, under, after

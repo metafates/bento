@@ -41,7 +41,9 @@ func (i Input) RenderStateful(area bento.Rect, buffer *bento.Buffer, state State
 
 	cursor := " "
 	if len(after) > 0 {
-		cursor = after[0].String()
+		if !after[0].IsEmpty() {
+			cursor = after[0].String()
+		}
 		after = after[1:]
 	}
 
@@ -50,8 +52,6 @@ func (i Input) RenderStateful(area bento.Rect, buffer *bento.Buffer, state State
 		textwidget.NewSpan(cursor).WithStyle(i.cursorStyle),
 		textwidget.NewSpan(after.String()),
 	)
-
-	// line = textwidget.NewLineStr(state.Line)
 
 	line.Render(area, buffer)
 }

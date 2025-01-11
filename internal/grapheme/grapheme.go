@@ -6,6 +6,10 @@ import (
 	"github.com/rivo/uniseg"
 )
 
+func Empty() Grapheme {
+	return Grapheme{}
+}
+
 func New(symbol string) Grapheme {
 	return Grapheme{
 		symbol: symbol,
