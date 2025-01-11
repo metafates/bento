@@ -130,7 +130,7 @@ func (a App) Run() (Model, error) {
 		finished:     make(chan struct{}, 1),
 		terminal:     terminal,
 
-		onShutdown: closeInput,
+		closeInput: closeInput,
 	}
 
 	return runner.Run()
@@ -158,21 +158,13 @@ type appRunner struct {
 	ttyOutput, ttyInput                     term.File
 	previousOutputState, previousInputState *term.State
 
-	onShutdown func() error
+	closeInput func() error
 }
 
 func (a *appRunner) Run() (model Model, err error) {
 	defer func() {
-		r := recover()
-
-		shutdownErr := a.shutdown()
-		if shutdownErr != nil {
-			err = errors.Join(err, shutdownErr)
-		}
-
-		if r != nil {
-			fmt.Printf("Caught panic:\n\n%s\n\nRestoring terminal...\n\n", r)
-			debug.PrintStack()
+		if a.closeInput != nil {
+			_ = a.closeInput()
 		}
 	}()
 
@@ -224,6 +216,10 @@ func (a *appRunner) Run() (model Model, err error) {
 
 	a.draw(model.Draw)
 
+	if err := a.shutdown(); err != nil {
+		return model, fmt.Errorf("shutdown: %w", err)
+	}
+
 	return model, nil
 }
 
@@ -258,6 +254,8 @@ func (a *appRunner) handleCommands(cmds chan Cmd) chan struct{} {
 				// possible to cancel them so we'll have to leak the goroutine
 				// until Cmd returns.
 				go func() {
+					defer a.recoverFromPanic()
+
 					msg := cmd() // this can be long.
 					a.Send(msg)
 				}()
@@ -331,18 +329,22 @@ func (a *appRunner) eventLoop(model Model, cmds chan Cmd) (Model, error) {
 
 			var cmd Cmd
 			model, cmd = model.Update(msg) // run update
-			cmds <- cmd                    // process command (if any)
-			a.draw(model.Draw)             // send view to renderer
+			cmds <- cmd
+			a.draw(model.Draw)
 		}
+	}
+}
+
+func (a *appRunner) recoverFromPanic() {
+	if r := recover(); r != nil {
+		a.shutdown()
+		fmt.Printf("Caught panic:\n\n%s\n\nRestoring terminal...\n\n", r)
+		debug.PrintStack()
 	}
 }
 
 func (a *appRunner) shutdown() error {
 	a.cancelCtx()
-
-	if a.onShutdown != nil {
-		_ = a.onShutdown()
-	}
 
 	a.handlers.shutdown()
 
@@ -360,10 +362,6 @@ func (a *appRunner) init() error {
 	if err := a.initTerminal(); err != nil {
 		return fmt.Errorf("init terminal: %w", err)
 	}
-
-	// if err := a.terminal.EnableRawMode(); err != nil {
-	// 	return fmt.Errorf("enable raw mode: %w", err)
-	// }
 
 	if err := a.terminal.EnableAlternateScreen(); err != nil {
 		return fmt.Errorf("enable alt screen buffer: %w", err)
@@ -396,6 +394,7 @@ func (h *channelHandlers) add(ch chan struct{}) {
 // shutdown waits for all handlers to terminate.
 func (h channelHandlers) shutdown() {
 	var wg sync.WaitGroup
+
 	for _, ch := range h {
 		wg.Add(1)
 		go func(ch chan struct{}) {
@@ -403,5 +402,6 @@ func (h channelHandlers) shutdown() {
 			wg.Done()
 		}(ch)
 	}
+
 	wg.Wait()
 }
