@@ -1,10 +1,10 @@
-# 🍱 Bento 
+# 🍱 Bento
 
 <img align="right" width="250" src="https://github.com/user-attachments/assets/120b3882-0ed7-4b69-b5aa-2b75d83abe8a">
 
 > Work in progress
 
-Bento is a Go library for cooking up delicious TUIs (terminal user interfaces).
+Bento is a Go framework for cooking up terminal user interfaces (TUIs). It provides a simple and flexible way to create text-based user interfaces in the terminal, which can be used for command-line applications, dashboards, and other interactive console programs.
 
 It's a mix of Rust's [ratatui](https://ratatui.rs) library and Go's [bubbletea](https://github.com/charmbracelet/bubbletea)
 
