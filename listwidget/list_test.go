@@ -19,7 +19,7 @@ func TestSelectedItemEnsuresVisibleOffsetBeforeRange(t *testing.T) {
 		NewItemStr("Item 6"),
 	}
 
-	list := NewList(items...).WithHighlightSymbol(">>")
+	list := New(items...).WithHighlightSymbol(">>")
 	state := NewState()
 	state.Select(1)
 	state.SetOffset(3)

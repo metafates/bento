@@ -6,6 +6,7 @@ import (
 
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/blockwidget"
+	"github.com/metafates/bento/footerwidget"
 	"github.com/metafates/bento/gaugewidget"
 	"github.com/metafates/bento/popupwidget"
 	"github.com/metafates/bento/textwidget"
@@ -24,6 +25,17 @@ func (m *Model) Init() bento.Cmd {
 
 // Render implements bento.Model.
 func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
+	var mainArea, footerArea bento.Rect
+
+	bento.
+		NewLayout(
+			bento.ConstraintFill(1),
+			bento.ConstraintLength(1),
+		).
+		Vertical().
+		Split(area).
+		Assign(&mainArea, &footerArea)
+
 	message := textwidget.NewTextStr("Try scrolling")
 	popup := popupwidget.
 		New(message).
@@ -35,7 +47,17 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 
 	gauge := gaugewidget.New().WithRatio(m.ratio).WithUnicode(true)
 
-	gauge.Render(area, buffer)
+	footerwidget.
+		New(
+			footerwidget.NewBinding("^c", "quit"),
+			footerwidget.NewBinding("up", "increment"),
+			footerwidget.NewBinding("down", "decrement"),
+		).
+		WithLeftLine(textwidget.NewLineStr("left")).
+		WithRightLine(textwidget.NewLineStr("right")).
+		Render(footerArea, buffer)
+
+	gauge.Render(mainArea, buffer)
 	popup.Render(area, buffer)
 }
 

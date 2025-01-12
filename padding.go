@@ -12,14 +12,14 @@ func NewPadding(sides ...int) Padding {
 		side := sides[0]
 		return Padding{Top: side, Right: side, Bottom: side, Left: side}
 	case 2:
-		horizontal := sides[0]
-		vertical := sides[1]
+		vertical := sides[0]
+		horizontal := sides[1]
 
 		return Padding{
-			Top:    horizontal,
-			Right:  vertical,
-			Bottom: horizontal,
-			Left:   vertical,
+			Top:    vertical,
+			Right:  horizontal,
+			Bottom: vertical,
+			Left:   horizontal,
 		}
 	case 4:
 		return Padding{

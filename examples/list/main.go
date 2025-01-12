@@ -48,7 +48,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 	}
 
 	list := listwidget.
-		NewList(items...).
+		New(items...).
 		WithHighlightSymbol("> ").
 		WithHighlightSpacing(listwidget.HighlightSpacingAlways).
 		WithBlock(block).WithHighlightStyle(bento.NewStyle().Black().OnBlue())
@@ -56,7 +56,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 	list.RenderStateful(area, buffer, &m.listState)
 
 	if m.showPopup {
-		paragraph := paragraphwidget.NewParagraphStr("Hello, world!").Center()
+		paragraph := paragraphwidget.NewStr("Hello, world!").Center()
 
 		popup := popupwidget.
 			New(paragraph).

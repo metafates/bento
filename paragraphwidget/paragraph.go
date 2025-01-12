@@ -20,11 +20,11 @@ type Paragraph struct {
 	Alignment bento.Alignment
 }
 
-func NewParagraphStr(s string) Paragraph {
-	return NewParagraph(textwidget.NewTextStr(s))
+func NewStr(s string) Paragraph {
+	return New(textwidget.NewTextStr(s))
 }
 
-func NewParagraph(text textwidget.Text) Paragraph {
+func New(text textwidget.Text) Paragraph {
 	return Paragraph{
 		Block:     nil,
 		Style:     bento.NewStyle(),

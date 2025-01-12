@@ -24,7 +24,7 @@ type Input struct {
 	showCursor       bool
 }
 
-func NewInput() Input {
+func New() Input {
 	return Input{
 		block:            nil,
 		style:            bento.NewStyle(),

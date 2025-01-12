@@ -54,7 +54,7 @@ type List struct {
 	scrollPadding         int
 }
 
-func NewList(items ...Item) List {
+func New(items ...Item) List {
 	return List{
 		block:                 nil,
 		items:                 items,
