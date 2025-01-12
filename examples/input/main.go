@@ -23,7 +23,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 
 	popup := popupwidget.NewStateful(input).WithBlock(block).WithHeight(bento.ConstraintLength(3))
 
-	fill := fillwidget.New("⣿").WithStyle(bento.NewStyle().Dim())
+	fill := fillwidget.New("╲").WithStyle(bento.NewStyle().Dim())
 
 	fill.Render(area, buffer)
 	popup.RenderStateful(area, buffer, &m.input)

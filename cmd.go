@@ -1,5 +1,7 @@
 package bento
 
+import "time"
+
 type (
 	QuitMsg       struct{}
 	BatchMsg      []Cmd
@@ -52,5 +54,17 @@ func Batch(cmds ...Cmd) Cmd {
 		return func() Msg {
 			return BatchMsg(validCmds)
 		}
+	}
+}
+
+func Tick(d time.Duration, fn func(time.Time) Msg) Cmd {
+	t := time.NewTimer(d)
+	return func() Msg {
+		ts := <-t.C
+		t.Stop()
+		for len(t.C) > 0 {
+			<-t.C
+		}
+		return fn(ts)
 	}
 }

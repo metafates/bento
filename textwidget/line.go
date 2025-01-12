@@ -51,6 +51,10 @@ func (l Lines) NewBuffer() bento.Buffer {
 	return buffer
 }
 
+func (l Lines) Height() int {
+	return len(l)
+}
+
 func (l Lines) Width() int {
 	var width int
 
