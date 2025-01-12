@@ -290,7 +290,7 @@ func (m *Model) renderCommandLog(area bento.Rect, buffer *bento.Buffer) {
 
 func (m *Model) newBlock(panel Panel, footer string) blockwidget.Block {
 	block := blockwidget.
-		NewBlock().
+		New().
 		WithBorderSides().
 		Rounded().
 		WithTitle(blockwidget.NewTitleStr(panel.Title()).Top().Left())

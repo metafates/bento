@@ -18,7 +18,7 @@ type Model struct {
 }
 
 func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
-	block := blockwidget.NewBlock().Bordered().Thick().WithTitleStr("Input")
+	block := blockwidget.New().Bordered().Thick().WithTitleStr("Input")
 	input := inputwidget.NewInput().WithPlaceholder("Placeholder...").WithPrompt("> ")
 
 	popup := popupwidget.NewStateful(input).WithBlock(block).WithHeight(bento.ConstraintLength(3))

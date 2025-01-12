@@ -23,7 +23,7 @@ type Block struct {
 	padding bento.Padding
 }
 
-func NewBlock() Block {
+func New() Block {
 	return Block{
 		titles:          nil,
 		titlesStyle:     bento.Style{},

@@ -32,7 +32,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 	bottomTitle += strconv.Itoa(m.itemsCount) + " items"
 
 	block := blockwidget.
-		NewBlock().
+		New().
 		WithBorderSides().
 		Rounded().
 		WithTitle(blockwidget.NewTitleStr("List")).
@@ -60,9 +60,9 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 
 		popup := popupwidget.
 			New(paragraph).
-			WithBlock(blockwidget.NewBlock().WithBorderSides().Thick().WithTitleStr("Popup")).
-			Top().
-			Right().
+			WithBlock(blockwidget.New().WithBorderSides().Thick().WithTitleStr("Popup")).
+			Middle().
+			Center().
 			WithHeight(bento.ConstraintLength(3)).
 			WithWidth(bento.ConstraintLength(30))
 

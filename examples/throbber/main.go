@@ -68,7 +68,7 @@ func (m *Model) renderThrobbers(area bento.Rect, buffer *bento.Buffer) {
 	grid := getGrid(area, len(types))
 
 	for i, t := range types {
-		block := blockwidget.NewBlock().Bordered().WithTitleStr(t.String())
+		block := blockwidget.New().Bordered().WithTitleStr(t.String())
 
 		a := block.Inner(grid[i])
 

@@ -1,6 +1,9 @@
 package bento
 
-import "github.com/metafates/bento/internal/bit"
+import (
+	"github.com/metafates/bento/internal/bit"
+	"github.com/muesli/termenv"
+)
 
 type Cell struct {
 	Symbol   string
@@ -31,6 +34,16 @@ func (c *Cell) SetSymbol(symbol string) *Cell {
 func (c *Cell) AppendSymbol(symbol string) *Cell {
 	c.Symbol += symbol
 
+	return c
+}
+
+func (c *Cell) SetFg(color termenv.Color) *Cell {
+	c.Fg = color
+	return c
+}
+
+func (c *Cell) SetBg(color termenv.Color) *Cell {
+	c.Bg = color
 	return c
 }
 
