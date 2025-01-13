@@ -53,8 +53,6 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 			footerwidget.NewBinding("up", "increment"),
 			footerwidget.NewBinding("down", "decrement"),
 		).
-		WithLeftLine(textwidget.NewLineStr("left")).
-		WithRightLine(textwidget.NewLineStr("right")).
 		Render(footerArea, buffer)
 
 	gauge.Render(mainArea, buffer)
