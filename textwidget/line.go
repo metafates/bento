@@ -136,7 +136,7 @@ func (l Line) renderWithAlignment(
 	buffer *bento.Buffer,
 	parentAlignment bento.Alignment,
 ) {
-	area = area.Intersection(buffer.Area)
+	area = area.Intersection(buffer.Area())
 	if area.IsEmpty() {
 		return
 	}

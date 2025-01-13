@@ -8,10 +8,10 @@ import (
 )
 
 type Buffer struct {
-	Area Rect
+	area Rect
 
-	// Content of the buffer. The length of this Vec should always be equal to [Area.Width] * [Area.Height]
-	Content []Cell
+	// content of the buffer. The length of this Vec should always be equal to [Area.Width] * [Area.Height]
+	content []Cell
 }
 
 func NewBufferEmpty(area Rect) Buffer {
@@ -27,9 +27,14 @@ func NewBufferFilled(area Rect, cell Cell) Buffer {
 	}
 
 	return Buffer{
-		Area:    area,
-		Content: content,
+		area:    area,
+		content: content,
 	}
+}
+
+// Area of the buffer
+func (b *Buffer) Area() Rect {
+	return b.area
 }
 
 // Diff builds a minimal sequence of coordinates and Cells necessary to update the UI from
@@ -38,8 +43,8 @@ func NewBufferFilled(area Rect, cell Cell) Buffer {
 // We're assuming that buffers are well-formed, that is no double-width cell is followed by
 // a non-blank cell.
 func (b *Buffer) Diff(other *Buffer) []PositionedCell {
-	prevBuffer := b.Content
-	nextBuffer := other.Content
+	prevBuffer := b.content
+	nextBuffer := other.content
 
 	var (
 		updates     []PositionedCell
@@ -74,12 +79,12 @@ func (b *Buffer) Diff(other *Buffer) []PositionedCell {
 }
 
 func (b *Buffer) PosOf(index int) Position {
-	if index >= len(b.Content) {
+	if index >= len(b.content) {
 		panic("trying to get coords of a cell outside the buffer")
 	}
 
-	x := index%b.Area.Width + b.Area.X
-	y := index/b.Area.Width + b.Area.Y
+	x := index%b.area.Width + b.area.X
+	y := index/b.area.Width + b.area.Y
 
 	return Position{X: x, Y: y}
 }
@@ -90,8 +95,8 @@ func (b *Buffer) SetString(x, y int, value string, style Style) {
 }
 
 func (b *Buffer) Reset() {
-	for i := range b.Content {
-		b.Content[i].Reset()
+	for i := range b.content {
+		b.content[i].Reset()
 	}
 }
 
@@ -100,7 +105,7 @@ func (b *Buffer) Reset() {
 //
 // Use [Buffer.SetString] when the maximum amount of characters can be printed.
 func (b *Buffer) SetStringN(x, y int, value string, maxWidth int, style Style) (int, int) {
-	remainingWidth := min(maxWidth, max(0, b.Area.Right()-x))
+	remainingWidth := min(maxWidth, max(0, b.area.Right()-x))
 
 	graphemes := uniseg.NewGraphemes(value)
 
@@ -125,7 +130,7 @@ func (b *Buffer) SetStringN(x, y int, value string, maxWidth int, style Style) (
 }
 
 func (b *Buffer) CellAt(position Position) *Cell {
-	return &b.Content[b.indexOf(position)]
+	return &b.content[b.indexOf(position)]
 }
 
 // indexOf returns the (global) coordinates of a cell given its index
@@ -134,15 +139,15 @@ func (b *Buffer) CellAt(position Position) *Cell {
 //
 // Panics when given an index that is outside the Buffer's content.
 func (b *Buffer) indexOf(position Position) int {
-	if !b.Area.Contains(position) {
+	if !b.area.Contains(position) {
 		panic("position out of bounds")
 	}
 
 	// remove offset
-	y := max(0, position.Y-b.Area.Y)
-	x := max(0, position.X-b.Area.X)
+	y := max(0, position.Y-b.area.Y)
+	x := max(0, position.X-b.area.X)
 
-	width := b.Area.Width
+	width := b.area.Width
 
 	return y*width + x
 }
@@ -150,21 +155,21 @@ func (b *Buffer) indexOf(position Position) int {
 func (b *Buffer) Resize(area Rect) {
 	length := area.Area()
 
-	if len(b.Content) > length {
-		b.Content = slices.Delete(b.Content, length, len(b.Content))
+	if len(b.content) > length {
+		b.content = slices.Delete(b.content, length, len(b.content))
 	} else {
-		toAdd := length - len(b.Content)
+		toAdd := length - len(b.content)
 
 		for i := 0; i < toAdd; i++ {
-			b.Content = append(b.Content, NewEmptyCell())
+			b.content = append(b.content, NewEmptyCell())
 		}
 	}
 
-	b.Area = area
+	b.area = area
 }
 
 func (b *Buffer) SetStyle(area Rect, style Style) {
-	area = b.Area.Intersection(area)
+	area = b.area.Intersection(area)
 
 	for y := area.Top(); y < area.Bottom(); y++ {
 		for x := area.Left(); x < area.Right(); x++ {

@@ -40,7 +40,7 @@ func TestText_Render(t *testing.T) {
 
 		NewTextStr("Hello, World!").Render(outOfBoundsArea, &smallBuffer)
 
-		require.Equal(t, bento.NewBufferEmpty(smallBuffer.Area), smallBuffer)
+		require.Equal(t, bento.NewBufferEmpty(smallBuffer.Area()), smallBuffer)
 	})
 
 	t.Run("right aligned", func(t *testing.T) {

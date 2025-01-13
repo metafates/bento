@@ -37,7 +37,7 @@ func (s Span) Width() int {
 }
 
 func (s Span) Render(area bento.Rect, buffer *bento.Buffer) {
-	area = area.Intersection(buffer.Area)
+	area = area.Intersection(buffer.Area())
 	if area.IsEmpty() {
 		return
 	}

@@ -58,7 +58,7 @@ func (t Text) Center() Text {
 
 // Render implements bento.Widget.
 func (t Text) Render(area bento.Rect, buffer *bento.Buffer) {
-	area = area.Intersection(buffer.Area)
+	area = area.Intersection(buffer.Area())
 
 	buffer.SetStyle(area, t.Style)
 

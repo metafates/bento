@@ -165,7 +165,7 @@ func (b Block) hasTitleAtPosition(position TitlePosition) bool {
 }
 
 func (b Block) Render(area bento.Rect, buffer *bento.Buffer) {
-	area = area.Intersection(buffer.Area)
+	area = area.Intersection(area)
 	if area.IsEmpty() {
 		return
 	}

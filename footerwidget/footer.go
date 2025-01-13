@@ -1,6 +1,8 @@
 package footerwidget
 
 import (
+	"strings"
+
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/textwidget"
 )
@@ -12,15 +14,23 @@ type Footer struct {
 	style       bento.Style
 	keyStyle    bento.Style
 	actionStyle bento.Style
+	keyPadding  int
 }
 
 func New(bindings ...Binding) Footer {
 	return Footer{
 		bindings:    bindings,
 		style:       bento.NewStyle(),
-		keyStyle:    bento.NewStyle().Yellow().Bold(),
+		keyStyle:    bento.NewStyle().Reversed(),
 		actionStyle: bento.NewStyle(),
+		keyPadding:  1,
 	}
+}
+
+// WithKeyPadding sets key padding to use on both sides.
+func (f Footer) WithKeyPadding(padding int) Footer {
+	f.keyPadding = padding
+	return f
 }
 
 func (f Footer) Render(area bento.Rect, buffer *bento.Buffer) {
@@ -30,8 +40,10 @@ func (f Footer) Render(area bento.Rect, buffer *bento.Buffer) {
 
 	var width int
 
+	padding := strings.Repeat(" ", f.keyPadding)
+
 	for i, b := range f.bindings {
-		key := b.Key
+		key := padding + b.Key + padding
 		action := b.Action
 
 		var spans []textwidget.Span
