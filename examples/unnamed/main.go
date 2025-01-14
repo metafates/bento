@@ -16,6 +16,8 @@ var _ bento.Model = (*Model)(nil)
 
 type Model struct {
 	ratio float64
+
+	footerState footerwidget.State
 }
 
 // Init implements bento.Model.
@@ -47,22 +49,27 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 
 	gauge := gaugewidget.New().WithRatio(m.ratio).WithUnicode(true)
 
+	gauge.Render(mainArea, buffer)
+	popup.Render(area, buffer)
+
 	footerwidget.
 		New(
 			footerwidget.NewBinding("^c", "quit"),
-			footerwidget.NewBinding("up", "increment"),
-			footerwidget.NewBinding("down", "decrement"),
+			footerwidget.NewBinding("up", "increment").WithDescription("Increment the gauge"),
+			footerwidget.NewBinding("down", "decrement").WithDescription("Decrement the gauge"),
 		).
-		Render(footerArea, buffer)
-
-	gauge.Render(mainArea, buffer)
-	popup.Render(area, buffer)
+		RenderStateful(footerArea, buffer, &m.footerState)
 }
 
 // Update implements bento.Model.
 func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 	switch msg := msg.(type) {
 	case bento.KeyMsg:
+		footerUpdated := m.footerState.Update(bento.Key(msg))
+		if footerUpdated {
+			return m, nil
+		}
+
 		switch msg.String() {
 		case "shift+up", "shift+right", "L", "+":
 			m.ratio = min(1, m.ratio+0.02)
@@ -81,7 +88,10 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 }
 
 func run() error {
-	model := Model{}
+	model := Model{
+		ratio:       0,
+		footerState: footerwidget.NewState(),
+	}
 
 	_, err := bento.NewApp(&model).Run()
 	if err != nil {

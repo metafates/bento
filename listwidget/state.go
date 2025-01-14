@@ -1,14 +1,105 @@
 package listwidget
 
-import "math"
+import (
+	"math"
+
+	"github.com/metafates/bento"
+	"github.com/metafates/bento/inputwidget"
+)
+
+type FilterState int
+
+const (
+	FilterStateNoFilter FilterState = iota
+	FilterStateFiltering
+	FilterStateFiltered
+)
 
 type State struct {
 	offset   int
 	selected *int
+
+	FilterState FilterState
+	input       inputwidget.State
 }
 
 func NewState() State {
-	return State{}
+	input := inputwidget.NewState()
+	input.ShowCursor(true)
+
+	return State{
+		offset:      0,
+		selected:    nil,
+		FilterState: FilterStateNoFilter,
+		input:       input,
+	}
+}
+
+func (s *State) setFilteringState(state FilterState) {
+	s.FilterState = state
+	s.input.ShowCursor(s.FilterState == FilterStateFiltering)
+
+	if state == FilterStateNoFilter {
+		s.input.DeleteLine()
+		s.Unselect()
+	}
+}
+
+func (s *State) Update(key bento.Key) bool {
+	if s.FilterState == FilterStateFiltering {
+		if s.input.Update(key) {
+			return true
+		}
+	}
+
+	switch key.String() {
+	case "enter":
+		if s.FilterState == FilterStateFiltering {
+			s.setFilteringState(FilterStateFiltered)
+			return true
+		}
+
+		return false
+	case "esc":
+		if s.FilterState == FilterStateNoFilter {
+			return false
+		}
+
+		s.setFilteringState(FilterStateNoFilter)
+		return true
+
+	case "ctrl+u":
+		s.ScrollUpBy(8)
+		return true
+
+	case "ctrl+d":
+		s.ScrollDownBy(8)
+		return true
+
+	case "G":
+		s.SelectLast()
+		return true
+
+	case "g":
+		s.SelectFirst()
+		return true
+
+	case "j", "down":
+		s.SelectNext()
+		return true
+
+	case "k", "up":
+		s.SelectPrevious()
+		return true
+
+	case "/":
+		s.setFilteringState(FilterStateFiltering)
+
+		return true
+
+	default:
+		return false
+	}
 }
 
 func (s *State) SetOffset(offset int) {

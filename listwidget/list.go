@@ -5,6 +5,7 @@ import (
 
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/blockwidget"
+	"github.com/metafates/bento/inputwidget"
 	"github.com/metafates/bento/internal/sliceutil"
 	"github.com/rivo/uniseg"
 )
@@ -73,8 +74,22 @@ func (l List) WithScrollPadding(padding int) List {
 	return l
 }
 
-// RenderStateful implements bento.StatefulWidget.
 func (l List) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State) {
+	if state.FilterState != FilterStateNoFilter {
+		var inputArea bento.Rect
+
+		bento.NewLayout(
+			bento.ConstraintLength(3),
+			bento.ConstraintFill(1),
+		).Vertical().Split(area).Assign(&inputArea, &area)
+
+		inputwidget.New().WithBlock(blockwidget.New().Bordered()).RenderStateful(inputArea, buffer, &state.input)
+	}
+
+	l.render(area, buffer, state)
+}
+
+func (l List) render(area bento.Rect, buffer *bento.Buffer, state *State) {
 	buffer.SetStyle(area, l.style)
 
 	listArea := area

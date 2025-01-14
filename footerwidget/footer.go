@@ -4,10 +4,13 @@ import (
 	"strings"
 
 	"github.com/metafates/bento"
+	"github.com/metafates/bento/blockwidget"
+	"github.com/metafates/bento/listwidget"
+	"github.com/metafates/bento/popupwidget"
 	"github.com/metafates/bento/textwidget"
 )
 
-var _ bento.Widget = (*Footer)(nil)
+var _ bento.StatefulWidget[*State] = (*Footer)(nil)
 
 type Footer struct {
 	bindings    []Binding
@@ -33,7 +36,15 @@ func (f Footer) WithKeyPadding(padding int) Footer {
 	return f
 }
 
-func (f Footer) Render(area bento.Rect, buffer *bento.Buffer) {
+func (f Footer) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State) {
+	if state.ShowPopup {
+		f.renderPopup(buffer.Area(), buffer, state)
+	}
+
+	f.renderFooter(area, buffer)
+}
+
+func (f Footer) renderFooter(area bento.Rect, buffer *bento.Buffer) {
 	buffer.SetStyle(area, f.style)
 
 	footerLine := textwidget.NewLine()
@@ -68,4 +79,19 @@ func (f Footer) Render(area bento.Rect, buffer *bento.Buffer) {
 	}
 
 	footerLine.Render(area, buffer)
+}
+
+func (f Footer) renderPopup(area bento.Rect, buffer *bento.Buffer, state *State) {
+	items := make([]listwidget.Item, 0, len(f.bindings))
+
+	for _, b := range f.bindings {
+		items = append(items, listwidget.NewItem(b.text()))
+	}
+
+	block := blockwidget.New().Bordered()
+	list := listwidget.New(items...).WithHighlightStyle(bento.NewStyle().Reversed()).WithBlock(block)
+
+	popup := popupwidget.NewStateful(list).Center().Middle().WithHeight(bento.ConstraintPercentage(60))
+
+	popup.RenderStateful(area, buffer, &state.BindingList)
 }

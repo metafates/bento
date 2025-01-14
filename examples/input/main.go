@@ -42,7 +42,7 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 		case "ctrl+c":
 			return m, bento.Quit
 		default:
-			m.input.HandleKey(bento.Key(msg))
+			m.input.Update(bento.Key(msg))
 		}
 	}
 

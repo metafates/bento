@@ -10,7 +10,8 @@ import (
 )
 
 type State struct {
-	cursor int
+	cursor     int
+	showCursor bool
 
 	graphemes grapheme.Graphemes
 
@@ -18,7 +19,9 @@ type State struct {
 }
 
 func NewState() State {
-	return State{}
+	return State{
+		showCursor: true,
+	}
 }
 
 func (s *State) String() string {
@@ -28,6 +31,10 @@ func (s *State) String() string {
 func (s *State) setCursor(cursor int) {
 	cursor = s.clampCursor(cursor)
 	s.cursor = cursor
+}
+
+func (s *State) ShowCursor(show bool) {
+	s.showCursor = show
 }
 
 func (s *State) MoveCursorLeft() {
@@ -111,34 +118,46 @@ func (s *State) MoveWordLeft() {
 	// TODO
 }
 
-func (s *State) HandleKey(key bento.Key) {
+func (s *State) Update(key bento.Key) bool {
 	switch key.Type {
 	case bento.KeyLeft:
 		s.MoveCursorLeft()
+		return true
 
 	case bento.KeyShiftLeft:
 		s.MoveWordLeft()
+		return true
 
 	case bento.KeyRight:
 		s.MoveCursorRight()
+		return true
 
 	case bento.KeyShiftRight:
 		s.MoveWordRight()
+		return true
 
 	case bento.KeyBackspace, bento.KeyDelete:
 		s.DeleteUnderCursor()
+		return true
 
 	case bento.KeyCtrlA:
 		s.MoveCursorBegin()
+		return true
 
 	case bento.KeyCtrlE:
 		s.MoveCursorEnd()
+		return true
 
 	case bento.KeyCtrlW:
 		s.DeleteWordUnderCursor()
+		return true
 
 	case bento.KeyRunes, bento.KeySpace:
 		s.Append(string(key.Runes))
+		return true
+
+	default:
+		return false
 	}
 }
 
