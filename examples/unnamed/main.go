@@ -64,11 +64,11 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 	switch msg := msg.(type) {
 	case bento.KeyMsg:
 		switch msg.String() {
-		case "shift+up", "shift+right", "L":
+		case "shift+up", "shift+right", "L", "+":
 			m.ratio = min(1, m.ratio+0.02)
 		case "up", "right", "l":
 			m.ratio = min(1, m.ratio+0.001)
-		case "shift+down", "shift+left", "H":
+		case "shift+down", "shift+left", "H", "-":
 			m.ratio = max(0, m.ratio-0.02)
 		case "down", "left", "h":
 			m.ratio = max(0, m.ratio-0.001)
