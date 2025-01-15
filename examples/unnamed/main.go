@@ -53,11 +53,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 	popup.Render(area, buffer)
 
 	footerwidget.
-		New(
-			footerwidget.NewBinding("^c", "quit"),
-			footerwidget.NewBinding("up", "increment").WithDescription("Increment the gauge"),
-			footerwidget.NewBinding("down", "decrement").WithDescription("Decrement the gauge"),
-		).
+		New().
 		RenderStateful(footerArea, buffer, &m.footerState)
 }
 
@@ -89,8 +85,12 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 
 func run() error {
 	model := Model{
-		ratio:       0,
-		footerState: footerwidget.NewState(),
+		ratio: 0,
+		footerState: footerwidget.NewState(
+			footerwidget.NewBinding("^c", "quit"),
+			footerwidget.NewBinding("up", "increment").WithDescription("Increment the gauge"),
+			footerwidget.NewBinding("down", "decrement").WithDescription("Decrement the gauge"),
+		),
 	}
 
 	_, err := bento.NewApp(&model).Run()

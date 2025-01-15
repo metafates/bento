@@ -6,21 +6,23 @@ import (
 )
 
 type State struct {
-	BindingList listwidget.State
+	BindingList listwidget.State[Binding]
 
 	ShowPopup bool
 }
 
-func NewState() State {
+func NewState(bindings ...Binding) State {
 	return State{
-		BindingList: listwidget.NewState(),
+		BindingList: listwidget.NewState(bindings...),
 	}
 }
 
 func (s *State) Update(key bento.Key) bool {
-	listUpdated := s.BindingList.Update(key)
-	if listUpdated {
-		return true
+	if s.ShowPopup {
+		listUpdated := s.BindingList.Update(key)
+		if listUpdated {
+			return true
+		}
 	}
 
 	switch key.String() {

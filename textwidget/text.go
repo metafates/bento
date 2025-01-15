@@ -72,6 +72,10 @@ func (t Text) Render(area bento.Rect, buffer *bento.Buffer) {
 	}
 }
 
+func (t Text) String() string {
+	return t.Lines.String()
+}
+
 func AppendTextSpans(text *Text, spans ...Span) {
 	if len(text.Lines) > 0 {
 		last := len(text.Lines) - 1

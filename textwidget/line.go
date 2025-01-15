@@ -35,6 +35,22 @@ func NewLinesStr(s ...string) Lines {
 	return Lines(lines)
 }
 
+func (l Lines) String() string {
+	var b strings.Builder
+
+	b.Grow(l.size())
+
+	for i, line := range l {
+		b.WriteString(line.String())
+
+		if i != len(l)-1 {
+			b.WriteRune('\n')
+		}
+	}
+
+	return b.String()
+}
+
 func (l Lines) NewBuffer() bento.Buffer {
 	height := len(l)
 	width := l.Width()
@@ -65,6 +81,16 @@ func (l Lines) Width() int {
 	return width
 }
 
+func (l Lines) size() int {
+	var size int
+
+	for _, line := range l {
+		size += line.size() + 1 // +1 for newline
+	}
+
+	return max(0, size-1) // remove trailing newline
+}
+
 type Line struct {
 	Style     bento.Style
 	Spans     []Span
@@ -91,6 +117,18 @@ func NewLineStr(s string) Line {
 	}
 
 	return NewLine(spans...)
+}
+
+func (l Line) String() string {
+	var b strings.Builder
+
+	b.Grow(l.size())
+
+	for _, s := range l.Spans {
+		b.WriteString(s.String())
+	}
+
+	return b.String()
 }
 
 func (l Line) StyledGraphemes(baseStyle bento.Style) []StyledGrapheme {
@@ -205,6 +243,16 @@ func (l Line) Width() int {
 	}
 
 	return width
+}
+
+func (l Line) size() int {
+	var size int
+
+	for _, s := range l.Spans {
+		size += len(s.String())
+	}
+
+	return size
 }
 
 func setLine(x, y int, buffer *bento.Buffer, line *Line, maxWidth int) (int, int) {

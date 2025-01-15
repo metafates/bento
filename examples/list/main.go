@@ -16,11 +16,31 @@ import (
 var _ bento.Model = (*Model)(nil)
 
 type Model struct {
-	listState listwidget.State
+	listState listwidget.State[Item]
 	showPopup bool
 
 	currentItem *int
-	itemsCount  int
+}
+
+type Item struct {
+	id int
+}
+
+func (i Item) Title() textwidget.Text {
+	return textwidget.NewText(
+		textwidget.NewLineStr("Item #"+strconv.Itoa(i.id+1)).WithStyle(bento.NewStyle().Bold()),
+		textwidget.NewLineStr("Description").WithStyle(bento.NewStyle().Italic().Dim()),
+	)
+}
+
+func newItems(count int) []Item {
+	var items []Item
+
+	for i := 0; i < count; i++ {
+		items = append(items, Item{id: i})
+	}
+
+	return items
 }
 
 func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
@@ -29,7 +49,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 		bottomTitle = strconv.Itoa(*m.currentItem+1) + " of "
 	}
 
-	bottomTitle += strconv.Itoa(m.itemsCount) + " items"
+	bottomTitle += strconv.Itoa(m.listState.LenFiltered()) + " items"
 
 	block := blockwidget.
 		New().
@@ -38,17 +58,8 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 		WithTitle(blockwidget.NewTitleStr("List")).
 		WithTitle(blockwidget.NewTitleStr(bottomTitle).Bottom().Right())
 
-	var items []listwidget.Item
-
-	for i := 0; i < m.itemsCount; i++ {
-		items = append(items, listwidget.NewItem(textwidget.NewText(
-			textwidget.NewLineStr("Item #"+strconv.Itoa(i+1)).WithStyle(bento.NewStyle().Bold()),
-			textwidget.NewLineStr("Description").WithStyle(bento.NewStyle().Italic().Dim()),
-		)))
-	}
-
 	list := listwidget.
-		New(items...).
+		New[Item]().
 		WithHighlightSymbol("> ").
 		WithHighlightSpacing(listwidget.HighlightSpacingAlways).
 		WithBlock(block).WithHighlightStyle(bento.NewStyle().Black().OnBlue())
@@ -91,18 +102,11 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 		}
 	}
 
-	index, ok := m.listState.SelectedWithLimit(m.itemsCount - 1)
-	if ok {
-		m.currentItem = &index
-	} else {
-		m.currentItem = nil
-	}
-
 	return m, nil
 }
 
 func run() error {
-	model := Model{listState: listwidget.NewState(), itemsCount: 100}
+	model := Model{listState: listwidget.NewState(newItems(100)...)}
 
 	_, err := bento.NewApp(&model).Run()
 	if err != nil {

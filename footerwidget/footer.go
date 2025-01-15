@@ -13,16 +13,14 @@ import (
 var _ bento.StatefulWidget[*State] = (*Footer)(nil)
 
 type Footer struct {
-	bindings    []Binding
 	style       bento.Style
 	keyStyle    bento.Style
 	actionStyle bento.Style
 	keyPadding  int
 }
 
-func New(bindings ...Binding) Footer {
+func New() Footer {
 	return Footer{
-		bindings:    bindings,
 		style:       bento.NewStyle(),
 		keyStyle:    bento.NewStyle().Reversed(),
 		actionStyle: bento.NewStyle(),
@@ -41,10 +39,10 @@ func (f Footer) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *Sta
 		f.renderPopup(buffer.Area(), buffer, state)
 	}
 
-	f.renderFooter(area, buffer)
+	f.renderFooter(area, buffer, state)
 }
 
-func (f Footer) renderFooter(area bento.Rect, buffer *bento.Buffer) {
+func (f Footer) renderFooter(area bento.Rect, buffer *bento.Buffer, state *State) {
 	buffer.SetStyle(area, f.style)
 
 	footerLine := textwidget.NewLine()
@@ -53,7 +51,7 @@ func (f Footer) renderFooter(area bento.Rect, buffer *bento.Buffer) {
 
 	padding := strings.Repeat(" ", f.keyPadding)
 
-	for i, b := range f.bindings {
+	for i, b := range state.BindingList.Items() {
 		key := padding + b.Key + padding
 		action := b.Action
 
@@ -82,14 +80,8 @@ func (f Footer) renderFooter(area bento.Rect, buffer *bento.Buffer) {
 }
 
 func (f Footer) renderPopup(area bento.Rect, buffer *bento.Buffer, state *State) {
-	items := make([]listwidget.Item, 0, len(f.bindings))
-
-	for _, b := range f.bindings {
-		items = append(items, listwidget.NewItem(b.text()))
-	}
-
-	block := blockwidget.New().Bordered()
-	list := listwidget.New(items...).WithHighlightStyle(bento.NewStyle().Reversed()).WithBlock(block)
+	block := blockwidget.New().Bordered().WithTitleStr("Help")
+	list := listwidget.New[Binding]().WithHighlightStyle(bento.NewStyle().Reversed()).WithBlock(block)
 
 	popup := popupwidget.NewStateful(list).Center().Middle().WithHeight(bento.ConstraintPercentage(60))
 

@@ -8,6 +8,7 @@ import (
 	"github.com/metafates/bento/blockwidget"
 	"github.com/metafates/bento/inputwidget"
 	"github.com/metafates/bento/internal/sliceutil"
+	"github.com/metafates/bento/textwidget"
 	"github.com/rivo/uniseg"
 )
 
@@ -40,13 +41,12 @@ func (hs HighlightSpacing) shouldAdd(hasSelection bool) bool {
 }
 
 var (
-	_ bento.StatefulWidget[*State] = (*List)(nil)
-	_ bento.Widget                 = (*List)(nil)
+	_ bento.StatefulWidget[*State[StringItem]] = (*List[StringItem])(nil)
+	_ bento.Widget                             = (*List[StringItem])(nil)
 )
 
-type List struct {
+type List[I Item] struct {
 	block                 *blockwidget.Block
-	items                 []Item
 	style                 bento.Style
 	direction             Direction
 	highlightStyle        bento.Style
@@ -56,10 +56,9 @@ type List struct {
 	scrollPadding         int
 }
 
-func New(items ...Item) List {
-	return List{
+func New[I Item]() List[I] {
+	return List[I]{
 		block:                 nil,
-		items:                 items,
 		style:                 bento.NewStyle(),
 		direction:             DirectionTopToBottom,
 		highlightStyle:        bento.NewStyle(),
@@ -70,13 +69,13 @@ func New(items ...Item) List {
 	}
 }
 
-func (l List) WithScrollPadding(padding int) List {
+func (l List[I]) WithScrollPadding(padding int) List[I] {
 	l.scrollPadding = padding
 	return l
 }
 
-func (l List) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State) {
-	if state.FilterState != FilterStateNoFilter {
+func (l List[I]) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State[I]) {
+	if state.filterState != FilterStateNoFilter {
 		var inputArea bento.Rect
 
 		bento.NewLayout(
@@ -90,11 +89,11 @@ func (l List) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State
 	l.render(area, buffer, state)
 }
 
-func (l List) renderFilter(area bento.Rect, buffer *bento.Buffer, state *State) {
+func (l List[I]) renderFilter(area bento.Rect, buffer *bento.Buffer, state *State[I]) {
 	title := "Filter"
 
-	if state.FilterState == FilterStateFiltered {
-		title = fmt.Sprintf("%s %q", title, state.input.String())
+	if state.filterState == FilterStateFiltered {
+		title = fmt.Sprintf("%s %q", title, state.filterInput.String())
 	}
 
 	block := blockwidget.New().Bordered().WithTitleStr(title)
@@ -102,10 +101,11 @@ func (l List) renderFilter(area bento.Rect, buffer *bento.Buffer, state *State) 
 	inputwidget.
 		New().
 		WithBlock(block).
-		RenderStateful(area, buffer, &state.input)
+		WithPlaceholder("Search").
+		RenderStateful(area, buffer, &state.filterInput)
 }
 
-func (l List) render(area bento.Rect, buffer *bento.Buffer, state *State) {
+func (l List[I]) render(area bento.Rect, buffer *bento.Buffer, state *State[I]) {
 	buffer.SetStyle(area, l.style)
 
 	listArea := area
@@ -114,22 +114,18 @@ func (l List) render(area bento.Rect, buffer *bento.Buffer, state *State) {
 		listArea = l.block.Inner(area)
 	}
 
-	if listArea.IsEmpty() {
+	if listArea.IsEmpty() || len(state.filteredIndices) == 0 {
 		return
-	}
-
-	if len(l.items) == 0 {
-		state.Unselect()
-		return
-	}
-
-	if state.selected != nil && *state.selected >= len(l.items) {
-		state.Select(max(0, len(l.items)-1))
 	}
 
 	listHeight := listArea.Height
 
-	firstVisibleIndex, lastVisibleIndex := l.getItemsBounds(state.selected, state.offset, listHeight)
+	items := make([]textwidget.Text, 0, len(state.filteredIndices))
+	for _, i := range state.filteredIndices {
+		items = append(items, state.items[i].Title())
+	}
+
+	firstVisibleIndex, lastVisibleIndex := l.getItemsBounds(state.selected, items, state.offset, listHeight)
 
 	// NOTE: this changes the state's offset to be the beginning of the now viewable items
 	state.offset = firstVisibleIndex
@@ -142,14 +138,16 @@ func (l List) render(area bento.Rect, buffer *bento.Buffer, state *State) {
 
 	selectionSpacing := l.highlightSpacing.shouldAdd(state.selected != nil)
 
-	for i, item := range sliceutil.Take(sliceutil.Skip(l.items, state.offset), lastVisibleIndex-firstVisibleIndex) {
+	for i, item := range sliceutil.Take(sliceutil.Skip(state.filteredIndices, state.offset), lastVisibleIndex-firstVisibleIndex) {
 		i += state.offset
 
 		var x, y int
 
+		text := state.items[item].Title()
+
 		switch l.direction {
 		case DirectionBottomToTop:
-			currentHeight += item.Height()
+			currentHeight += text.Height()
 
 			x = listArea.Left()
 			y = listArea.Bottom() - currentHeight
@@ -157,17 +155,17 @@ func (l List) render(area bento.Rect, buffer *bento.Buffer, state *State) {
 			x = listArea.Left()
 			y = listArea.Top() + currentHeight
 
-			currentHeight += item.Height()
+			currentHeight += text.Height()
 		}
 
 		rowArea := bento.Rect{
 			X:      x,
 			Y:      y,
 			Width:  listArea.Width,
-			Height: item.Height(),
+			Height: text.Height(),
 		}
 
-		itemStyle := l.style.Patched(item.style)
+		itemStyle := l.style.Patched(text.Style)
 		buffer.SetStyle(rowArea, itemStyle)
 
 		var isSelected bool
@@ -187,10 +185,10 @@ func (l List) render(area bento.Rect, buffer *bento.Buffer, state *State) {
 			}
 		}
 
-		item.content.Render(itemArea, buffer)
+		text.Render(itemArea, buffer)
 
 		if selectionSpacing {
-			for j := 0; j < item.Height(); j++ {
+			for j := 0; j < text.Height(); j++ {
 				symbol := blankSymbol
 				if isSelected && (j == 0 || l.repeatHighlightSymbol) {
 					symbol = highlightSymbol
@@ -207,61 +205,48 @@ func (l List) render(area bento.Rect, buffer *bento.Buffer, state *State) {
 }
 
 // Render implements bento.Widget.
-func (l List) Render(area bento.Rect, buffer *bento.Buffer) {
-	l.RenderStateful(area, buffer, new(State))
+func (l List[I]) Render(area bento.Rect, buffer *bento.Buffer) {
+	l.RenderStateful(area, buffer, new(State[I]))
 }
 
-func (l List) WithDirection(direction Direction) List {
+func (l List[I]) WithDirection(direction Direction) List[I] {
 	l.direction = direction
 	return l
 }
 
-func (l List) WithHighlightSpacing(highlightSpacing HighlightSpacing) List {
+func (l List[I]) WithHighlightSpacing(highlightSpacing HighlightSpacing) List[I] {
 	l.highlightSpacing = highlightSpacing
 	return l
 }
 
-func (l List) WithRepeatHighlightSymbol(repeat bool) List {
+func (l List[I]) WithRepeatHighlightSymbol(repeat bool) List[I] {
 	l.repeatHighlightSymbol = repeat
 	return l
 }
 
-func (l List) WithHighlightStyle(style bento.Style) List {
+func (l List[I]) WithHighlightStyle(style bento.Style) List[I] {
 	l.highlightStyle = style
 	return l
 }
 
-func (l List) WithHighlightSymbol(symbol string) List {
+func (l List[I]) WithHighlightSymbol(symbol string) List[I] {
 	l.highlightSymbol = symbol
 	return l
 }
 
-func (l List) WithStyle(style bento.Style) List {
+func (l List[I]) WithStyle(style bento.Style) List[I] {
 	l.style = style
 	return l
 }
 
-func (l List) WithBlock(block blockwidget.Block) List {
+func (l List[I]) WithBlock(block blockwidget.Block) List[I] {
 	l.block = &block
 	return l
 }
 
-func (l List) WithItems(items ...Item) List {
-	l.items = items
-	return l
-}
-
-func (l List) Len() int {
-	return len(l.items)
-}
-
-func (l List) IsEmpty() bool {
-	return len(l.items) == 0
-}
-
 // getItemsBounds given an offset, calculates which items can fit in a given area
-func (l List) getItemsBounds(selected *int, offset, maxHeight int) (int, int) {
-	offset = min(offset, max(0, len(l.items)-1))
+func (l List[I]) getItemsBounds(selected *int, items []textwidget.Text, offset, maxHeight int) (int, int) {
+	offset = min(offset, max(0, len(items)-1))
 
 	// NOTE: visible here implies visible in the given area
 	firstVisibleIndex := offset
@@ -272,7 +257,7 @@ func (l List) getItemsBounds(selected *int, offset, maxHeight int) (int, int) {
 
 	// Calculate the last visible index and total height of the items
 	// that will fit in the available space
-	for _, item := range sliceutil.Skip(l.items, offset) {
+	for _, item := range sliceutil.Skip(items, offset) {
 		if heightFromOffset+item.Height() > maxHeight {
 			break
 		}
@@ -289,6 +274,7 @@ func (l List) getItemsBounds(selected *int, offset, maxHeight int) (int, int) {
 	if selected != nil {
 		indexToDisplay = l.applyScrollPaddingToSelectedIndex(
 			*selected,
+			items,
 			maxHeight,
 			firstVisibleIndex,
 			lastVisibleIndex,
@@ -300,14 +286,14 @@ func (l List) getItemsBounds(selected *int, offset, maxHeight int) (int, int) {
 	// If we have an item selected that is out of the viewable area (or
 	// the offset is still set), we still need to show this item
 	for indexToDisplay >= lastVisibleIndex {
-		heightFromOffset += l.items[lastVisibleIndex].Height()
+		heightFromOffset += items[lastVisibleIndex].Height()
 
 		lastVisibleIndex++
 
 		// Now we need to hide previous items since we didn't have space
 		// for the selected/offset item
 		for heightFromOffset > maxHeight {
-			heightFromOffset = max(0, heightFromOffset-l.items[firstVisibleIndex].Height())
+			heightFromOffset = max(0, heightFromOffset-items[firstVisibleIndex].Height())
 
 			// Remove this item to view by starting at the next item index
 			firstVisibleIndex++
@@ -319,13 +305,13 @@ func (l List) getItemsBounds(selected *int, offset, maxHeight int) (int, int) {
 	for indexToDisplay < firstVisibleIndex {
 		firstVisibleIndex--
 
-		heightFromOffset += l.items[firstVisibleIndex].Height()
+		heightFromOffset += items[firstVisibleIndex].Height()
 
 		// Don't show an item if it is beyond our viewable height
 		for heightFromOffset > maxHeight {
 			lastVisibleIndex--
 
-			heightFromOffset = max(0, heightFromOffset-l.items[lastVisibleIndex].Height())
+			heightFromOffset = max(0, heightFromOffset-items[lastVisibleIndex].Height())
 		}
 	}
 
@@ -336,8 +322,8 @@ func (l List) getItemsBounds(selected *int, offset, maxHeight int) (int, int) {
 // selected item on screen even with items of inconsistent sizes
 //
 // This function is sensitive to how the bounds checking function handles item height
-func (l List) applyScrollPaddingToSelectedIndex(selected int, maxHeight, firstVisibleIndex, lastVisibleIndex int) int {
-	lastValidIndex := max(0, len(l.items)-1)
+func (l List[I]) applyScrollPaddingToSelectedIndex(selected int, items []textwidget.Text, maxHeight, firstVisibleIndex, lastVisibleIndex int) int {
+	lastValidIndex := max(0, len(items)-1)
 
 	selected = min(selected, lastValidIndex)
 
@@ -354,7 +340,7 @@ func (l List) applyScrollPaddingToSelectedIndex(selected int, maxHeight, firstVi
 		to := min(lastValidIndex, selected+scrollPadding)
 
 		for i := from; i <= to; i++ {
-			heightAroundSelected += l.items[i].Height()
+			heightAroundSelected += items[i].Height()
 		}
 
 		if heightAroundSelected <= maxHeight {

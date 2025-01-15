@@ -22,6 +22,10 @@ func NewSpan(v string) Span {
 	}
 }
 
+func (s Span) String() string {
+	return s.Content
+}
+
 func (s Span) WithStylePatch(patch bento.Style) Span {
 	return s.WithStyle(s.Style.Patched(patch))
 }

@@ -1,35 +1,29 @@
 package listwidget
 
 import (
-	"github.com/metafates/bento"
 	"github.com/metafates/bento/textwidget"
 )
 
-type Item struct {
-	style   bento.Style
-	content textwidget.Text
+type Item interface {
+	Title() textwidget.Text
 }
 
-func NewItemStr(text string) Item {
-	return NewItem(textwidget.NewTextStr(text))
+type FilterableItem interface {
+	Item
+
+	FilterValue() string
 }
 
-func NewItem(text textwidget.Text) Item {
-	return Item{
-		style:   bento.NewStyle(),
-		content: text,
-	}
+type StringItem string
+
+func (i StringItem) Title() textwidget.Text {
+	return textwidget.NewTextStr(string(i))
 }
 
-func (i Item) WithStyle(style bento.Style) Item {
-	i.style = style
-	return i
+func (i StringItem) FilterValue() string {
+	return string(i)
 }
 
-func (i Item) Height() int {
-	return i.content.Height()
-}
-
-func (i Item) Width() int {
-	return i.content.Width()
+func NewStringItem(s string) StringItem {
+	return StringItem(s)
 }

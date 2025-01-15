@@ -2,8 +2,11 @@ package footerwidget
 
 import (
 	"github.com/metafates/bento"
+	"github.com/metafates/bento/listwidget"
 	"github.com/metafates/bento/textwidget"
 )
+
+var _ listwidget.Item = (*Binding)(nil)
 
 type Binding struct {
 	Key         string
@@ -24,7 +27,7 @@ func (b Binding) WithDescription(description string) Binding {
 	return b
 }
 
-func (b Binding) text() textwidget.Text {
+func (b Binding) Title() textwidget.Text {
 	text := textwidget.NewText(
 		textwidget.NewLine(
 			textwidget.NewSpan(b.Key).WithStyle(bento.NewStyle().Bold()),
