@@ -77,30 +77,13 @@ func (m *Model) Init() bento.Cmd {
 func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 	switch msg := msg.(type) {
 	case bento.KeyMsg:
+		if m.listState.Update(bento.Key(msg)) {
+			return m, nil
+		}
+
 		switch msg.String() {
 		case " ":
 			m.showPopup = !m.showPopup
-
-		case "ctrl+u":
-			m.listState.ScrollUpBy(8)
-
-		case "ctrl+d":
-			m.listState.ScrollDownBy(8)
-
-		case "G":
-			m.listState.SelectLast()
-
-		case "g":
-			m.listState.SelectFirst()
-
-		case "j", "down":
-			m.listState.SelectNext()
-
-		case "k", "up":
-			m.listState.SelectPrevious()
-
-		case "esc":
-			m.listState.Unselect()
 
 		case "q", "ctrl+c":
 			return m, bento.Quit

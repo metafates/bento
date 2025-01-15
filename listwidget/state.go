@@ -54,18 +54,29 @@ func (s *State) Update(key bento.Key) bool {
 
 	switch key.String() {
 	case "enter":
-		if s.FilterState == FilterStateFiltering {
-			s.setFilteringState(FilterStateFiltered)
-			return true
+		if s.FilterState != FilterStateFiltering {
+			return false
 		}
 
-		return false
+		if s.input.String() == "" {
+			s.setFilteringState(FilterStateNoFilter)
+		} else {
+			s.setFilteringState(FilterStateFiltered)
+		}
+
+		return true
 	case "esc":
 		if s.FilterState == FilterStateNoFilter {
+			if s.selected != nil {
+				s.Unselect()
+				return true
+			}
+
 			return false
 		}
 
 		s.setFilteringState(FilterStateNoFilter)
+
 		return true
 
 	case "ctrl+u":

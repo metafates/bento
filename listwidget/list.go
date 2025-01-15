@@ -1,6 +1,7 @@
 package listwidget
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/metafates/bento"
@@ -83,10 +84,25 @@ func (l List) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State
 			bento.ConstraintFill(1),
 		).Vertical().Split(area).Assign(&inputArea, &area)
 
-		inputwidget.New().WithBlock(blockwidget.New().Bordered()).RenderStateful(inputArea, buffer, &state.input)
+		l.renderFilter(inputArea, buffer, state)
 	}
 
 	l.render(area, buffer, state)
+}
+
+func (l List) renderFilter(area bento.Rect, buffer *bento.Buffer, state *State) {
+	title := "Filter"
+
+	if state.FilterState == FilterStateFiltered {
+		title = fmt.Sprintf("%s %q", title, state.input.String())
+	}
+
+	block := blockwidget.New().Bordered().WithTitleStr(title)
+
+	inputwidget.
+		New().
+		WithBlock(block).
+		RenderStateful(area, buffer, &state.input)
 }
 
 func (l List) render(area bento.Rect, buffer *bento.Buffer, state *State) {
