@@ -8,18 +8,35 @@ import (
 
 var _ filterablelistwidget.Item = (*Binding)(nil)
 
+type Action func()
+
 type Binding struct {
 	Key         string
-	Action      string
+	Aliases     []string
+	Name        string
 	Description string
+	Action      Action
 }
 
-func NewBinding(key, action string) Binding {
+func NewBinding(action, key string, aliases ...string) Binding {
 	return Binding{
 		Key:         key,
-		Action:      action,
+		Aliases:     aliases,
+		Name:        action,
 		Description: "",
+		Action:      nil,
 	}
+}
+
+func (b Binding) Call() {
+	if b.Action != nil {
+		b.Action()
+	}
+}
+
+func (b Binding) WithAction(action Action) Binding {
+	b.Action = action
+	return b
 }
 
 func (b Binding) WithDescription(description string) Binding {
@@ -27,12 +44,28 @@ func (b Binding) WithDescription(description string) Binding {
 	return b
 }
 
+func (b Binding) Matches(key bento.Key) bool {
+	keyStr := key.String()
+
+	if b.Key == keyStr {
+		return true
+	}
+
+	for _, alias := range b.Aliases {
+		if alias == keyStr {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (b Binding) Text() textwidget.Text {
 	text := textwidget.NewText(
 		textwidget.NewLine(
 			textwidget.NewSpan(b.Key).WithStyle(bento.NewStyle().Bold()),
 			textwidget.NewSpan("  "),
-			textwidget.NewSpan(b.Action),
+			textwidget.NewSpan(b.Name),
 		),
 	)
 

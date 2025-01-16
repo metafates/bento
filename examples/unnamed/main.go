@@ -17,7 +17,7 @@ var _ bento.Model = (*Model)(nil)
 type Model struct {
 	ratio float64
 
-	footerState footerwidget.State
+	footerState *footerwidget.State
 }
 
 // Init implements bento.Model.
@@ -54,7 +54,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 
 	footerwidget.
 		New().
-		RenderStateful(footerArea, buffer, &m.footerState)
+		RenderStateful(footerArea, buffer, m.footerState)
 }
 
 // Update implements bento.Model.
@@ -75,8 +75,6 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 			m.ratio = max(0, m.ratio-0.02)
 		case "down", "left", "h":
 			m.ratio = max(0, m.ratio-0.001)
-		case "ctrl+c":
-			return m, bento.Quit
 		}
 	}
 
@@ -84,16 +82,16 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 }
 
 func run() error {
-	model := Model{
-		ratio: 0,
-		footerState: footerwidget.NewState(
-			footerwidget.NewBinding("^c", "quit"),
-			footerwidget.NewBinding("up", "increment").WithDescription("Increment the gauge"),
-			footerwidget.NewBinding("down", "decrement").WithDescription("Decrement the gauge"),
-		),
-	}
-
-	_, err := bento.NewApp(&model).Run()
+	_, err := bento.NewAppWithProxy(func(proxy bento.AppProxy) bento.Model {
+		return &Model{
+			ratio: 0,
+			footerState: footerwidget.NewState(
+				footerwidget.NewBinding("quit", "ctrl+c").WithAction(proxy.Quit),
+				footerwidget.NewBinding("increment", "up").WithDescription("Increment the gauge").WithAction(func() {}),
+				footerwidget.NewBinding("decrement", "down").WithDescription("Decrement the gauge"),
+			),
+		}
+	}).Run()
 	if err != nil {
 		return fmt.Errorf("new app: %w", err)
 	}

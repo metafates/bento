@@ -11,16 +11,31 @@ type State struct {
 	ShowPopup bool
 }
 
-func NewState(bindings ...Binding) State {
-	return State{
+func NewState(bindings ...Binding) *State {
+	state := State{
 		BindingList: filterablelistwidget.NewState(bindings...),
 	}
+
+	state.BindingList.OnSelect(state.closePopup)
+
+	return &state
+}
+
+func (s *State) closePopup() {
+	s.ShowPopup = false
+	s.BindingList.Reset()
 }
 
 func (s *State) Update(key bento.Key) bool {
 	if s.ShowPopup {
 		listUpdated := s.BindingList.Update(key)
 		if listUpdated {
+			return true
+		}
+
+		switch key.String() {
+		case "esc", "q":
+			s.closePopup()
 			return true
 		}
 	}
@@ -30,13 +45,20 @@ func (s *State) Update(key bento.Key) bool {
 		s.TogglePopup()
 		return true
 
-	case "esc", "q":
-		s.ShowPopup = false
-		return true
-
 	default:
-		return false
+		return s.callBinding(key)
 	}
+}
+
+func (s *State) callBinding(key bento.Key) bool {
+	for _, b := range s.BindingList.AllItems() {
+		if b.Matches(key) {
+			b.Call()
+			return true
+		}
+	}
+
+	return false
 }
 
 func (s *State) TogglePopup() {

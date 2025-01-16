@@ -80,7 +80,7 @@ func (i _InputCustom) getInput() (io.Reader, func() error, error) {
 }
 
 type App struct {
-	initialModel Model
+	modelConstructor func(proxy AppProxy) Model
 
 	ctx       context.Context
 	cancelCtx context.CancelFunc
@@ -89,15 +89,21 @@ type App struct {
 	output io.Writer
 }
 
-func NewApp(initialModel Model) App {
+func NewApp(model Model) App {
+	return NewAppWithProxy(func(AppProxy) Model {
+		return model
+	})
+}
+
+func NewAppWithProxy(constructor func(proxy AppProxy) Model) App {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 
 	return App{
-		initialModel: initialModel,
-		ctx:          ctx,
-		cancelCtx:    cancelCtx,
-		input:        _InputDefault{},
-		output:       os.Stdout,
+		modelConstructor: constructor,
+		ctx:              ctx,
+		cancelCtx:        cancelCtx,
+		input:            _InputDefault{},
+		output:           os.Stdout,
 	}
 }
 
@@ -116,13 +122,12 @@ func (a App) Run() (Model, error) {
 	backend := NewDefaultBackend(input, a.output)
 	terminal, err := NewTerminal(&backend, ViewportFullscreen{})
 	if err != nil {
-		return a.initialModel, fmt.Errorf("new terminal: %w", err)
+		return nil, fmt.Errorf("new terminal: %w", err)
 	}
 
 	runner := appRunner{
-		initialModel: a.initialModel,
-		ctx:          a.ctx,
-		cancelCtx:    a.cancelCtx,
+		ctx:       a.ctx,
+		cancelCtx: a.cancelCtx,
 
 		readLoopDone: make(chan struct{}),
 		handlers:     channelHandlers{},
@@ -133,6 +138,10 @@ func (a App) Run() (Model, error) {
 
 		closeInput: closeInput,
 	}
+
+	runner.initialModel = a.modelConstructor(AppProxy{
+		runner: &runner,
+	})
 
 	return runner.Run()
 }
@@ -244,26 +253,30 @@ func (a *appRunner) handleCommands(cmds chan Cmd) chan struct{} {
 				return
 
 			case cmd := <-cmds:
-				if cmd == nil {
-					continue
-				}
-
-				// Don't wait on these goroutines, otherwise the shutdown
-				// latency would get too large as a Cmd can run for some time
-				// (e.g. tick commands that sleep for half a second). It's not
-				// possible to cancel them so we'll have to leak the goroutine
-				// until Cmd returns.
-				go func() {
-					defer a.recoverFromPanic()
-
-					msg := cmd() // this can be long.
-					a.Send(msg)
-				}()
+				a.handleCmd(cmd)
 			}
 		}
 	}()
 
 	return ch
+}
+
+func (a *appRunner) handleCmd(cmd Cmd) {
+	if cmd == nil {
+		return
+	}
+
+	// Don't wait on these goroutines, otherwise the shutdown
+	// latency would get too large as a Cmd can run for some time
+	// (e.g. tick commands that sleep for half a second). It's not
+	// possible to cancel them so we'll have to leak the goroutine
+	// until Cmd returns.
+	go func() {
+		defer a.recoverFromPanic()
+
+		msg := cmd() // this can be long.
+		a.Send(msg)
+	}()
 }
 
 func (a *appRunner) handleResize() chan struct{} {

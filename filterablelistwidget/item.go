@@ -8,10 +8,12 @@ type Item interface {
 	Text() textwidget.Text
 }
 
-type FilterableItem interface {
-	Item
-
+type Filterable interface {
 	FilterValue() string
+}
+
+type Callable interface {
+	Call()
 }
 
 type StringItem string

@@ -13,7 +13,10 @@ require (
 	golang.org/x/sync v0.10.0
 )
 
-require golang.org/x/text v0.21.0 // indirect
+require (
+	github.com/lithammer/fuzzysearch v1.1.8 // indirect
+	golang.org/x/text v0.21.0 // indirect
+)
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect

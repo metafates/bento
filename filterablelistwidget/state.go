@@ -2,8 +2,8 @@ package filterablelistwidget
 
 import (
 	"math"
-	"strings"
 
+	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/inputwidget"
 	"github.com/metafates/bento/listwidget"
@@ -25,6 +25,10 @@ type State[I Item] struct {
 
 	items           []I
 	filteredIndices []int
+
+	cache map[string][]int
+
+	onSelect func()
 }
 
 func NewState[I Item](items ...I) State[I] {
@@ -35,15 +39,22 @@ func NewState[I Item](items ...I) State[I] {
 		list: listwidget.NewState(),
 
 		filterState: FilterStateNoFilter,
+
 		filterInput: input,
 
 		items:           items,
 		filteredIndices: make([]int, 0, len(items)),
+		cache:           make(map[string][]int),
+		onSelect:        nil,
 	}
 
 	state.applyFilter()
 
 	return state
+}
+
+func (s *State[I]) OnSelect(f func()) {
+	s.onSelect = f
 }
 
 func (s *State[I]) reselect() {
@@ -56,12 +67,19 @@ func (s *State[I]) reselect() {
 }
 
 func (s *State[I]) applyFilter() {
-	// TODO: optimize
-	s.filteredIndices = make([]int, 0, cap(s.filteredIndices))
-
 	filter := s.filterInput.String()
 
-	defer s.reselect()
+	if cached, ok := s.cache[filter]; ok {
+		s.filteredIndices = cached
+		return
+	}
+
+	s.filteredIndices = make([]int, 0, cap(s.filteredIndices))
+
+	defer func() {
+		s.reselect()
+		s.cache[filter] = s.filteredIndices
+	}()
 
 	if filter == "" {
 		for i := range s.items {
@@ -74,13 +92,13 @@ func (s *State[I]) applyFilter() {
 	for i, item := range s.items {
 		var value string
 
-		if f, ok := Item(item).(FilterableItem); ok {
+		if f, ok := Item(item).(Filterable); ok {
 			value = f.FilterValue()
 		} else {
 			value = item.Text().String()
 		}
 
-		if strings.Contains(value, filter) {
+		if fuzzy.MatchNormalizedFold(filter, value) {
 			s.filteredIndices = append(s.filteredIndices, i)
 		}
 	}
@@ -110,8 +128,22 @@ func (s *State[I]) SetItems(items ...I) {
 	s.applyFilter()
 }
 
-func (s *State[I]) Items() []I {
+// AllItems returns all items
+func (s *State[I]) AllItems() []I {
 	return s.items
+}
+
+// Items returns currently filtered items
+//
+// See [State.AllItems] to get all items
+func (s *State[I]) Items() []I {
+	items := make([]I, 0, len(s.filteredIndices))
+
+	for _, i := range s.filteredIndices {
+		items = append(items, s.items[i])
+	}
+
+	return items
 }
 
 func (s *State[I]) Update(key bento.Key) bool {
@@ -129,6 +161,22 @@ func (s *State[I]) Update(key bento.Key) bool {
 	switch key.String() {
 	case "enter":
 		if s.filterState != FilterStateFiltering {
+			selected, ok := s.Selected()
+			if !ok {
+				s.SelectFirst()
+				return true
+			}
+
+			if callable, ok := Item(selected).(Callable); ok {
+				if s.onSelect != nil {
+					s.onSelect()
+				}
+
+				callable.Call()
+
+				return true
+			}
+
 			return false
 		}
 
@@ -167,6 +215,13 @@ func (s *State[I]) Update(key bento.Key) bool {
 
 func (s *State[I]) SetOffset(offset int) {
 	s.list.SetOffset(offset)
+}
+
+func (s *State[I]) Reset() {
+	s.Unselect()
+	s.filterInput.DeleteLine()
+	s.applyFilter()
+	s.filterState = FilterStateNoFilter
 }
 
 func (s *State[I]) Select(index int) {
