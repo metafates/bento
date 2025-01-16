@@ -29,7 +29,9 @@ type Splitted []Rect
 
 func (s Splitted) Assign(areas ...*Rect) {
 	for i := range areas {
-		*areas[i] = s[i]
+		if areas[i] != nil {
+			*areas[i] = s[i]
+		}
 	}
 }
 

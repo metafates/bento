@@ -120,6 +120,10 @@ func (s *State[I]) Update(key bento.Key) bool {
 			s.applyFilter()
 			return true
 		}
+	} else if s.list.Update(key) {
+		s.reselect()
+
+		return true
 	}
 
 	switch key.String() {
@@ -149,54 +153,6 @@ func (s *State[I]) Update(key bento.Key) bool {
 
 		s.setFilteringState(FilterStateNoFilter)
 
-		return true
-
-	case "ctrl+u":
-		if s.filterState == FilterStateFiltering {
-			return false
-		}
-
-		s.ScrollUpBy(8)
-		return true
-
-	case "ctrl+d":
-		if s.filterState == FilterStateFiltering {
-			return false
-		}
-
-		s.ScrollDownBy(8)
-		return true
-
-	case "G":
-		if s.filterState == FilterStateFiltering {
-			return false
-		}
-
-		s.SelectLast()
-		return true
-
-	case "g":
-		if s.filterState == FilterStateFiltering {
-			return false
-		}
-
-		s.SelectFirst()
-		return true
-
-	case "j", "down":
-		if s.filterState == FilterStateFiltering {
-			return false
-		}
-
-		s.SelectNext()
-		return true
-
-	case "k", "up":
-		if s.filterState == FilterStateFiltering {
-			return false
-		}
-
-		s.SelectPrevious()
 		return true
 
 	case "/":

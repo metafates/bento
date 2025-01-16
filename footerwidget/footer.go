@@ -40,7 +40,30 @@ func (f Footer) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *Sta
 		f.renderPopup(buffer.Area(), buffer, state)
 	}
 
-	f.renderFooter(area, buffer, state)
+	helpBinding := f.bindingLine(_helpBinding)
+
+	var otherKeysArea, helpKeyArea bento.Rect
+
+	bento.NewLayout(
+		bento.ConstraintFill(1),
+		bento.ConstraintLength(1),
+		bento.ConstraintLength(helpBinding.Width()),
+	).Horizontal().Split(area).Assign(&otherKeysArea, nil, &helpKeyArea)
+
+	f.renderFooter(otherKeysArea, buffer, state)
+
+	helpBinding.Render(helpKeyArea, buffer)
+}
+
+func (f Footer) bindingLine(b Binding) textwidget.Line {
+	padding := strings.Repeat(" ", f.keyPadding)
+	key := padding + b.Key + padding
+
+	return textwidget.NewLine(
+		textwidget.NewSpan(key).WithStyle(f.keyStyle),
+		textwidget.NewSpan(" "),
+		textwidget.NewSpan(b.Action).WithStyle(f.actionStyle),
+	)
 }
 
 func (f Footer) renderFooter(area bento.Rect, buffer *bento.Buffer, state *State) {
@@ -50,21 +73,14 @@ func (f Footer) renderFooter(area bento.Rect, buffer *bento.Buffer, state *State
 
 	var width int
 
-	padding := strings.Repeat(" ", f.keyPadding)
-
 	for i, b := range state.BindingList.Items() {
-		key := padding + b.Key + padding
-		action := b.Action
-
 		var spans []textwidget.Span
 
 		if i > 0 {
 			spans = append(spans, textwidget.NewSpan("  "))
 		}
 
-		spans = append(spans, textwidget.NewSpan(key).WithStyle(f.keyStyle))
-		spans = append(spans, textwidget.NewSpan(" "))
-		spans = append(spans, textwidget.NewSpan(action).WithStyle(f.actionStyle))
+		spans = append(spans, f.bindingLine(b).Spans...)
 
 		line := textwidget.NewLine(spans...)
 		lineWidth := line.Width()
@@ -79,6 +95,8 @@ func (f Footer) renderFooter(area bento.Rect, buffer *bento.Buffer, state *State
 
 	footerLine.Render(area, buffer)
 }
+
+var _helpBinding = NewBinding("?", "help").WithDescription("Show help")
 
 func (f Footer) renderPopup(area bento.Rect, buffer *bento.Buffer, state *State) {
 	block := blockwidget.New().Bordered().WithTitleStr("Help")
