@@ -5,7 +5,7 @@ import (
 )
 
 type Item interface {
-	Title() textwidget.Text
+	Text() textwidget.Text
 }
 
 type FilterableItem interface {
@@ -16,7 +16,7 @@ type FilterableItem interface {
 
 type StringItem string
 
-func (i StringItem) Title() textwidget.Text {
+func (i StringItem) Text() textwidget.Text {
 	return textwidget.NewTextStr(string(i))
 }
 

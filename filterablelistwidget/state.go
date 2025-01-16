@@ -6,6 +6,7 @@ import (
 
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/inputwidget"
+	"github.com/metafates/bento/listwidget"
 )
 
 type FilterState int
@@ -17,8 +18,7 @@ const (
 )
 
 type State[I Item] struct {
-	offset   int
-	selected *int
+	list listwidget.State
 
 	filterState FilterState
 	filterInput inputwidget.State
@@ -32,8 +32,7 @@ func NewState[I Item](items ...I) State[I] {
 	input.ShowCursor(true)
 
 	state := State[I]{
-		offset:   0,
-		selected: nil,
+		list: listwidget.NewState(),
 
 		filterState: FilterStateNoFilter,
 		filterInput: input,
@@ -48,11 +47,12 @@ func NewState[I Item](items ...I) State[I] {
 }
 
 func (s *State[I]) reselect() {
-	if s.selected == nil {
+	selected, ok := s.list.Selected()
+	if !ok {
 		return
 	}
 
-	s.Select(*s.selected)
+	s.Select(selected)
 }
 
 func (s *State[I]) applyFilter() {
@@ -77,7 +77,7 @@ func (s *State[I]) applyFilter() {
 		if f, ok := Item(item).(FilterableItem); ok {
 			value = f.FilterValue()
 		} else {
-			value = item.Title().String()
+			value = item.Text().String()
 		}
 
 		if strings.Contains(value, filter) {
@@ -139,7 +139,7 @@ func (s *State[I]) Update(key bento.Key) bool {
 		return true
 	case "esc":
 		if s.filterState == FilterStateNoFilter {
-			if s.selected != nil {
+			if _, ok := s.list.Selected(); ok {
 				s.Unselect()
 				return true
 			}
@@ -210,12 +210,12 @@ func (s *State[I]) Update(key bento.Key) bool {
 }
 
 func (s *State[I]) SetOffset(offset int) {
-	s.offset = offset
+	s.list.SetOffset(offset)
 }
 
 func (s *State[I]) Select(index int) {
 	index = s.clampIndex(index)
-	s.selected = &index
+	s.list.Select(index)
 }
 
 func (s *State[I]) clampIndex(index int) int {
@@ -223,23 +223,13 @@ func (s *State[I]) clampIndex(index int) int {
 }
 
 func (s *State[I]) SelectNext() {
-	var next int
-
-	if s.selected != nil {
-		next = *s.selected + 1
-	}
-
-	s.Select(next)
+	s.list.SelectNext()
+	s.reselect()
 }
 
 func (s *State[I]) SelectPrevious() {
-	previous := math.MaxInt
-
-	if s.selected != nil {
-		previous = max(0, *s.selected-1)
-	}
-
-	s.Select(previous)
+	s.list.SelectPrevious()
+	s.reselect()
 }
 
 func (s *State[I]) SelectFirst() {
@@ -251,42 +241,27 @@ func (s *State[I]) SelectLast() {
 }
 
 func (s *State[I]) ScrollDownBy(amount int) {
-	var selected int
-
-	if s.selected != nil {
-		selected = *s.selected
-	}
-
-	s.Select(selected + amount)
+	s.list.ScrollDownBy(amount)
+	s.reselect()
 }
 
 func (s *State[I]) ScrollUpBy(amount int) {
-	var selected int
-
-	if s.selected != nil {
-		selected = *s.selected
-	}
-
-	s.Select(selected - amount)
+	s.list.ScrollUpBy(amount)
+	s.reselect()
 }
 
 func (s *State[I]) Unselect() {
-	s.selected = nil
-	s.offset = 0
+	s.list.Unselect()
 }
 
-// Selected returns index of the selected item.
+// Selected returns selected item.
 // Returns ok = false if no item is selected.
-//
-// NOTE: Returned index may be greater, than you would expect, since it is trimmed only after [List.RenderStateful] call
-//
-// Use [State.SelectedWithLimit] if you know the limit or [GetSelectedItem] to select an item from the slice
 func (s *State[I]) Selected() (item I, ok bool) {
-	if s.selected == nil {
+	index, ok := s.list.Selected()
+	if !ok {
 		var empty I
 		return empty, false
 	}
 
-	index := *s.selected
 	return s.items[s.filteredIndices[index]], true
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/blockwidget"
 	"github.com/metafates/bento/filterablelistwidget"
+	"github.com/metafates/bento/listwidget"
 	"github.com/metafates/bento/popupwidget"
 	"github.com/metafates/bento/textwidget"
 )
@@ -81,13 +82,13 @@ func (f Footer) renderFooter(area bento.Rect, buffer *bento.Buffer, state *State
 
 func (f Footer) renderPopup(area bento.Rect, buffer *bento.Buffer, state *State) {
 	block := blockwidget.New().Bordered().WithTitleStr("Help")
-	list := filterablelistwidget.
-		New[Binding]().
+	list := listwidget.
+		New().
 		WithHighlightStyle(bento.NewStyle().Reversed()).
 		WithBlock(block)
 
 	popup := popupwidget.
-		NewStateful(list).
+		NewStateful(filterablelistwidget.New[Binding](list)).
 		Center().
 		Middle().
 		WithHeight(bento.ConstraintPercentage(60))

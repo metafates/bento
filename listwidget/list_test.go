@@ -9,14 +9,14 @@ import (
 )
 
 func TestSelectedItemEnsuresVisibleOffsetBeforeRange(t *testing.T) {
-	items := []Item{
-		NewItemStr("Item 0"),
-		NewItemStr("Item 1"),
-		NewItemStr("Item 2"),
-		NewItemStr("Item 3"),
-		NewItemStr("Item 4"),
-		NewItemStr("Item 5"),
-		NewItemStr("Item 6"),
+	items := []textwidget.Text{
+		textwidget.NewTextStr("Item 0"),
+		textwidget.NewTextStr("Item 1"),
+		textwidget.NewTextStr("Item 2"),
+		textwidget.NewTextStr("Item 3"),
+		textwidget.NewTextStr("Item 4"),
+		textwidget.NewTextStr("Item 5"),
+		textwidget.NewTextStr("Item 6"),
 	}
 
 	list := New(items...).WithHighlightSymbol(">>")
