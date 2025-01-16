@@ -2,18 +2,18 @@ package footerwidget
 
 import (
 	"github.com/metafates/bento"
-	"github.com/metafates/bento/listwidget"
+	"github.com/metafates/bento/filterablelistwidget"
 )
 
 type State struct {
-	BindingList listwidget.State[Binding]
+	BindingList filterablelistwidget.State[Binding]
 
 	ShowPopup bool
 }
 
 func NewState(bindings ...Binding) State {
 	return State{
-		BindingList: listwidget.NewState(bindings...),
+		BindingList: filterablelistwidget.NewState(bindings...),
 	}
 }
 
