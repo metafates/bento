@@ -6,8 +6,8 @@ import (
 
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/blockwidget"
-	"github.com/metafates/bento/footerwidget"
 	"github.com/metafates/bento/gaugewidget"
+	"github.com/metafates/bento/helpwidget"
 	"github.com/metafates/bento/popupwidget"
 	"github.com/metafates/bento/textwidget"
 )
@@ -17,7 +17,7 @@ var _ bento.Model = (*Model)(nil)
 type Model struct {
 	ratio float64
 
-	footerState *footerwidget.State
+	footerState *helpwidget.State
 }
 
 // Init implements bento.Model.
@@ -52,7 +52,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 	gauge.Render(mainArea, buffer)
 	popup.Render(area, buffer)
 
-	footerwidget.
+	helpwidget.
 		New().
 		RenderStateful(footerArea, buffer, m.footerState)
 }
@@ -81,18 +81,18 @@ func run() error {
 	_, err := bento.NewAppWithProxy(func(proxy bento.AppProxy) bento.Model {
 		return &Model{
 			ratio: 0,
-			footerState: footerwidget.NewState(
-				footerwidget.NewBinding("quit", "ctrl+c").
+			footerState: helpwidget.NewState(
+				helpwidget.NewBinding("quit", "ctrl+c").
 					WithAction(proxy.Quit).
 					Hidden(),
 
-				footerwidget.NewBinding("increment", "up", "right", "l", "+").
+				helpwidget.NewBinding("increment", "up", "right", "l", "+").
 					WithDescription("Increment the gauge").
 					WithAction(func() {
 						proxy.Send(Change(0.01))
 					}),
 
-				footerwidget.NewBinding("decrement", "down", "left", "h", "-").
+				helpwidget.NewBinding("decrement", "down", "left", "h", "-").
 					WithDescription("Decrement the gauge").
 					WithAction(func() {
 						proxy.Send(Change(-0.01))

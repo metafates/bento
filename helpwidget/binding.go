@@ -1,4 +1,4 @@
-package footerwidget
+package helpwidget
 
 import (
 	"strings"
