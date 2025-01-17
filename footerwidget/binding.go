@@ -1,6 +1,8 @@
 package footerwidget
 
 import (
+	"strings"
+
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/filterablelistwidget"
 	"github.com/metafates/bento/textwidget"
@@ -8,18 +10,23 @@ import (
 
 var _ filterablelistwidget.Item = (*Binding)(nil)
 
+var _helpBinding = NewBinding("help", "?").WithDescription("Show help")
+
 type Action func()
 
 type Binding struct {
+	DisplayKey  string
 	Key         string
 	Aliases     []string
 	Name        string
 	Description string
 	Action      Action
+	IsHidden    bool
 }
 
 func NewBinding(action, key string, aliases ...string) Binding {
 	return Binding{
+		DisplayKey:  strings.ReplaceAll(key, "ctrl+", "^"),
 		Key:         key,
 		Aliases:     aliases,
 		Name:        action,
@@ -34,6 +41,19 @@ func (b Binding) Call() {
 	}
 }
 
+func (b Binding) String() string {
+	if b.DisplayKey != "" {
+		return b.DisplayKey
+	}
+
+	return b.Key
+}
+
+func (b Binding) WithDisplayKey(displayKey string) Binding {
+	b.DisplayKey = displayKey
+	return b
+}
+
 func (b Binding) WithAction(action Action) Binding {
 	b.Action = action
 	return b
@@ -41,6 +61,11 @@ func (b Binding) WithAction(action Action) Binding {
 
 func (b Binding) WithDescription(description string) Binding {
 	b.Description = description
+	return b
+}
+
+func (b Binding) Hidden() Binding {
+	b.IsHidden = true
 	return b
 }
 
@@ -63,7 +88,7 @@ func (b Binding) Matches(key bento.Key) bool {
 func (b Binding) Text() textwidget.Text {
 	text := textwidget.NewText(
 		textwidget.NewLine(
-			textwidget.NewSpan(b.Key).WithStyle(bento.NewStyle().Bold()),
+			textwidget.NewSpan(b.String()).WithStyle(bento.NewStyle().Bold()),
 			textwidget.NewSpan("  "),
 			textwidget.NewSpan(b.Name),
 		),

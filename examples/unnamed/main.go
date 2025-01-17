@@ -60,25 +60,21 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 // Update implements bento.Model.
 func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 	switch msg := msg.(type) {
+	case ChangeMsg:
+		m.ratio = max(0, min(1, m.ratio+float64(msg)))
 	case bento.KeyMsg:
-		footerUpdated := m.footerState.Update(bento.Key(msg))
-		if footerUpdated {
-			return m, nil
-		}
-
-		switch msg.String() {
-		case "shift+up", "shift+right", "L", "+":
-			m.ratio = min(1, m.ratio+0.02)
-		case "up", "right", "l":
-			m.ratio = min(1, m.ratio+0.001)
-		case "shift+down", "shift+left", "H", "-":
-			m.ratio = max(0, m.ratio-0.02)
-		case "down", "left", "h":
-			m.ratio = max(0, m.ratio-0.001)
-		}
+		m.footerState.Update(bento.Key(msg))
 	}
 
 	return m, nil
+}
+
+type ChangeMsg float64
+
+func Change(delta float64) bento.Cmd {
+	return func() bento.Msg {
+		return ChangeMsg(delta)
+	}
 }
 
 func run() error {
@@ -86,9 +82,21 @@ func run() error {
 		return &Model{
 			ratio: 0,
 			footerState: footerwidget.NewState(
-				footerwidget.NewBinding("quit", "ctrl+c").WithAction(proxy.Quit),
-				footerwidget.NewBinding("increment", "up").WithDescription("Increment the gauge").WithAction(func() {}),
-				footerwidget.NewBinding("decrement", "down").WithDescription("Decrement the gauge"),
+				footerwidget.NewBinding("quit", "ctrl+c").
+					WithAction(proxy.Quit).
+					Hidden(),
+
+				footerwidget.NewBinding("increment", "up", "right", "l", "+").
+					WithDescription("Increment the gauge").
+					WithAction(func() {
+						proxy.Send(Change(0.01))
+					}),
+
+				footerwidget.NewBinding("decrement", "down", "left", "h", "-").
+					WithDescription("Decrement the gauge").
+					WithAction(func() {
+						proxy.Send(Change(-0.01))
+					}),
 			),
 		}
 	}).Run()

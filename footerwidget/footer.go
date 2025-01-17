@@ -57,7 +57,7 @@ func (f Footer) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *Sta
 
 func (f Footer) bindingLine(b Binding) textwidget.Line {
 	padding := strings.Repeat(" ", f.keyPadding)
-	key := padding + b.Key + padding
+	key := padding + b.String() + padding
 
 	return textwidget.NewLine(
 		textwidget.NewSpan(key).WithStyle(f.keyStyle),
@@ -71,12 +71,16 @@ func (f Footer) renderFooter(area bento.Rect, buffer *bento.Buffer, state *State
 
 	footerLine := textwidget.NewLine()
 
-	var width int
+	var width, shownCount int
 
-	for i, b := range state.BindingList.AllItems() {
+	for _, b := range state.BindingList.AllItems() {
+		if b.IsHidden {
+			continue
+		}
+
 		var spans []textwidget.Span
 
-		if i > 0 {
+		if shownCount > 0 {
 			spans = append(spans, textwidget.NewSpan("  "))
 		}
 
@@ -91,12 +95,11 @@ func (f Footer) renderFooter(area bento.Rect, buffer *bento.Buffer, state *State
 
 		footerLine.Spans = append(footerLine.Spans, line.Spans...)
 		width += lineWidth
+		shownCount++
 	}
 
 	footerLine.Render(area, buffer)
 }
-
-var _helpBinding = NewBinding("help", "?").WithDescription("Show help")
 
 func (f Footer) renderPopup(area bento.Rect, buffer *bento.Buffer, state *State) {
 	block := blockwidget.New().Bordered().WithTitleStr("Help")
