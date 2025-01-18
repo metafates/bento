@@ -77,6 +77,42 @@ func (l Layout) Horizontal() Layout {
 	return l.WithDirection(DirectionHorizontal)
 }
 
+// Fill returns a new layout with appended [ConstraintFill] constructed from the value
+func (l Layout) Fill(value int) Layout {
+	l.Constraints = append(l.Constraints, ConstraintFill(value))
+	return l
+}
+
+// Len returns a new layout with appended [ConstraintLen] constructed from the value
+func (l Layout) Len(value int) Layout {
+	l.Constraints = append(l.Constraints, ConstraintLen(value))
+	return l
+}
+
+// Percentage returns a new layout with appended [ConstraintPercentage] constructed from the value
+func (l Layout) Percentage(value int) Layout {
+	l.Constraints = append(l.Constraints, ConstraintPercentage(value))
+	return l
+}
+
+// Min returns a new layout with appended [ConstraintMin] constructed from the value
+func (l Layout) Min(value int) Layout {
+	l.Constraints = append(l.Constraints, ConstraintMin(value))
+	return l
+}
+
+// Max returns a new layout with appended [ConstraintMax] constructed from the value
+func (l Layout) Max(value int) Layout {
+	l.Constraints = append(l.Constraints, ConstraintMax(value))
+	return l
+}
+
+// Ratio returns a new layout with appended [ConstraintRatio] constructed from the num and den
+func (l Layout) Ratio(num, den int) Layout {
+	l.Constraints = append(l.Constraints, ConstraintRatio{Num: num, Den: den})
+	return l
+}
+
 func (l Layout) WithDirection(direction Direction) Layout {
 	l.Direction = direction
 	return l

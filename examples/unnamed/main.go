@@ -30,11 +30,10 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 	var mainArea, footerArea bento.Rect
 
 	bento.
-		NewLayout(
-			bento.ConstraintFill(1),
-			bento.ConstraintLen(1),
-		).
+		NewLayout().
 		Vertical().
+		Fill(1).
+		Len(1).
 		Split(area).
 		Assign(&mainArea, &footerArea)
 
