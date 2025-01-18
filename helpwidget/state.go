@@ -26,31 +26,42 @@ func (s *State) closePopup() {
 	s.BindingList.Reset()
 }
 
-func (s *State) Update(key bento.Key) bool {
+func (s *State) TryUpdate(msg bento.Msg) (bool, bento.Cmd) {
 	if s.ShowPopup {
-		listUpdated := s.BindingList.Update(key)
-		if listUpdated {
-			return true
+		consumed, cmd := s.BindingList.TryUpdate(msg)
+		if consumed {
+			return true, cmd
 		}
 
-		switch key.String() {
+		keyMsg, ok := msg.(bento.KeyMsg)
+		if !ok {
+			return false, nil
+		}
+
+		switch keyMsg.String() {
 		case "esc", "q":
 			s.closePopup()
-			return true
+			return true, nil
 		}
 	}
 
-	switch key.String() {
+	keyMsg, ok := msg.(bento.KeyMsg)
+	if !ok {
+		return false, nil
+	}
+
+	switch keyMsg.String() {
 	case "?":
 		s.TogglePopup()
-		return true
+		return true, nil
 
 	default:
-		return s.callBinding(key)
+		return s.callBinding(bento.Key(keyMsg)), nil
 	}
 }
 
 func (s *State) callBinding(key bento.Key) bool {
+	// TODO: cache
 	for _, b := range s.BindingList.AllItems() {
 		if b.Matches(key) {
 			b.Call()

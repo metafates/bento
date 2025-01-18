@@ -59,11 +59,14 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 
 // Update implements bento.Model.
 func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
+	consumed, cmd := m.footerState.TryUpdate(msg)
+	if consumed {
+		return m, cmd
+	}
+
 	switch msg := msg.(type) {
 	case ChangeMsg:
 		m.ratio = max(0, min(1, m.ratio+float64(msg)))
-	case bento.KeyMsg:
-		m.footerState.Update(bento.Key(msg))
 	}
 
 	return m, nil
@@ -78,33 +81,39 @@ func Change(delta float64) bento.Cmd {
 }
 
 func run() error {
-	_, err := bento.NewAppWithProxy(func(proxy bento.AppProxy) bento.Model {
-		return &Model{
-			ratio: 0,
-			footerState: helpwidget.NewState(
-				helpwidget.NewBinding("quit", "ctrl+c").
-					WithAction(proxy.Quit).
-					Hidden(),
-
-				helpwidget.NewBinding("increment", "up", "right", "l", "+").
-					WithDescription("Increment the gauge").
-					WithAction(func() {
-						proxy.Send(Change(0.01))
-					}),
-
-				helpwidget.NewBinding("decrement", "down", "left", "h", "-").
-					WithDescription("Decrement the gauge").
-					WithAction(func() {
-						proxy.Send(Change(-0.01))
-					}),
-			),
-		}
-	}).Run()
+	_, err := bento.
+		NewAppWithProxy(func(proxy bento.AppProxy) bento.Model {
+			return newModel(proxy)
+		}).
+		Run()
 	if err != nil {
 		return fmt.Errorf("new app: %w", err)
 	}
 
 	return nil
+}
+
+func newModel(proxy bento.AppProxy) *Model {
+	return &Model{
+		ratio: 0,
+		footerState: helpwidget.NewState(
+			helpwidget.NewBinding("quit", "ctrl+c").
+				WithAction(proxy.Quit).
+				Hidden(),
+
+			helpwidget.NewBinding("increment", "up", "right", "l", "+").
+				WithDescription("Increment the gauge").
+				WithAction(func() {
+					proxy.Send(Change(0.01))
+				}),
+
+			helpwidget.NewBinding("decrement", "down", "left", "h", "-").
+				WithDescription("Decrement the gauge").
+				WithAction(func() {
+					proxy.Send(Change(-0.01))
+				}),
+		),
+	}
 }
 
 func main() {

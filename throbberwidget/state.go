@@ -1,31 +1,12 @@
 package throbberwidget
 
 import (
-	"sync/atomic"
 	"time"
 
 	"github.com/metafates/bento"
 )
 
-var lastID atomic.Int64
-
-func nextID() int {
-	return int(lastID.Add(1))
-}
-
-type TickMsg struct {
-	time time.Time
-	tag  int
-
-	id int
-}
-
-// ID of the spinner that this message belongs to. This can be
-// helpful when routing messages, however bear in mind that spinners
-// will ignore messages that don't contain id by default.
-func (t TickMsg) ID() int {
-	return t.id
-}
+var _ bento.Updateable = (*State)(nil)
 
 type State struct {
 	frame int
@@ -50,19 +31,24 @@ func (s *State) ID() int {
 	return s.id
 }
 
-func (s *State) Update(msg TickMsg) bento.Cmd {
-	if msg.id > 0 && msg.id != s.id {
-		return nil
+func (s *State) TryUpdate(msg bento.Msg) (bool, bento.Cmd) {
+	tickMsg, ok := msg.(TickMsg)
+	if !ok {
+		return false, nil
 	}
 
-	if msg.tag > 0 && msg.tag != s.tag {
-		return nil
+	if tickMsg.id > 0 && tickMsg.id != s.id {
+		return false, nil
+	}
+
+	if tickMsg.tag > 0 && tickMsg.tag != s.tag {
+		return false, nil
 	}
 
 	s.frame++
 	s.tag++
 
-	return s.tick()
+	return true, s.tick()
 }
 
 // Tick is the command used to advance the spinner one frame. Use this command

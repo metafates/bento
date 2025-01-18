@@ -11,17 +11,17 @@ import (
 	"github.com/metafates/bento/textwidget"
 )
 
-var _ bento.StatefulWidget[*State] = (*Footer)(nil)
+var _ bento.StatefulWidget[*State] = (*Help)(nil)
 
-type Footer struct {
+type Help struct {
 	style       bento.Style
 	keyStyle    bento.Style
 	actionStyle bento.Style
 	keyPadding  int
 }
 
-func New() Footer {
-	return Footer{
+func New() Help {
+	return Help{
 		style:       bento.NewStyle(),
 		keyStyle:    bento.NewStyle().Reversed(),
 		actionStyle: bento.NewStyle(),
@@ -30,17 +30,17 @@ func New() Footer {
 }
 
 // WithKeyPadding sets key padding to use on both sides.
-func (f Footer) WithKeyPadding(padding int) Footer {
-	f.keyPadding = padding
-	return f
+func (h Help) WithKeyPadding(padding int) Help {
+	h.keyPadding = padding
+	return h
 }
 
-func (f Footer) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State) {
+func (h Help) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State) {
 	if state.ShowPopup {
-		f.renderPopup(buffer.Area(), buffer, state)
+		h.renderPopup(buffer.Area(), buffer, state)
 	}
 
-	helpBinding := f.bindingLine(_helpBinding)
+	helpBinding := h.bindingLine(_helpBinding)
 
 	var otherKeysArea, helpKeyArea bento.Rect
 
@@ -50,24 +50,24 @@ func (f Footer) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *Sta
 		bento.ConstraintLength(helpBinding.Width()),
 	).Horizontal().Split(area).Assign(&otherKeysArea, nil, &helpKeyArea)
 
-	f.renderFooter(otherKeysArea, buffer, state)
+	h.renderFooter(otherKeysArea, buffer, state)
 
 	helpBinding.Render(helpKeyArea, buffer)
 }
 
-func (f Footer) bindingLine(b Binding) textwidget.Line {
-	padding := strings.Repeat(" ", f.keyPadding)
+func (h Help) bindingLine(b Binding) textwidget.Line {
+	padding := strings.Repeat(" ", h.keyPadding)
 	key := padding + b.String() + padding
 
 	return textwidget.NewLine(
-		textwidget.NewSpan(key).WithStyle(f.keyStyle),
+		textwidget.NewSpan(key).WithStyle(h.keyStyle),
 		textwidget.NewSpan(" "),
-		textwidget.NewSpan(b.Name).WithStyle(f.actionStyle),
+		textwidget.NewSpan(b.Name).WithStyle(h.actionStyle),
 	)
 }
 
-func (f Footer) renderFooter(area bento.Rect, buffer *bento.Buffer, state *State) {
-	buffer.SetStyle(area, f.style)
+func (h Help) renderFooter(area bento.Rect, buffer *bento.Buffer, state *State) {
+	buffer.SetStyle(area, h.style)
 
 	footerLine := textwidget.NewLine()
 
@@ -84,7 +84,7 @@ func (f Footer) renderFooter(area bento.Rect, buffer *bento.Buffer, state *State
 			spans = append(spans, textwidget.NewSpan("  "))
 		}
 
-		spans = append(spans, f.bindingLine(b).Spans...)
+		spans = append(spans, h.bindingLine(b).Spans...)
 
 		line := textwidget.NewLine(spans...)
 		lineWidth := line.Width()
@@ -101,7 +101,7 @@ func (f Footer) renderFooter(area bento.Rect, buffer *bento.Buffer, state *State
 	footerLine.Render(area, buffer)
 }
 
-func (f Footer) renderPopup(area bento.Rect, buffer *bento.Buffer, state *State) {
+func (h Help) renderPopup(area bento.Rect, buffer *bento.Buffer, state *State) {
 	block := blockwidget.New().Bordered().WithTitleStr("Help")
 	list := listwidget.
 		New().

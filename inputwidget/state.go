@@ -118,7 +118,16 @@ func (s *State) MoveWordLeft() {
 	// TODO
 }
 
-func (s *State) Update(key bento.Key) bool {
+func (s *State) TryUpdate(msg bento.Msg) (bool, bento.Cmd) {
+	keyMsg, ok := msg.(bento.KeyMsg)
+	if !ok {
+		return false, nil
+	}
+
+	return s.update(bento.Key(keyMsg)), nil
+}
+
+func (s *State) update(key bento.Key) bool {
 	switch key.Type {
 	case bento.KeyLeft:
 		s.MoveCursorLeft()

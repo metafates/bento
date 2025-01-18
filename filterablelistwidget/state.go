@@ -146,25 +146,30 @@ func (s *State[I]) Items() []I {
 	return items
 }
 
-func (s *State[I]) Update(key bento.Key) bool {
+func (s *State[I]) TryUpdate(msg bento.Msg) (bool, bento.Cmd) {
 	if s.filterState == FilterStateFiltering {
-		if s.filterInput.Update(key) {
+		if ok, cmd := s.filterInput.TryUpdate(msg); ok {
 			s.applyFilter()
-			return true
+			return true, cmd
 		}
-	} else if s.list.Update(key) {
+	} else if ok, cmd := s.list.TryUpdate(msg); ok {
 		s.reselect()
 
-		return true
+		return true, cmd
 	}
 
-	switch key.String() {
+	keyMsg, ok := msg.(bento.KeyMsg)
+	if !ok {
+		return false, nil
+	}
+
+	switch keyMsg.String() {
 	case "enter":
 		if s.filterState != FilterStateFiltering {
 			selected, ok := s.Selected()
 			if !ok {
 				s.SelectFirst()
-				return true
+				return true, nil
 			}
 
 			if callable, ok := Item(selected).(Callable); ok {
@@ -174,10 +179,10 @@ func (s *State[I]) Update(key bento.Key) bool {
 
 				callable.Call()
 
-				return true
+				return true, nil
 			}
 
-			return false
+			return false, nil
 		}
 
 		if s.filterInput.String() == "" {
@@ -188,28 +193,28 @@ func (s *State[I]) Update(key bento.Key) bool {
 
 		s.applyFilter()
 
-		return true
+		return true, nil
 	case "esc":
 		if s.filterState == FilterStateNoFilter {
 			if _, ok := s.list.Selected(); ok {
 				s.Unselect()
-				return true
+				return true, nil
 			}
 
-			return false
+			return false, nil
 		}
 
 		s.setFilteringState(FilterStateNoFilter)
 
-		return true
+		return true, nil
 
 	case "/":
 		s.setFilteringState(FilterStateFiltering)
 
-		return true
+		return true, nil
 
 	default:
-		return false
+		return false, nil
 	}
 }
 
@@ -269,7 +274,7 @@ func (s *State[I]) Unselect() {
 // Returns ok = false if no item is selected.
 func (s *State[I]) Selected() (item I, ok bool) {
 	index, ok := s.list.Selected()
-	if !ok {
+	if !ok || len(s.filteredIndices) == 0 {
 		var empty I
 		return empty, false
 	}

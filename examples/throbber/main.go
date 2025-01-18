@@ -114,9 +114,12 @@ func getGrid(area bento.Rect, itemsCount int) []bento.Rect {
 
 // Update implements bento.Model.
 func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
+	consumed, cmd := m.throbber.TryUpdate(msg)
+	if consumed {
+		return m, cmd
+	}
+
 	switch msg := msg.(type) {
-	case throbberwidget.TickMsg:
-		return m, m.throbber.Update(msg)
 	case bento.KeyMsg:
 		switch msg.String() {
 		case "+":

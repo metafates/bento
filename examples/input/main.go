@@ -36,13 +36,16 @@ func (m *Model) Init() bento.Cmd {
 
 // Update implements bento.Model.
 func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
+	consumed, cmd := m.input.TryUpdate(msg)
+	if consumed {
+		return m, cmd
+	}
+
 	switch msg := msg.(type) {
 	case bento.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
 			return m, bento.Quit
-		default:
-			m.input.Update(bento.Key(msg))
 		}
 	}
 

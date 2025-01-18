@@ -87,12 +87,13 @@ func (m *Model) Init() bento.Cmd {
 }
 
 func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
+	consumed, cmd := m.listState.TryUpdate(msg)
+	if consumed {
+		return m, cmd
+	}
+
 	switch msg := msg.(type) {
 	case bento.KeyMsg:
-		if m.listState.Update(bento.Key(msg)) {
-			return m, nil
-		}
-
 		switch msg.String() {
 		case " ":
 			m.showPopup = !m.showPopup

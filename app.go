@@ -23,6 +23,16 @@ type Msg any
 
 type Cmd func() Msg
 
+type Updateable interface {
+	// TryUpdate passes message to update the receiver.
+	// It returns a boolean that states whether the message was consumed
+	// and should not be handled further.
+	// If consumed is true the caller should return resulted cmd.
+	//
+	// It is adviced to call this method before any further message handling.
+	TryUpdate(msg Msg) (consumed bool, cmd Cmd)
+}
+
 type Model interface {
 	Widget
 
