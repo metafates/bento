@@ -112,3 +112,19 @@ func (r Rect) IndentX(offset int) Rect {
 		Height: r.Height,
 	}
 }
+
+func (r Rect) Columns() []Rect {
+	currentColumnFwd := r.X
+	currentColumnBack := r.Right()
+
+	var columns []Rect
+
+	for currentColumnFwd < currentColumnBack {
+		column := NewRect(1, r.Height).Positioned(currentColumnFwd, r.Y)
+		currentColumnFwd++
+
+		columns = append(columns, column)
+	}
+
+	return columns
+}
