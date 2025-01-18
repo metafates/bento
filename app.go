@@ -149,15 +149,15 @@ func (a App) Run() (Model, error) {
 		closeInput: closeInput,
 	}
 
-	runner.initialModel = a.modelConstructor(AppProxy{
-		runner: &runner,
-	})
+	proxy := AppProxy{runner: &runner}
+
+	runner.model = a.modelConstructor(proxy)
 
 	return runner.Run()
 }
 
 type appRunner struct {
-	initialModel Model
+	model Model
 
 	ctx       context.Context
 	cancelCtx context.CancelFunc
@@ -189,12 +189,12 @@ func (a *appRunner) Run() (model Model, err error) {
 
 	err = a.init()
 	if err != nil {
-		return a.initialModel, fmt.Errorf("init: %w", err)
+		return a.model, fmt.Errorf("init: %w", err)
 	}
 
 	cmds := make(chan Cmd)
 
-	model = a.initialModel
+	model = a.model
 
 	if initCmd := model.Init(); initCmd != nil {
 		ch := make(chan struct{})

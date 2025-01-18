@@ -24,15 +24,19 @@ type Binding struct {
 	IsHidden    bool
 }
 
-func NewBinding(action, key string, aliases ...string) Binding {
+func NewBinding(action, key string) Binding {
 	return Binding{
 		DisplayKey:  strings.ReplaceAll(key, "ctrl+", "^"),
 		Key:         key,
-		Aliases:     aliases,
 		Name:        action,
 		Description: "",
 		Action:      nil,
 	}
+}
+
+func (b Binding) WithAliases(aliases ...string) Binding {
+	b.Aliases = aliases
+	return b
 }
 
 func (b Binding) Call() {

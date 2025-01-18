@@ -6,29 +6,28 @@ import (
 )
 
 type State struct {
-	BindingList filterablelistwidget.State[Binding]
-
-	ShowPopup bool
+	bindingList filterablelistwidget.State[Binding]
+	showPopup   bool
 }
 
 func NewState(bindings ...Binding) *State {
 	state := State{
-		BindingList: filterablelistwidget.NewState(bindings...),
+		bindingList: filterablelistwidget.NewState(bindings...),
 	}
 
-	state.BindingList.OnSelect(state.closePopup)
+	state.bindingList.OnSelect(state.closePopup)
 
 	return &state
 }
 
 func (s *State) closePopup() {
-	s.ShowPopup = false
-	s.BindingList.Reset()
+	s.showPopup = false
+	s.bindingList.Reset()
 }
 
 func (s *State) TryUpdate(msg bento.Msg) (bool, bento.Cmd) {
-	if s.ShowPopup {
-		consumed, cmd := s.BindingList.TryUpdate(msg)
+	if s.showPopup {
+		consumed, cmd := s.bindingList.TryUpdate(msg)
 		if consumed {
 			return true, cmd
 		}
@@ -62,7 +61,7 @@ func (s *State) TryUpdate(msg bento.Msg) (bool, bento.Cmd) {
 
 func (s *State) callBinding(key bento.Key) bool {
 	// TODO: cache
-	for _, b := range s.BindingList.AllItems() {
+	for _, b := range s.bindingList.AllItems() {
 		if b.Matches(key) {
 			b.Call()
 			return true
@@ -73,5 +72,5 @@ func (s *State) callBinding(key bento.Key) bool {
 }
 
 func (s *State) TogglePopup() {
-	s.ShowPopup = !s.ShowPopup
+	s.showPopup = !s.showPopup
 }

@@ -101,13 +101,15 @@ func newModel(proxy bento.AppProxy) *Model {
 				WithAction(proxy.Quit).
 				Hidden(),
 
-			helpwidget.NewBinding("increment", "up", "right", "l", "+").
+			helpwidget.NewBinding("increment", "up").
+				WithAliases("right", "l", "+").
 				WithDescription("Increment the gauge").
 				WithAction(func() {
 					proxy.Send(Change(0.01))
 				}),
 
-			helpwidget.NewBinding("decrement", "down", "left", "h", "-").
+			helpwidget.NewBinding("decrement", "down").
+				WithAliases("left", "h", "-").
 				WithDescription("Decrement the gauge").
 				WithAction(func() {
 					proxy.Send(Change(-0.01))

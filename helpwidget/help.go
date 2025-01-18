@@ -36,7 +36,7 @@ func (h Help) WithKeyPadding(padding int) Help {
 }
 
 func (h Help) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State) {
-	if state.ShowPopup {
+	if state.showPopup {
 		h.renderPopup(buffer.Area(), buffer, state)
 	}
 
@@ -73,7 +73,7 @@ func (h Help) renderFooter(area bento.Rect, buffer *bento.Buffer, state *State) 
 
 	var width, shownCount int
 
-	for _, b := range state.BindingList.AllItems() {
+	for _, b := range state.bindingList.AllItems() {
 		if b.IsHidden {
 			continue
 		}
@@ -114,5 +114,5 @@ func (h Help) renderPopup(area bento.Rect, buffer *bento.Buffer, state *State) {
 		Middle().
 		WithHeight(bento.ConstraintPercentage(60))
 
-	popup.RenderStateful(area, buffer, &state.BindingList)
+	popup.RenderStateful(area, buffer, &state.bindingList)
 }
