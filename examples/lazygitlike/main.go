@@ -69,7 +69,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 		Vertical().
 		WithConstraints(
 			bento.ConstraintFill(1),
-			bento.ConstraintLength(1),
+			bento.ConstraintLen(1),
 		).
 		Split(area).
 		Assign(&primaryArea, &footnoteArea)
@@ -123,10 +123,10 @@ func (m *Model) filesConstraint() bento.Constraint {
 	}
 
 	if m.size.Height > HeightSmall {
-		return bento.ConstraintLength(3)
+		return bento.ConstraintLen(3)
 	}
 
-	return bento.ConstraintLength(1)
+	return bento.ConstraintLen(1)
 }
 
 func (m *Model) branchesConstraint() bento.Constraint {
@@ -135,10 +135,10 @@ func (m *Model) branchesConstraint() bento.Constraint {
 	}
 
 	if m.size.Height > HeightSmall {
-		return bento.ConstraintLength(3)
+		return bento.ConstraintLen(3)
 	}
 
-	return bento.ConstraintLength(1)
+	return bento.ConstraintLen(1)
 }
 
 func (m *Model) commitsConstraint() bento.Constraint {
@@ -147,15 +147,15 @@ func (m *Model) commitsConstraint() bento.Constraint {
 	}
 
 	if m.size.Height > HeightSmall {
-		return bento.ConstraintLength(3)
+		return bento.ConstraintLen(3)
 	}
 
-	return bento.ConstraintLength(1)
+	return bento.ConstraintLen(1)
 }
 
 func (m *Model) statusConstraint() bento.Constraint {
 	if m.size.Height > HeightMedium {
-		return bento.ConstraintLength(3)
+		return bento.ConstraintLen(3)
 	}
 
 	if m.activePanel == PanelStatus {
@@ -163,24 +163,24 @@ func (m *Model) statusConstraint() bento.Constraint {
 	}
 
 	if m.size.Height > HeightSmall {
-		return bento.ConstraintLength(3)
+		return bento.ConstraintLen(3)
 	}
 
-	return bento.ConstraintLength(1)
+	return bento.ConstraintLen(1)
 }
 
 func (m *Model) stashConstraint() bento.Constraint {
 	isActive := m.activePanel == PanelStash
 
 	if m.size.Height > HeightMedium || (m.size.Height > HeightSmall && !isActive) {
-		return bento.ConstraintLength(3)
+		return bento.ConstraintLen(3)
 	}
 
 	if isActive {
 		return bento.ConstraintFill(1)
 	}
 
-	return bento.ConstraintLength(1)
+	return bento.ConstraintLen(1)
 }
 
 func (m *Model) drawSidebar(area bento.Rect, buffer *bento.Buffer) {
@@ -259,7 +259,7 @@ func (m *Model) drawRight(area bento.Rect, buffer *bento.Buffer) {
 		Vertical().
 		WithConstraints(
 			bento.ConstraintFill(1),
-			bento.ConstraintLength(m.commandLogHeight()),
+			bento.ConstraintLen(m.commandLogHeight()),
 		).
 		Split(area).
 		Assign(&infoArea, &commandLogArea)

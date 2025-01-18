@@ -63,7 +63,7 @@ func (l List[I]) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *St
 		var inputArea bento.Rect
 
 		bento.NewLayout(
-			bento.ConstraintLength(3),
+			bento.ConstraintLen(3),
 			bento.ConstraintFill(1),
 		).Vertical().Split(area).Assign(&inputArea, &area)
 

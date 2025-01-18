@@ -110,7 +110,7 @@ func (i Input) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *Stat
 	}
 
 	area = bento.
-		NewLayout(bento.ConstraintLength(1)).
+		NewLayout(bento.ConstraintLen(1)).
 		Vertical().
 		WithFlex(i.vertical).
 		Split(area).

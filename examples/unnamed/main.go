@@ -32,7 +32,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 	bento.
 		NewLayout(
 			bento.ConstraintFill(1),
-			bento.ConstraintLength(1),
+			bento.ConstraintLen(1),
 		).
 		Vertical().
 		Split(area).
@@ -43,8 +43,8 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 		New(message).
 		Top().
 		Right().
-		WithWidth(bento.ConstraintLength(message.Width() + 2)).
-		WithHeight(bento.ConstraintLength(message.Height() + 2)).
+		WithWidth(bento.ConstraintLen(message.Width() + 2)).
+		WithHeight(bento.ConstraintLen(message.Height() + 2)).
 		WithBlock(blockwidget.New().Bordered().WithTitleStr("Hint"))
 
 	gauge := gaugewidget.New().WithRatio(m.ratio).WithUnicode(true)

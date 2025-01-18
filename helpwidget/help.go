@@ -46,8 +46,8 @@ func (h Help) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State
 
 	bento.NewLayout(
 		bento.ConstraintFill(1),
-		bento.ConstraintLength(1),
-		bento.ConstraintLength(helpBinding.Width()),
+		bento.ConstraintLen(1),
+		bento.ConstraintLen(helpBinding.Width()),
 	).Horizontal().Split(area).Assign(&otherKeysArea, nil, &helpKeyArea)
 
 	h.renderFooter(otherKeysArea, buffer, state)

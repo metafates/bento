@@ -35,8 +35,8 @@ func (t Throbber) RenderStateful(area bento.Rect, buffer *bento.Buffer, state St
 
 	width, height := frame.Dimensions()
 
-	vertical := bento.NewLayout(bento.ConstraintLength(height)).Vertical().WithPadding(t.padding).WithFlex(t.vertical)
-	horizontal := bento.NewLayout(bento.ConstraintLength(width)).Horizontal().WithPadding(t.padding).WithFlex(t.horizontal)
+	vertical := bento.NewLayout(bento.ConstraintLen(height)).Vertical().WithPadding(t.padding).WithFlex(t.vertical)
+	horizontal := bento.NewLayout(bento.ConstraintLen(width)).Horizontal().WithPadding(t.padding).WithFlex(t.horizontal)
 
 	area = vertical.Split(area).Unwrap()
 	area = horizontal.Split(area).Unwrap()

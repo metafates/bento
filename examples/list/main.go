@@ -75,8 +75,8 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 			WithBlock(blockwidget.New().WithBorderSides().Thick().WithTitleStr("Popup")).
 			Middle().
 			Center().
-			WithHeight(bento.ConstraintLength(3)).
-			WithWidth(bento.ConstraintLength(30))
+			WithHeight(bento.ConstraintLen(3)).
+			WithWidth(bento.ConstraintLen(30))
 
 		popup.Render(area, buffer)
 	}

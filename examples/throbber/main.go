@@ -27,9 +27,9 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 
 	bento.
 		NewLayout(
-			bento.ConstraintLength(1),
+			bento.ConstraintLen(1),
 			bento.ConstraintFill(1),
-			bento.ConstraintLength(1),
+			bento.ConstraintLen(1),
 		).
 		Vertical().
 		Split(area).

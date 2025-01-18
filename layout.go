@@ -358,7 +358,7 @@ func configureConstraints(
 				}
 			}
 
-		case ConstraintLength:
+		case ConstraintLen:
 			length := int(constraint)
 
 			if err := solver.AddConstraint(segment.hasIntSize(length, _lengthSizeEq)); err != nil {
