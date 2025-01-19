@@ -136,6 +136,7 @@ func (a App) Run() (Model, error) {
 
 		readLoopDone: make(chan struct{}),
 		handlers:     channelHandlers{},
+		cmds:         make(chan Cmd),
 		msgs:         make(chan Msg),
 		errs:         make(chan error),
 		finished:     make(chan struct{}, 1),
@@ -162,11 +163,28 @@ type appRunner struct {
 	// program can exit.
 	handlers channelHandlers
 
+	cmds     chan Cmd
 	msgs     chan Msg
 	errs     chan error
 	finished chan struct{}
 
 	closeInput func() error
+}
+
+func (a *appRunner) initModel() {
+	if initCmd := a.model.Init(); initCmd != nil {
+		ch := make(chan struct{})
+		a.handlers.add(ch)
+
+		go func() {
+			defer close(ch)
+
+			select {
+			case a.cmds <- initCmd:
+			case <-a.ctx.Done():
+			}
+		}()
+	}
 }
 
 func (a *appRunner) Run() (model Model, err error) {
@@ -183,25 +201,8 @@ func (a *appRunner) Run() (model Model, err error) {
 		return a.model, fmt.Errorf("init: %w", err)
 	}
 
-	cmds := make(chan Cmd)
-
-	model = a.model
-
-	if initCmd := model.Init(); initCmd != nil {
-		ch := make(chan struct{})
-		a.handlers.add(ch)
-
-		go func() {
-			defer close(ch)
-
-			select {
-			case cmds <- initCmd:
-			case <-a.ctx.Done():
-			}
-		}()
-	}
-
-	a.draw(model)
+	a.initModel()
+	a.draw(a.model)
 
 	err = a.initCancelReader()
 	if err != nil {
@@ -209,12 +210,12 @@ func (a *appRunner) Run() (model Model, err error) {
 	}
 
 	// Handle resize events.
-	a.handlers.add(a.handleResize())
+	a.handleResize()
 
 	// Process commands.
-	a.handlers.add(a.handleCommands(cmds))
+	a.handleCommands()
 
-	model, err = a.eventLoop(model, cmds)
+	model, err = a.eventLoop(model)
 	killed := a.ctx.Err() != nil || err != nil
 	if killed && err == nil {
 		err = fmt.Errorf("%w: %s", ErrKilled, a.ctx.Err())
@@ -242,7 +243,7 @@ func (a *appRunner) Send(msg Msg) {
 
 // handleCommands runs commands in a goroutine and sends the result to the
 // program's message channel.
-func (a *appRunner) handleCommands(cmds chan Cmd) chan struct{} {
+func (a *appRunner) handleCommands() {
 	ch := make(chan struct{})
 
 	go func() {
@@ -253,13 +254,13 @@ func (a *appRunner) handleCommands(cmds chan Cmd) chan struct{} {
 			case <-a.ctx.Done():
 				return
 
-			case cmd := <-cmds:
+			case cmd := <-a.cmds:
 				a.handleCmd(cmd)
 			}
 		}
 	}()
 
-	return ch
+	a.handlers.add(ch)
 }
 
 func (a *appRunner) handleCmd(cmd Cmd) {
@@ -280,7 +281,7 @@ func (a *appRunner) handleCmd(cmd Cmd) {
 	}()
 }
 
-func (a *appRunner) handleResize() chan struct{} {
+func (a *appRunner) handleResize() {
 	ch := make(chan struct{})
 
 	// Get the initial terminal size and send it to the program.
@@ -289,10 +290,10 @@ func (a *appRunner) handleResize() chan struct{} {
 	// Listen for window resizes.
 	go a.listenForResize(ch)
 
-	return ch
+	a.handlers.add(ch)
 }
 
-func (a *appRunner) eventLoop(model Model, cmds chan Cmd) (Model, error) {
+func (a *appRunner) eventLoop(model Model) (Model, error) {
 	for {
 		select {
 		case <-a.ctx.Done():
@@ -343,7 +344,7 @@ func (a *appRunner) eventLoop(model Model, cmds chan Cmd) (Model, error) {
 
 			var cmd Cmd
 			model, cmd = model.Update(msg) // run update
-			cmds <- cmd
+			a.cmds <- cmd
 			a.draw(model)
 		}
 	}
