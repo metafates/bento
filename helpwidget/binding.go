@@ -12,7 +12,7 @@ var _ filterablelistwidget.Item = (*Binding)(nil)
 
 var _helpBinding = NewBinding("help", "?").WithDescription("Show help")
 
-type Action func()
+type Action func() bento.Cmd
 
 type Binding struct {
 	DisplayKey  string
@@ -39,10 +39,12 @@ func (b Binding) WithAliases(aliases ...string) Binding {
 	return b
 }
 
-func (b Binding) Call() {
-	if b.Action != nil {
-		b.Action()
+func (b Binding) Call() bento.Cmd {
+	if b.Action == nil {
+		return nil
 	}
+
+	return b.Action()
 }
 
 func (b Binding) String() string {

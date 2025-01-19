@@ -177,9 +177,7 @@ func (s *State[I]) TryUpdate(msg bento.Msg) (bool, bento.Cmd) {
 					s.onSelect()
 				}
 
-				callable.Call()
-
-				return true, nil
+				return true, callable.Call()
 			}
 
 			return false, nil

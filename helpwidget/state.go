@@ -55,20 +55,19 @@ func (s *State) TryUpdate(msg bento.Msg) (bool, bento.Cmd) {
 		return true, nil
 
 	default:
-		return s.callBinding(bento.Key(keyMsg)), nil
+		return s.callBinding(bento.Key(keyMsg))
 	}
 }
 
-func (s *State) callBinding(key bento.Key) bool {
+func (s *State) callBinding(key bento.Key) (bool, bento.Cmd) {
 	// TODO: cache
 	for _, b := range s.bindingList.AllItems() {
 		if b.Matches(key) {
-			b.Call()
-			return true
+			return true, b.Call()
 		}
 	}
 
-	return false
+	return false, nil
 }
 
 func (s *State) TogglePopup() {

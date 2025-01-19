@@ -90,7 +90,7 @@ func (i _InputCustom) getInput() (io.Reader, func() error, error) {
 }
 
 type App struct {
-	modelConstructor func(proxy AppProxy) Model
+	model Model
 
 	ctx       context.Context
 	cancelCtx context.CancelFunc
@@ -100,20 +100,14 @@ type App struct {
 }
 
 func NewApp(model Model) App {
-	return NewAppWithProxy(func(AppProxy) Model {
-		return model
-	})
-}
-
-func NewAppWithProxy(constructor func(proxy AppProxy) Model) App {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 
 	return App{
-		modelConstructor: constructor,
-		ctx:              ctx,
-		cancelCtx:        cancelCtx,
-		input:            _InputDefault{},
-		output:           os.Stdout,
+		model:     model,
+		ctx:       ctx,
+		cancelCtx: cancelCtx,
+		input:     _InputDefault{},
+		output:    os.Stdout,
 	}
 }
 
@@ -136,6 +130,7 @@ func (a App) Run() (Model, error) {
 	}
 
 	runner := appRunner{
+		model:     a.model,
 		ctx:       a.ctx,
 		cancelCtx: a.cancelCtx,
 
@@ -148,10 +143,6 @@ func (a App) Run() (Model, error) {
 
 		closeInput: closeInput,
 	}
-
-	proxy := AppProxy{runner: &runner}
-
-	runner.model = a.modelConstructor(proxy)
 
 	return runner.Run()
 }
