@@ -6,7 +6,7 @@ import (
 	"github.com/metafates/bento"
 )
 
-var _ bento.Updateable = (*State)(nil)
+var _ bento.TryUpdater = (*State)(nil)
 
 type State struct {
 	frame int

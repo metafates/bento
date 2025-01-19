@@ -74,7 +74,7 @@ func (h Help) renderFooter(area bento.Rect, buffer *bento.Buffer, state *State) 
 	var width, shownCount int
 
 	for _, b := range state.bindingList.AllItems() {
-		if b.IsHidden {
+		if b.IsHidden || !b.IsActive() {
 			continue
 		}
 

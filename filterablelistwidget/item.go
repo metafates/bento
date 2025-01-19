@@ -1,7 +1,6 @@
 package filterablelistwidget
 
 import (
-	"github.com/metafates/bento"
 	"github.com/metafates/bento/textwidget"
 )
 
@@ -11,14 +10,6 @@ type Item interface {
 
 type Filterable interface {
 	FilterValue() string
-}
-
-type Callable interface {
-	Call() bento.Cmd
-}
-
-type Conditional interface {
-	IsActive() bool
 }
 
 type StringItem string

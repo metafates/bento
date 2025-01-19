@@ -23,7 +23,7 @@ type Msg any
 
 type Cmd func() Msg
 
-type Updateable interface {
+type TryUpdater interface {
 	// TryUpdate passes message to update the receiver.
 	// It returns a boolean that states whether the message was consumed
 	// and should not be handled further.
@@ -206,7 +206,7 @@ func (a *appRunner) Run() (model Model, err error) {
 
 	err = a.initCancelReader()
 	if err != nil {
-		return model, fmt.Errorf("init cancel reader: %w", err)
+		return a.model, fmt.Errorf("init cancel reader: %w", err)
 	}
 
 	// Handle resize events.
@@ -215,7 +215,7 @@ func (a *appRunner) Run() (model Model, err error) {
 	// Process commands.
 	a.handleCommands()
 
-	model, err = a.eventLoop(model)
+	model, err = a.eventLoop(a.model)
 	killed := a.ctx.Err() != nil || err != nil
 	if killed && err == nil {
 		err = fmt.Errorf("%w: %s", ErrKilled, a.ctx.Err())

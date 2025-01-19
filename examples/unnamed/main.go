@@ -14,7 +14,7 @@ var _ bento.Model = (*Model)(nil)
 type Model struct {
 	ratio float64
 
-	footerState *helpwidget.State
+	helpState helpwidget.State
 }
 
 // Init implements bento.Model.
@@ -40,12 +40,12 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 
 	helpwidget.
 		New().
-		RenderStateful(helpArea, buffer, m.footerState)
+		RenderStateful(helpArea, buffer, &m.helpState)
 }
 
 // Update implements bento.Model.
 func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
-	consumed, cmd := m.footerState.TryUpdate(msg)
+	consumed, cmd := m.helpState.TryUpdate(msg)
 	if consumed {
 		return m, cmd
 	}
@@ -60,7 +60,7 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 
 type ChangeMsg float64
 
-func Change(delta float64) bento.Cmd {
+func Add(delta float64) bento.Cmd {
 	return func() bento.Msg {
 		return ChangeMsg(delta)
 	}
@@ -80,7 +80,7 @@ func run() error {
 func newModel() *Model {
 	return &Model{
 		ratio: 0,
-		footerState: helpwidget.NewState(
+		helpState: helpwidget.NewState(
 			helpwidget.NewBinding("quit", "ctrl+c").
 				WithAction(func() bento.Cmd { return bento.Quit }).
 				Hidden(),
@@ -89,14 +89,14 @@ func newModel() *Model {
 				WithAliases("right", "l", "+").
 				WithDescription("Increment the gauge").
 				WithAction(func() bento.Cmd {
-					return Change(0.01)
-				}).WithCondition(func() bool { return false }),
+					return Add(0.01)
+				}),
 
 			helpwidget.NewBinding("decrement", "down").
 				WithAliases("left", "h", "-").
 				WithDescription("Decrement the gauge").
 				WithAction(func() bento.Cmd {
-					return Change(-0.01)
+					return Add(-0.01)
 				}),
 		),
 	}

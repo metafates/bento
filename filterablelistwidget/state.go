@@ -27,8 +27,6 @@ type State[I Item] struct {
 	filteredIndices []int
 
 	cache map[string][]int
-
-	onSelect func()
 }
 
 func NewState[I Item](items ...I) State[I] {
@@ -45,16 +43,11 @@ func NewState[I Item](items ...I) State[I] {
 		items:           items,
 		filteredIndices: make([]int, 0, len(items)),
 		cache:           make(map[string][]int),
-		onSelect:        nil,
 	}
 
 	state.applyFilter()
 
 	return state
-}
-
-func (s *State[I]) OnSelect(f func()) {
-	s.onSelect = f
 }
 
 func (s *State[I]) reselect() {
@@ -166,22 +159,10 @@ func (s *State[I]) TryUpdate(msg bento.Msg) (bool, bento.Cmd) {
 	switch keyMsg.String() {
 	case "enter":
 		if s.filterState != FilterStateFiltering {
-			selected, ok := s.Selected()
+			_, ok := s.Selected()
 			if !ok {
 				s.SelectFirst()
 				return true, nil
-			}
-
-			if callable, ok := Item(selected).(Callable); ok {
-				if conditional, ok := callable.(Conditional); ok && !conditional.IsActive() {
-					return false, nil
-				}
-
-				if s.onSelect != nil {
-					s.onSelect()
-				}
-
-				return true, callable.Call()
 			}
 
 			return false, nil

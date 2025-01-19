@@ -10,14 +10,10 @@ type State struct {
 	showPopup   bool
 }
 
-func NewState(global ...Binding) *State {
-	state := State{
+func NewState(global ...Binding) State {
+	return State{
 		bindingList: filterablelistwidget.NewState(global...),
 	}
-
-	state.bindingList.OnSelect(state.closePopup)
-
-	return &state
 }
 
 func (s *State) closePopup() {
@@ -38,6 +34,15 @@ func (s *State) TryUpdate(msg bento.Msg) (bool, bento.Cmd) {
 		}
 
 		switch keyMsg.String() {
+		case "enter":
+			selected, ok := s.bindingList.Selected()
+			if !ok || !selected.IsActive() {
+				return false, nil
+			}
+
+			s.closePopup()
+			return true, selected.Call()
+
 		case "esc", "q":
 			s.closePopup()
 			return true, nil
