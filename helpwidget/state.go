@@ -10,9 +10,9 @@ type State struct {
 	showPopup   bool
 }
 
-func NewState(bindings ...Binding) *State {
+func NewState(global ...Binding) *State {
 	state := State{
-		bindingList: filterablelistwidget.NewState(bindings...),
+		bindingList: filterablelistwidget.NewState(global...),
 	}
 
 	state.bindingList.OnSelect(state.closePopup)
@@ -60,9 +60,8 @@ func (s *State) TryUpdate(msg bento.Msg) (bool, bento.Cmd) {
 }
 
 func (s *State) callBinding(key bento.Key) (bool, bento.Cmd) {
-	// TODO: cache
 	for _, b := range s.bindingList.AllItems() {
-		if b.Matches(key) {
+		if b.IsActive() && b.Matches(key) {
 			return true, b.Call()
 		}
 	}

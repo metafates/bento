@@ -17,6 +17,10 @@ type Callable interface {
 	Call() bento.Cmd
 }
 
+type Conditional interface {
+	IsActive() bool
+}
+
 type StringItem string
 
 func (i StringItem) Text() textwidget.Text {

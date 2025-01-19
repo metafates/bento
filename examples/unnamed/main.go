@@ -24,7 +24,7 @@ func (m *Model) Init() bento.Cmd {
 
 // Render implements bento.Model.
 func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
-	var mainArea, footerArea bento.Rect
+	var mainArea, helpArea bento.Rect
 
 	bento.
 		NewLayout().
@@ -32,7 +32,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 		Fill(1).
 		Len(1).
 		Split(area).
-		Assign(&mainArea, &footerArea)
+		Assign(&mainArea, &helpArea)
 
 	gauge := gaugewidget.New().WithRatio(m.ratio).WithUnicode(true)
 
@@ -40,7 +40,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 
 	helpwidget.
 		New().
-		RenderStateful(footerArea, buffer, m.footerState)
+		RenderStateful(helpArea, buffer, m.footerState)
 }
 
 // Update implements bento.Model.
@@ -90,7 +90,7 @@ func newModel() *Model {
 				WithDescription("Increment the gauge").
 				WithAction(func() bento.Cmd {
 					return Change(0.01)
-				}),
+				}).WithCondition(func() bool { return false }),
 
 			helpwidget.NewBinding("decrement", "down").
 				WithAliases("left", "h", "-").

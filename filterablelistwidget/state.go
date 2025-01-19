@@ -173,6 +173,10 @@ func (s *State[I]) TryUpdate(msg bento.Msg) (bool, bento.Cmd) {
 			}
 
 			if callable, ok := Item(selected).(Callable); ok {
+				if conditional, ok := callable.(Conditional); ok && !conditional.IsActive() {
+					return false, nil
+				}
+
 				if s.onSelect != nil {
 					s.onSelect()
 				}

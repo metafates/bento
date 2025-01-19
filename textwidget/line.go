@@ -2,6 +2,7 @@ package textwidget
 
 import (
 	"bufio"
+	"slices"
 	"strings"
 
 	"github.com/metafates/bento"
@@ -129,6 +130,21 @@ func (l Line) String() string {
 	}
 
 	return b.String()
+}
+
+func (l Line) WithSpans(spans ...Span) Line {
+	l.Spans = append(l.Spans, spans...)
+	return l
+}
+
+func (l Line) WithSpansStr(spans ...string) Line {
+	l.Spans = slices.Grow(l.Spans, len(spans))
+
+	for _, s := range spans {
+		l.Spans = append(l.Spans, NewSpan(s))
+	}
+
+	return l
 }
 
 func (l Line) StyledGraphemes(baseStyle bento.Style) []StyledGrapheme {

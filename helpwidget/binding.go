@@ -22,6 +22,7 @@ type Binding struct {
 	Description string
 	Action      Action
 	IsHidden    bool
+	Condition   func() bool
 }
 
 func NewBinding(action, key string) Binding {
@@ -31,7 +32,21 @@ func NewBinding(action, key string) Binding {
 		Name:        action,
 		Description: "",
 		Action:      nil,
+		Condition:   func() bool { return true },
 	}
+}
+
+func (b Binding) IsActive() bool {
+	if b.Condition == nil {
+		return true
+	}
+
+	return b.Condition()
+}
+
+func (b Binding) WithCondition(condition func() bool) Binding {
+	b.Condition = condition
+	return b
 }
 
 func (b Binding) WithAliases(aliases ...string) Binding {
@@ -40,7 +55,7 @@ func (b Binding) WithAliases(aliases ...string) Binding {
 }
 
 func (b Binding) Call() bento.Cmd {
-	if b.Action == nil {
+	if b.Action == nil || !b.IsActive() {
 		return nil
 	}
 
@@ -70,6 +85,8 @@ func (b Binding) WithDescription(description string) Binding {
 	return b
 }
 
+// Hidden returns binding that will be hidden from the bottom list.
+// Note, that it would be shown in the full list regardless
 func (b Binding) Hidden() Binding {
 	b.IsHidden = true
 	return b
@@ -92,19 +109,30 @@ func (b Binding) Matches(key bento.Key) bool {
 }
 
 func (b Binding) Text() textwidget.Text {
-	text := textwidget.NewText(
-		textwidget.NewLine(
-			textwidget.NewSpan(b.String()).WithStyle(bento.NewStyle().Bold()),
-			textwidget.NewSpan("  "),
-			textwidget.NewSpan(b.Name),
-		),
+	title := textwidget.NewLine(
+		textwidget.NewSpan(b.String()).WithStyle(bento.NewStyle().Bold()),
+		textwidget.NewSpan("  "),
+		textwidget.NewSpan(b.Name),
 	)
+
+	if !b.IsActive() {
+		title = title.WithSpans(
+			textwidget.NewSpan(" "),
+			textwidget.NewSpan("(disabled)").WithStyle(bento.NewStyle().Underlined()),
+		)
+	}
+
+	text := textwidget.NewText(title)
 
 	if b.Description != "" {
 		description := textwidget.NewLineStr(b.Description).WithStyle(bento.NewStyle().Italic().Dim())
 
-		text.Lines = append(text.Lines, description)
+		text = text.WithLines(description)
 	}
 
 	return text
+}
+
+func (b Binding) FilterValue() string {
+	return b.String() + " " + b.Description
 }

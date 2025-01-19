@@ -26,6 +26,16 @@ func NewText(lines ...Line) Text {
 	}
 }
 
+func (t Text) WithLines(lines ...Line) Text {
+	t.Lines = append(t.Lines, lines...)
+	return t
+}
+
+func (t Text) WithLinesStr(lines ...string) Text {
+	t.Lines = append(t.Lines, NewLinesStr(lines...)...)
+	return t
+}
+
 func (t Text) Height() int {
 	return len(t.Lines)
 }
