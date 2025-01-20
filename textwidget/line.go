@@ -181,6 +181,32 @@ func (l Line) Left() Line {
 	return l.WithAlignment(bento.AlignmentLeft)
 }
 
+// Print a line, starting at the position (x, y)
+func (l Line) Print(buffer *bento.Buffer, x, y, maxWidth int) (int, int) {
+	remainingWidth := maxWidth
+
+	for _, s := range l.Spans {
+		if remainingWidth == 0 {
+			break
+		}
+
+		newX, _ := buffer.SetStringN(
+			x,
+			y,
+			s.Content,
+			remainingWidth,
+			l.Style.Patched(s.Style),
+		)
+
+		w := max(0, newX-x)
+		x = newX
+
+		remainingWidth = max(0, remainingWidth-w)
+	}
+
+	return x, y
+}
+
 func (l Line) Render(area bento.Rect, buffer *bento.Buffer) {
 	l.renderWithAlignment(area, buffer, bento.AlignmentNone)
 }
