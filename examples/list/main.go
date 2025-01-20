@@ -17,9 +17,10 @@ import (
 var _ bento.Model = (*Model)(nil)
 
 type Model struct {
-	listState filterablelistwidget.State[Item]
+	listState filterablelistwidget.State
 	showPopup bool
 
+	items       []Item
 	currentItem *int
 }
 
@@ -50,7 +51,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 		bottomTitle = strconv.Itoa(*m.currentItem+1) + " of "
 	}
 
-	bottomTitle += strconv.Itoa(m.listState.LenFiltered()) + " items"
+	bottomTitle += strconv.Itoa(len(m.items)) + " items"
 
 	block := blockwidget.
 		New().
@@ -65,7 +66,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 		WithHighlightSpacing(listwidget.HighlightSpacingAlways).
 		WithBlock(block).WithHighlightStyle(bento.NewStyle().Black().OnBlue())
 
-	filterablelistwidget.New[Item](list).RenderStateful(area, buffer, &m.listState)
+	filterablelistwidget.New[Item]().WithList(list).RenderStateful(area, buffer, &m.listState)
 
 	if m.showPopup {
 		paragraph := paragraphwidget.NewStr("Hello, world!").Center()
@@ -108,7 +109,10 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 }
 
 func run() error {
-	model := Model{listState: filterablelistwidget.NewState(newItems(100)...)}
+	model := Model{
+		listState: filterablelistwidget.NewState(),
+		items:     newItems(100),
+	}
 
 	_, err := bento.NewApp(&model).Run()
 	if err != nil {

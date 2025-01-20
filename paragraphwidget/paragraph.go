@@ -35,6 +35,11 @@ func New(text textwidget.Text) Paragraph {
 	}
 }
 
+func (p Paragraph) WithScroll(vertical, horizontal int) Paragraph {
+	p.Scroll = bento.NewPosition(horizontal, vertical)
+	return p
+}
+
 func (p Paragraph) Right() Paragraph {
 	p.Alignment = bento.AlignmentRight
 	return p

@@ -3,18 +3,20 @@ package main
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/gaugewidget"
-	"github.com/metafates/bento/helpwidget"
+	"github.com/metafates/bento/paragraphwidget"
+	"github.com/metafates/bento/popupwidget"
+	"github.com/metafates/bento/scrollwidget"
 )
 
 var _ bento.Model = (*Model)(nil)
 
 type Model struct {
-	ratio float64
-
-	helpState helpwidget.State
+	text           string
+	verticalScroll scrollwidget.State
 }
 
 // Init implements bento.Model.
@@ -24,82 +26,52 @@ func (m *Model) Init() bento.Cmd {
 
 // Render implements bento.Model.
 func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
-	var mainArea, helpArea bento.Rect
+	content := paragraphwidget.
+		NewStr(m.text).
+		Wrapped(paragraphwidget.NewWrap()).
+		WithScroll(m.verticalScroll.Position(), 0)
 
-	bento.
-		NewLayout().
-		Vertical().
-		Fill(1).
-		Len(1).
-		Split(area).
-		Assign(&mainArea, &helpArea)
+	scroll := scrollwidget.New(scrollwidget.OrientationVerticalRight)
 
-	gauge := gaugewidget.New().WithRatio(m.ratio).WithUnicode(true)
+	innerArea := scroll.Inner(area)
 
-	gauge.Render(mainArea, buffer)
+	gauge := gaugewidget.New().WithRatio(m.verticalScroll.Ratio()).WithUnicode(true)
+	popup := popupwidget.New(gauge).Bottom().Left().WithHeight(bento.ConstraintLen(3)).WithWidth(bento.ConstraintPercentage(30))
 
-	helpwidget.
-		New().
-		RenderStateful(helpArea, buffer, &m.helpState)
+	content.Render(innerArea, buffer)
+	scroll.RenderStateful(area, buffer, m.verticalScroll)
+	popup.Render(area, buffer)
 }
 
 // Update implements bento.Model.
 func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
-	consumed, cmd := m.helpState.TryUpdate(msg)
-	if consumed {
-		return m, cmd
-	}
-
 	switch msg := msg.(type) {
-	case ChangeMsg:
-		m.ratio = max(0, min(1, m.ratio+float64(msg)))
+	case bento.KeyMsg:
+		switch msg.String() {
+		case "up":
+			m.verticalScroll.Prev()
+		case "down":
+			m.verticalScroll.Next()
+		case "ctrl+c":
+			return m, bento.Quit
+		}
 	}
 
 	return m, nil
 }
 
-type ChangeMsg float64
-
-func Add(delta float64) bento.Cmd {
-	return func() bento.Msg {
-		return ChangeMsg(delta)
-	}
-}
-
 func run() error {
-	_, err := bento.
-		NewApp(newModel()).
-		Run()
+	model := Model{
+		text:           strings.Repeat("Lorem ipsum dolor sit amet. ", 40),
+		verticalScroll: scrollwidget.NewState(100),
+	}
+
+	_, err := bento.NewApp(&model).Run()
 	if err != nil {
 		return fmt.Errorf("new app: %w", err)
 	}
 
 	return nil
-}
-
-func newModel() *Model {
-	return &Model{
-		ratio: 0,
-		helpState: helpwidget.NewState(
-			helpwidget.NewBinding("quit", "ctrl+c").
-				WithAction(func() bento.Cmd { return bento.Quit }).
-				Hidden(),
-
-			helpwidget.NewBinding("increment", "up").
-				WithAliases("right", "l", "+").
-				WithDescription("Increment the gauge").
-				WithAction(func() bento.Cmd {
-					return Add(0.01)
-				}),
-
-			helpwidget.NewBinding("decrement", "down").
-				WithAliases("left", "h", "-").
-				WithDescription("Decrement the gauge").
-				WithAction(func() bento.Cmd {
-					return Add(-0.01)
-				}),
-		),
-	}
 }
 
 func main() {

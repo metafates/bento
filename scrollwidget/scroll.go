@@ -1,6 +1,7 @@
 package scrollwidget
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/metafates/bento"
@@ -45,6 +46,30 @@ func New(orientation Orientation) Scroll {
 		endStyle:    bento.NewStyle(),
 		endSymbol:   &set.End,
 	}
+}
+
+func (s Scroll) Inner(area bento.Rect) bento.Rect {
+	barArea, ok := s.scrollbarArea(area)
+	if !ok {
+		return bento.Rect{}
+	}
+
+	var padding bento.Padding
+
+	switch s.orientation {
+	case OrientationHorizontalBottom:
+		padding = padding.WithBottom(barArea.Height)
+	case OrientationHorizontalTop:
+		padding = padding.WithTop(barArea.Height)
+	case OrientationVerticalLeft:
+		padding = padding.WithLeft(barArea.Width)
+	case OrientationVerticalRight:
+		padding = padding.WithRight(barArea.Width)
+	default:
+		panic(fmt.Sprintf("unexpected scrollwidget.Orientation: %#v", s.orientation))
+	}
+
+	return area.Inner(padding)
 }
 
 func (s Scroll) RenderStateful(area bento.Rect, buffer *bento.Buffer, state State) {

@@ -126,13 +126,12 @@ func (s *State) Unselect() {
 // Selected returns index of the selected item.
 // Returns ok = false if no item is selected.
 //
-// NOTE: Returned index may be greater, than you would expect, since it is trimmed only after [List.RenderStateful] call
-//
-// Use [State.SelectedWithLimit] if you know the limit or [GetSelectedItem] to select an item from the slice
-func (s *State) Selected() (index int, ok bool) {
+// NOTE: Returned index may be greater, than you would expect, since the state does not the items count.
+// Therefore, you must supply a max value as an argument
+func (s *State) Selected(max_ int) (index int, ok bool) {
 	if s.selected == nil {
 		return 0, false
 	}
 
-	return *s.selected, true
+	return min(max_, max(0, *s.selected)), true
 }

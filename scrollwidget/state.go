@@ -64,6 +64,10 @@ func (s *State) Scroll(direction Direction) {
 	}
 }
 
+func (s *State) Ratio() float64 {
+	return float64(s.position) / float64(s.contentLen)
+}
+
 func (s *State) Position() int {
 	return s.position
 }
