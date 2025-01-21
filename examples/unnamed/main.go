@@ -36,7 +36,12 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 	innerArea := scroll.Inner(area)
 
 	gauge := gaugewidget.New().WithRatio(m.verticalScroll.Ratio()).WithUnicode(true)
-	popup := popupwidget.New(gauge).Bottom().Left().WithHeight(bento.ConstraintLen(3)).WithWidth(bento.ConstraintPercentage(30))
+	popup := popupwidget.
+		New(gauge).
+		Bottom().
+		Left().
+		WithHeight(bento.ConstraintLen(3)).
+		WithWidth(bento.ConstraintPercentage(30))
 
 	content.Render(innerArea, buffer)
 	scroll.RenderStateful(area, buffer, m.verticalScroll)

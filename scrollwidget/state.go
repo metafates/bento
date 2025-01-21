@@ -37,6 +37,14 @@ func NewState(contentLen int) State {
 	}
 }
 
+func (s *State) SetPosition(position int) {
+	s.position = position
+}
+
+func (s *State) SetViewportnContentLen(l int) {
+	s.viewportContentLen = l
+}
+
 // Decrements the scroll position by one, ensuring it doesn't go below zero.
 func (s *State) Prev() {
 	s.position = max(0, s.position-1)
