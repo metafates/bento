@@ -26,19 +26,54 @@ func New(titles ...textwidget.Line) Tabs {
 		titles:         titles,
 		selected:       nil,
 		style:          bento.NewStyle(),
-		highlightStyle: bento.NewStyle(),
+		highlightStyle: bento.NewStyle().Reversed(),
 		divider:        textwidget.NewSpan(symbol.LineVertical),
 		paddingLeft:    textwidget.NewLineStr(" "),
 		paddingRight:   textwidget.NewLineStr(" "),
 	}
 }
 
-func (t Tabs) WithSelected(selected int) Tabs {
-	t.selected = &selected
+func (t Tabs) WithStyle(style bento.Style) Tabs {
+	t.style = style
 	return t
 }
 
-func (t Tabs) WithoutSelected() Tabs {
+func (t Tabs) WithPaddingLeft(padding textwidget.Line) Tabs {
+	t.paddingLeft = padding
+	return t
+}
+
+func (t Tabs) WithPaddingRight(padding textwidget.Line) Tabs {
+	t.paddingRight = padding
+	return t
+}
+
+func (t Tabs) WithDivider(divider textwidget.Span) Tabs {
+	t.divider = divider
+	return t
+}
+
+func (t Tabs) WithHighlightStyle(style bento.Style) Tabs {
+	t.highlightStyle = style
+	return t
+}
+
+func (t Tabs) WithBlock(block blockwidget.Block) Tabs {
+	t.block = &block
+	return t
+}
+
+func (t Tabs) WithTitles(titles ...textwidget.Line) Tabs {
+	t.titles = titles
+	return t
+}
+
+func (t Tabs) Select(index int) Tabs {
+	t.selected = &index
+	return t
+}
+
+func (t Tabs) Unselect() Tabs {
 	t.selected = nil
 	return t
 }
@@ -70,6 +105,7 @@ func (t Tabs) render(area bento.Rect, buffer *bento.Buffer) {
 			break
 		}
 
+		// Left padding
 		x, _ = t.paddingLeft.Print(buffer, x, area.Top(), remainingWidth)
 
 		remainingWidth = max(0, area.Right()-x)
@@ -103,6 +139,6 @@ func (t Tabs) render(area bento.Rect, buffer *bento.Buffer) {
 			break
 		}
 
-		// TODO
+		x, _ = t.divider.Print(buffer, x, area.Top(), remainingWidth)
 	}
 }

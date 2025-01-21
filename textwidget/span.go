@@ -40,6 +40,10 @@ func (s Span) Width() int {
 	return uniseg.StringWidth(s.Content)
 }
 
+func (s Span) Print(buffer *bento.Buffer, x, y, maxWidth int) (int, int) {
+	return buffer.SetStringN(x, y, s.Content, maxWidth, s.Style)
+}
+
 func (s Span) Render(area bento.Rect, buffer *bento.Buffer) {
 	area = area.Intersection(buffer.Area())
 	if area.IsEmpty() {
