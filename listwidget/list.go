@@ -92,6 +92,12 @@ func (l List) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State
 		return
 	}
 
+	if state.selected != nil {
+		selected := min(*state.selected, len(l.items)-1)
+
+		state.selected = &selected
+	}
+
 	listHeight := listArea.Height
 
 	firstVisibleIndex, lastVisibleIndex := l.getItemsBounds(state.selected, state.offset, listHeight)

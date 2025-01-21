@@ -7,7 +7,6 @@ import (
 
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/blockwidget"
-	"github.com/metafates/bento/filterablelistwidget"
 	"github.com/metafates/bento/listwidget"
 	"github.com/metafates/bento/paragraphwidget"
 	"github.com/metafates/bento/popupwidget"
@@ -17,7 +16,7 @@ import (
 var _ bento.Model = (*Model)(nil)
 
 type Model struct {
-	listState filterablelistwidget.State
+	listState listwidget.State
 	showPopup bool
 
 	items       []Item
@@ -60,13 +59,18 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 		WithTitle(blockwidget.NewTitleStr("List")).
 		WithTitle(blockwidget.NewTitleStr(bottomTitle).Bottom().Right())
 
+	items := make([]textwidget.Text, 0, len(m.items))
+	for _, item := range m.items {
+		items = append(items, item.Text())
+	}
+
 	list := listwidget.
-		New().
+		New(items...).
 		WithHighlightSymbol("> ").
 		WithHighlightSpacing(listwidget.HighlightSpacingAlways).
 		WithBlock(block).WithHighlightStyle(bento.NewStyle().Black().OnBlue())
 
-	filterablelistwidget.New[Item]().WithList(list).RenderStateful(area, buffer, &m.listState)
+	list.RenderStateful(area, buffer, &m.listState)
 
 	if m.showPopup {
 		paragraph := paragraphwidget.NewStr("Hello, world!").Center()
@@ -110,7 +114,7 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 
 func run() error {
 	model := Model{
-		listState: filterablelistwidget.NewState(),
+		listState: listwidget.NewState(),
 		items:     newItems(100),
 	}
 
