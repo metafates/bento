@@ -17,7 +17,7 @@ type Popup struct {
 	Padding              bento.Padding
 }
 
-func New(content bento.Widget) Popup {
+func New() Popup {
 	return Popup{
 		Block:      nil,
 		Horizontal: bento.FlexCenter,
@@ -26,7 +26,6 @@ func New(content bento.Widget) Popup {
 		Width:      bento.ConstraintPercentage(60),
 		Height:     bento.ConstraintPercentage(20),
 		Padding:    bento.NewPadding(),
-		Content:    content,
 	}
 }
 
@@ -85,6 +84,21 @@ func (p Popup) Right() Popup {
 	return p
 }
 
+func (p Popup) Inner(area bento.Rect) bento.Rect {
+	vertical := bento.NewLayout(p.Height).Vertical().WithPadding(p.Padding).WithFlex(p.Vertical)
+	horizontal := bento.NewLayout(p.Width).Horizontal().WithPadding(p.Padding).WithFlex(p.Horizontal)
+
+	inner := area
+	inner = vertical.Split(inner).Unwrap()
+	inner = horizontal.Split(inner).Unwrap()
+
+	if p.Block != nil {
+		inner = p.Block.Inner(inner)
+	}
+
+	return inner
+}
+
 func (p Popup) Render(area bento.Rect, buffer *bento.Buffer) {
 	vertical := bento.NewLayout(p.Height).Vertical().WithPadding(p.Padding).WithFlex(p.Vertical)
 	horizontal := bento.NewLayout(p.Width).Horizontal().WithPadding(p.Padding).WithFlex(p.Horizontal)
@@ -97,12 +111,5 @@ func (p Popup) Render(area bento.Rect, buffer *bento.Buffer) {
 
 	if p.Block != nil {
 		p.Block.Render(area, buffer)
-		area = p.Block.Inner(area)
 	}
-
-	if area.IsEmpty() {
-		return
-	}
-
-	p.Content.Render(area, buffer)
 }

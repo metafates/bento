@@ -41,15 +41,15 @@ type Set struct {
 var _doubleVertical = Set{
 	Track: symbol.LineDoubleVertical,
 	Thumb: symbol.BlockFull,
-	Begin: "▲",
-	End:   "▼",
+	Begin: symbol.ArrowUp,
+	End:   symbol.ArrowDown,
 }
 
 var _vertical = Set{
 	Track: symbol.LineVertical,
 	Thumb: symbol.BlockFull,
-	Begin: "◄",
-	End:   "►",
+	Begin: symbol.ArrowLeft,
+	End:   symbol.ArrowRight,
 }
 
 var _doubleHorizontal = Set{

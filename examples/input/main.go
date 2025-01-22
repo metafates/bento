@@ -21,12 +21,13 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 	block := blockwidget.New().Bordered().Thick().WithTitleStr("Input")
 	input := inputwidget.New().WithPlaceholder("Placeholder...").WithPrompt("> ")
 
-	popup := popupwidget.NewStateful(input).WithBlock(block).WithHeight(bento.ConstraintLen(3))
+	popup := popupwidget.New().WithBlock(block).WithHeight(bento.ConstraintLen(3))
 
 	fill := fillwidget.New("╲").WithStyle(bento.NewStyle().Dim())
 
 	fill.Render(area, buffer)
-	popup.RenderStateful(area, buffer, &m.input)
+	popup.Render(area, buffer)
+	input.RenderStateful(popup.Inner(area), buffer, &m.input)
 }
 
 // Init implements bento.Model.
