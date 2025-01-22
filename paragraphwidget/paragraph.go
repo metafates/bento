@@ -60,9 +60,13 @@ func (p Paragraph) WithBlock(block blockwidget.Block) Paragraph {
 	return p
 }
 
-func (p Paragraph) Wrapped(wrap Wrap) Paragraph {
+func (p Paragraph) WithWrap(wrap Wrap) Paragraph {
 	p.Wrap = &wrap
 	return p
+}
+
+func (p Paragraph) Wrapped() Paragraph {
+	return p.WithWrap(NewWrap().WithTrim(false))
 }
 
 func (p Paragraph) Render(area bento.Rect, buffer *bento.Buffer) {

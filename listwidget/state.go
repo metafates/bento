@@ -67,6 +67,7 @@ func (s *State) SetOffset(offset int) {
 }
 
 func (s *State) Select(index int) {
+	index = max(0, index)
 	s.selected = &index
 }
 
