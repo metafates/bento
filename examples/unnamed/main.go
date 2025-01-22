@@ -28,7 +28,7 @@ func (m *Model) Init() bento.Cmd {
 func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 	content := paragraphwidget.
 		NewStr(m.text).
-		Wrapped(paragraphwidget.NewWrap()).
+		Wrapped().
 		WithScroll(m.verticalScroll.Position(), 0)
 
 	scroll := scrollwidget.New(scrollwidget.OrientationVerticalRight)

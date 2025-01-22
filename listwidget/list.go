@@ -92,10 +92,8 @@ func (l List) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State
 		return
 	}
 
-	if state.selected != nil {
-		selected := min(*state.selected, len(l.items)-1)
-
-		state.selected = &selected
+	if state.selected != nil && *state.selected >= len(l.items) {
+		state.Select(max(0, len(l.items)-1))
 	}
 
 	listHeight := listArea.Height
