@@ -28,7 +28,7 @@ func (m *Model) Init() bento.Cmd {
 func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 	content := paragraphwidget.
 		NewStr(m.text).
-		Wrapped(paragraphwidget.NewWrap()).
+		Wrapped().
 		WithScroll(m.verticalScroll.Position(), 0)
 
 	scroll := scrollwidget.New(scrollwidget.OrientationVerticalRight)
@@ -37,7 +37,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 
 	gauge := gaugewidget.New().WithRatio(m.verticalScroll.Ratio()).WithUnicode(true)
 	popup := popupwidget.
-		New(gauge).
+		New().
 		Bottom().
 		Left().
 		WithHeight(bento.ConstraintLen(3)).
@@ -45,7 +45,9 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 
 	content.Render(innerArea, buffer)
 	scroll.RenderStateful(area, buffer, m.verticalScroll)
+
 	popup.Render(area, buffer)
+	gauge.Render(popup.Inner(area), buffer)
 }
 
 // Update implements bento.Model.

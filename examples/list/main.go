@@ -76,7 +76,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 		paragraph := paragraphwidget.NewStr("Hello, world!").Center()
 
 		popup := popupwidget.
-			New(paragraph).
+			New().
 			WithBlock(blockwidget.New().WithBorderSides().Thick().WithTitleStr("Popup")).
 			Middle().
 			Center().
@@ -84,6 +84,7 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 			WithWidth(bento.ConstraintLen(30))
 
 		popup.Render(area, buffer)
+		paragraph.Render(popup.Inner(area), buffer)
 	}
 }
 
