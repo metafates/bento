@@ -3,20 +3,66 @@ package main
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/metafates/bento"
-	"github.com/metafates/bento/gaugewidget"
-	"github.com/metafates/bento/paragraphwidget"
-	"github.com/metafates/bento/popupwidget"
-	"github.com/metafates/bento/scrollwidget"
+	"github.com/metafates/bento/blockwidget"
+	"github.com/metafates/bento/examples/unnamed/tabs"
+	"github.com/metafates/bento/examples/unnamed/theme"
+	"github.com/metafates/bento/tabswidget"
+	"github.com/metafates/bento/textwidget"
+	"github.com/muesli/termenv"
 )
 
 var _ bento.Model = (*Model)(nil)
 
+type Tab int
+
+const (
+	TabAbout Tab = iota
+	TabRecipe
+	TabEmail
+	TabTraceroute
+	TabWeather
+	_tabsCount
+)
+
+func (t Tab) String() string {
+	switch t {
+	case TabAbout:
+		return "About"
+	case TabEmail:
+		return "Email"
+	case TabRecipe:
+		return "Recipe"
+	case TabTraceroute:
+		return "Traceroute"
+	case TabWeather:
+		return "Weather"
+	default:
+		return ""
+	}
+}
+
+func (t Tab) Title() string {
+	if t == TabAbout {
+		return ""
+	}
+
+	return " " + t.String() + " "
+}
+
+func (t Tab) Next() Tab {
+	return min(_tabsCount-1, t+1)
+}
+
+func (t Tab) Prev() Tab {
+	return max(0, t-1)
+}
+
 type Model struct {
-	text           string
-	verticalScroll scrollwidget.State
+	tab Tab
+
+	aboutTab tabs.About
 }
 
 // Init implements bento.Model.
@@ -26,28 +72,98 @@ func (m *Model) Init() bento.Cmd {
 
 // Render implements bento.Model.
 func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
-	content := paragraphwidget.
-		NewStr(m.text).
-		Wrapped().
-		WithScroll(m.verticalScroll.Position(), 0)
+	var titleBar, tab, bottomBar bento.Rect
 
-	scroll := scrollwidget.New(scrollwidget.OrientationVerticalRight)
+	bento.
+		NewLayout(
+			bento.ConstraintLen(1),
+			bento.ConstraintMin(0),
+			bento.ConstraintLen(1),
+		).
+		Vertical().
+		Split(area).
+		Assign(&titleBar, &tab, &bottomBar)
 
-	innerArea := scroll.Inner(area)
+	blockwidget.New().WithStyle(theme.Global.Root).Render(area, buffer)
 
-	gauge := gaugewidget.New().WithRatio(m.verticalScroll.Ratio()).WithUnicode(true)
-	popup := popupwidget.
-		New().
-		Bottom().
-		Left().
-		WithHeight(bento.ConstraintLen(3)).
-		WithWidth(bento.ConstraintPercentage(30))
+	m.renderTitleBar(titleBar, buffer)
+	m.renderSelectedTab(tab, buffer)
+	m.renderBottomBar(bottomBar, buffer)
+}
 
-	content.Render(innerArea, buffer)
-	scroll.RenderStateful(area, buffer, m.verticalScroll)
+func (m *Model) renderTitleBar(area bento.Rect, buffer *bento.Buffer) {
+	var title, tabs bento.Rect
 
-	popup.Render(area, buffer)
-	gauge.Render(popup.Inner(area), buffer)
+	bento.
+		NewLayout(
+			bento.ConstraintMin(0),
+			bento.ConstraintLen(43),
+		).
+		Horizontal().
+		Split(area).
+		Assign(&title, &tabs)
+
+	textwidget.NewSpan("Bento").WithStyle(theme.Global.AppTitle).Render(title, buffer)
+
+	titles := make([]textwidget.Line, 0, _tabsCount)
+	for _, tab := range []Tab{
+		TabAbout,
+		TabRecipe,
+		TabEmail,
+		TabTraceroute,
+		TabWeather,
+	} {
+		titles = append(titles, textwidget.NewLineStr(tab.Title()))
+	}
+
+	tabswidget.
+		New(titles...).
+		WithStyle(theme.Global.Tabs).
+		WithHighlightStyle(theme.Global.TabsSelected).
+		Select(int(m.tab)).
+		WithDividerStr("").
+		WithPaddingLeftStr("").
+		WithPaddingRightStr("").
+		Render(tabs, buffer)
+}
+
+func (m *Model) renderSelectedTab(area bento.Rect, buffer *bento.Buffer) {
+	switch m.tab {
+	case TabAbout:
+		m.aboutTab.Render(area, buffer)
+	}
+}
+
+func (m *Model) renderBottomBar(area bento.Rect, buffer *bento.Buffer) {
+	var spans []textwidget.Span
+
+	for _, tuple := range [][]string{
+		{"H/←", "Left"},
+		{"L/→", "Right"},
+		{"K/↑", "Up"},
+		{"J/↓", "Down"},
+		{"D/Del", "Destroy"},
+		{"Q/Esc", "Quit"},
+	} {
+		key, desc := tuple[0], tuple[1]
+
+		keySpan := textwidget.
+			NewSpan(fmt.Sprintf(" %s ", key)).
+			WithStyle(theme.Global.KeyBinding.Key)
+
+		descSpan := textwidget.
+			NewSpan(fmt.Sprintf(" %s ", desc)).
+			WithStyle(theme.Global.KeyBinding.Description)
+
+		spans = append(spans, keySpan, descSpan)
+	}
+
+	fg := termenv.ANSI256.Color("236")
+	bg := termenv.ANSI256.Color("232")
+
+	style := bento.NewStyle().WithForeground(fg).WithBackground(bg)
+
+	textwidget.NewLine(spans...).Center().WithStyle(style).Render(area, buffer)
 }
 
 // Update implements bento.Model.
@@ -55,23 +171,39 @@ func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 	switch msg := msg.(type) {
 	case bento.KeyMsg:
 		switch msg.String() {
-		case "up":
-			m.verticalScroll.Prev()
-		case "down":
-			m.verticalScroll.Next()
-		case "ctrl+c":
+		case "ctrl+c", "esc", "q":
 			return m, bento.Quit
+
+		case "h":
+			m.prevTab()
+			return m, nil
+
+		case "l":
+			m.nextTab()
+			return m, nil
 		}
 	}
 
 	return m, nil
 }
 
-func run() error {
-	model := Model{
-		text:           strings.Repeat("Lorem ipsum dolor sit amet. ", 40),
-		verticalScroll: scrollwidget.NewState(100),
+func (m *Model) prevTab() {
+	m.tab = m.tab.Prev()
+}
+
+func (m *Model) nextTab() {
+	m.tab = m.tab.Next()
+}
+
+func newModel() Model {
+	return Model{
+		tab:      TabAbout,
+		aboutTab: tabs.NewAbout(),
 	}
+}
+
+func run() error {
+	model := newModel()
 
 	_, err := bento.NewApp(&model).Run()
 	if err != nil {

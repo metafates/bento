@@ -43,14 +43,26 @@ func (t Tabs) WithPaddingLeft(padding textwidget.Line) Tabs {
 	return t
 }
 
+func (t Tabs) WithPaddingLeftStr(padding string) Tabs {
+	return t.WithPaddingLeft(textwidget.NewLineStr(padding))
+}
+
 func (t Tabs) WithPaddingRight(padding textwidget.Line) Tabs {
 	t.paddingRight = padding
 	return t
 }
 
+func (t Tabs) WithPaddingRightStr(padding string) Tabs {
+	return t.WithPaddingRight(textwidget.NewLineStr(padding))
+}
+
 func (t Tabs) WithDivider(divider textwidget.Span) Tabs {
 	t.divider = divider
 	return t
+}
+
+func (t Tabs) WithDividerStr(divider string) Tabs {
+	return t.WithDivider(textwidget.NewSpan(divider))
 }
 
 func (t Tabs) WithHighlightStyle(style bento.Style) Tabs {
@@ -115,7 +127,7 @@ func (t Tabs) render(area bento.Rect, buffer *bento.Buffer) {
 
 		newX, _ := title.Print(buffer, x, area.Top(), remainingWidth)
 
-		if t.selected != nil {
+		if t.selected != nil && *t.selected == i {
 			buffer.SetStyle(bento.Rect{
 				X:      x,
 				Y:      area.Top(),
