@@ -4,49 +4,49 @@ import (
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/blockwidget"
 	"github.com/metafates/bento/clearwidget"
-	"github.com/metafates/bento/examples/unnamed/gradient"
-	"github.com/metafates/bento/examples/unnamed/theme"
+	"github.com/metafates/bento/examples/demo/theme"
+	"github.com/metafates/bento/mascotwidget"
 	"github.com/metafates/bento/paragraphwidget"
 )
 
-var _ bento.Widget = (*About)(nil)
+var _ bento.Widget = (*AboutTab)(nil)
 
-type About struct {
+type AboutTab struct {
 	rowIndex int
 }
 
-func NewAbout() About {
-	return About{
+func NewAboutTab() AboutTab {
+	return AboutTab{
 		rowIndex: 0,
 	}
 }
 
-func (a *About) PrevRow() {
+func (a *AboutTab) PrevRow() {
 	a.rowIndex = max(0, a.rowIndex-1)
 }
 
-func (a *About) NextRow() {
+func (a *AboutTab) NextRow() {
 	a.rowIndex++
 }
 
-func (a *About) Render(area bento.Rect, buffer *bento.Buffer) {
+func (a *AboutTab) Render(area bento.Rect, buffer *bento.Buffer) {
 	var logoArea, descriptionArea bento.Rect
 
 	bento.
 		NewLayout(
-			bento.ConstraintLen(34),
+			bento.ConstraintLen(44),
 			bento.ConstraintMin(0),
 		).
 		Horizontal().
 		Split(area).
 		Assign(&logoArea, &descriptionArea)
 
-	a.renderDescription(area, buffer)
+	a.renderDescription(descriptionArea, buffer)
+
+	mascotwidget.New().Render(logoArea.Inner(bento.NewPadding(0, 2)), buffer)
 }
 
-func (*About) renderDescription(area bento.Rect, buffer *bento.Buffer) {
-	gradient.New().Render(area, buffer)
-
+func (*AboutTab) renderDescription(area bento.Rect, buffer *bento.Buffer) {
 	area = area.Inner(bento.NewPadding(4, 2))
 
 	clearwidget.New().Render(area, buffer)
@@ -65,7 +65,7 @@ Bento is a Go framework that provides widgets (e.g. Paragraph, Table) and draws 
 		WithBlock(
 			blockwidget.
 				New().
-				WithTitleStr(" Bento ").
+				WithTitleStr(" Bento 🍱 ").
 				WithTitlesAlignment(bento.AlignmentCenter).
 				WithBorderSides(blockwidget.SideTop).
 				WithBorderStyle(theme.Global.DescriptionTitle).
@@ -73,5 +73,6 @@ Bento is a Go framework that provides widgets (e.g. Paragraph, Table) and draws 
 		).
 		WithWrap(paragraphwidget.NewWrap().Trimmed()).
 		WithScroll(0, 0).
+		Center().
 		Render(area, buffer)
 }

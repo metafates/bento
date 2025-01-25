@@ -6,8 +6,9 @@ import (
 
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/blockwidget"
-	"github.com/metafates/bento/examples/unnamed/tabs"
-	"github.com/metafates/bento/examples/unnamed/theme"
+	"github.com/metafates/bento/examples/demo/gradient"
+	"github.com/metafates/bento/examples/demo/tabs"
+	"github.com/metafates/bento/examples/demo/theme"
 	"github.com/metafates/bento/tabswidget"
 	"github.com/metafates/bento/textwidget"
 	"github.com/muesli/termenv"
@@ -62,7 +63,10 @@ func (t Tab) Prev() Tab {
 type Model struct {
 	tab Tab
 
-	aboutTab tabs.About
+	aboutTab tabs.AboutTab
+
+	recipeTabState tabs.RecipeTabState
+	recipeTab      tabs.RecipeTab
 }
 
 // Init implements bento.Model.
@@ -128,9 +132,13 @@ func (m *Model) renderTitleBar(area bento.Rect, buffer *bento.Buffer) {
 }
 
 func (m *Model) renderSelectedTab(area bento.Rect, buffer *bento.Buffer) {
+	gradient.New().Render(area, buffer)
+
 	switch m.tab {
 	case TabAbout:
 		m.aboutTab.Render(area, buffer)
+	case TabRecipe:
+		m.recipeTab.RenderStateful(area, buffer, m.recipeTabState)
 	}
 }
 
@@ -197,8 +205,10 @@ func (m *Model) nextTab() {
 
 func newModel() Model {
 	return Model{
-		tab:      TabAbout,
-		aboutTab: tabs.NewAbout(),
+		tab:            TabAbout,
+		aboutTab:       tabs.NewAboutTab(),
+		recipeTabState: tabs.NewRecipeTabState(),
+		recipeTab:      tabs.NewRecipeTab(tabs.SalmonNigiriRecipe),
 	}
 }
 

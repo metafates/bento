@@ -41,7 +41,7 @@ func (s *State) SetPosition(position int) {
 	s.position = position
 }
 
-func (s *State) SetViewportnContentLen(l int) {
+func (s *State) SetViewportContentLen(l int) {
 	s.viewportContentLen = l
 }
 

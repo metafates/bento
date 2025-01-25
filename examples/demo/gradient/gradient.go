@@ -40,7 +40,7 @@ func (Gradient) Render(area bento.Rect, buffer *bento.Buffer) {
 }
 
 func colorFromOklab(hue, saturation, value float64) bento.Color {
-	color := colorful.HPLuv(hue, saturation, value)
+	color := colorful.Hsv(hue, saturation, value)
 
 	return termenv.RGBColor(color.Hex())
 }
