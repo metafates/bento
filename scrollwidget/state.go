@@ -37,12 +37,14 @@ func NewState(contentLen int) State {
 	}
 }
 
-func (s *State) SetPosition(position int) {
+func (s *State) SetPosition(position int) *State {
 	s.position = position
+	return s
 }
 
-func (s *State) SetViewportContentLen(l int) {
+func (s *State) SetViewportContentLen(l int) *State {
 	s.viewportContentLen = l
+	return s
 }
 
 // Decrements the scroll position by one, ensuring it doesn't go below zero.

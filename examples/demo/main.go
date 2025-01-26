@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/metafates/bento"
 	"github.com/metafates/bento/blockwidget"
@@ -61,7 +62,9 @@ func (t Tab) Prev() Tab {
 }
 
 type Model struct {
-	tab Tab
+	frameCount int
+	destroy    bool
+	tab        Tab
 
 	aboutTab tabs.AboutTab
 
@@ -76,6 +79,8 @@ func (m *Model) Init() bento.Cmd {
 
 // Render implements bento.Model.
 func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
+	m.frameCount++
+
 	var titleBar, tab, bottomBar bento.Rect
 
 	bento.
@@ -93,6 +98,10 @@ func (m *Model) Render(area bento.Rect, buffer *bento.Buffer) {
 	m.renderTitleBar(titleBar, buffer)
 	m.renderSelectedTab(tab, buffer)
 	m.renderBottomBar(bottomBar, buffer)
+
+	if m.destroy {
+		destroy(m.frameCount, buffer)
+	}
 }
 
 func (m *Model) renderTitleBar(area bento.Rect, buffer *bento.Buffer) {
@@ -174,11 +183,28 @@ func (m *Model) renderBottomBar(area bento.Rect, buffer *bento.Buffer) {
 	textwidget.NewLine(spans...).Center().WithStyle(style).Render(area, buffer)
 }
 
+type TickMsg time.Time
+
+func (m *Model) tick() bento.Cmd {
+	return bento.Tick(20*time.Millisecond, func(t time.Time) bento.Msg {
+		return TickMsg(t)
+	})
+}
+
 // Update implements bento.Model.
 func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
 	switch msg := msg.(type) {
+	case TickMsg:
+		return m, m.tick()
 	case bento.KeyMsg:
 		switch msg.String() {
+		case "d":
+			if m.destroy {
+				return m, nil
+			}
+
+			m.destroy = true
+			return m, m.tick()
 		case "ctrl+c", "esc", "q":
 			return m, bento.Quit
 

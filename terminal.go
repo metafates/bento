@@ -118,10 +118,6 @@ func (t *Terminal) DisableRawMode() error {
 }
 
 func (t *Terminal) Draw(widget Widget) (CompletedFrame, error) {
-	// if err := t.Autoresize(); err != nil {
-	// 	return CompletedFrame{}, fmt.Errorf("autoresize: %w", err)
-	// }
-
 	frame := t.GetFrame()
 
 	frame.RenderWidget(widget, frame.Area())
