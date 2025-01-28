@@ -71,7 +71,7 @@ Bento is a Go framework that provides widgets (e.g. Paragraph, Table) and draws 
 				WithBorderStyle(theme.Global.DescriptionTitle).
 				WithPadding(bento.NewPadding()),
 		).
-		WithWrap(paragraphwidget.NewWrap().Trimmed()).
+		WithWrap(paragraphwidget.NewWrap().WithTrim(true)).
 		WithScroll(0, 0).
 		Center().
 		Render(area, buffer)

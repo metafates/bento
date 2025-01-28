@@ -40,6 +40,11 @@ func (p Paragraph) WithStyle(style bento.Style) Paragraph {
 	return p
 }
 
+// WithScroll sets the scroll offset for the given paragraph
+//
+// The scroll offset is a tuple of (y, x) offset. The y offset is the number of lines to
+// scroll, and the x offset is the number of characters to scroll. The scroll offset is applied
+// after the text is wrapped and aligned.
 func (p Paragraph) WithScroll(vertical, horizontal int) Paragraph {
 	p.Scroll = bento.NewPosition(horizontal, vertical)
 	return p
@@ -65,6 +70,9 @@ func (p Paragraph) WithBlock(block blockwidget.Block) Paragraph {
 	return p
 }
 
+// WithWrap sets the wrapping configuration for the widget.
+//
+// See [Wrap] for more information on the different options.
 func (p Paragraph) WithWrap(wrap Wrap) Paragraph {
 	p.Wrap = &wrap
 	return p

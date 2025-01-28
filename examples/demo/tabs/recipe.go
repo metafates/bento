@@ -141,7 +141,7 @@ func (r *RecipeTab) renderRecipe(area bento.Rect, buffer *bento.Buffer) {
 
 	paragraphwidget.
 		New(textwidget.NewText(lines...)).
-		WithWrap(paragraphwidget.NewWrap().Trimmed()).
+		WithWrap(paragraphwidget.NewWrap().WithTrim(true)).
 		WithBlock(blockwidget.New().WithPadding(bento.NewPadding(0, 1, 0, 0))).
 		Render(area, buffer)
 }
