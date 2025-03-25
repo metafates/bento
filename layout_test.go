@@ -1093,7 +1093,7 @@ func TestEdgeCases(t *testing.T) {
 		constraints []bento.Constraint
 		direction   bento.Direction
 		split       bento.Rect
-		want        []bento.Rect
+		want        bento.Splitted
 	}{
 		{
 			name: "50% 50% min(0) stretches into last",
