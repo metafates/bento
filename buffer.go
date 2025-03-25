@@ -86,7 +86,7 @@ func (b *Buffer) PosOf(index int) Position {
 	x := index%b.area.Width + b.area.X
 	y := index/b.area.Width + b.area.Y
 
-	return Position{X: x, Y: y}
+	return NewPosition(x, y)
 }
 
 // SetString prints a string, starting at the position (x, y)

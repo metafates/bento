@@ -59,6 +59,7 @@ type Layout struct {
 	Spacing     Spacing
 }
 
+// NewLayout returns vertical layout with the given constraints
 func NewLayout(constraints ...Constraint) Layout {
 	return Layout{
 		Direction:   DirectionVertical,
