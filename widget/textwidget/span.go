@@ -52,8 +52,8 @@ func (s Span) Render(area bento.Rect, buffer *bento.Buffer) {
 
 	x, y := area.X, area.Y
 
-	for i, grapheme := range s.StyledGraphemes(bento.NewStyle()) {
-		symbolWidth := grapheme.Width()
+	for i, gr := range s.StyledGraphemes(bento.NewStyle()) {
+		symbolWidth := gr.Width()
 
 		nextX := x + symbolWidth
 		if nextX > area.Right() {
@@ -63,17 +63,17 @@ func (s Span) Render(area bento.Rect, buffer *bento.Buffer) {
 		switch {
 		case i == 0:
 			// the first grapheme is always set on the cell
-			buffer.CellAt(bento.Position{X: x, Y: y}).SetSymbol(grapheme.String()).SetStyle(grapheme.Style)
+			buffer.CellAt(bento.Position{X: x, Y: y}).SetSymbol(gr.String()).SetStyle(gr.Style)
 		case x == area.X:
 			// there is one or more zero-width graphemes in the first cell, so the first cell
 			// must be appended to.
-			buffer.CellAt(bento.Position{X: x, Y: y}).AppendSymbol(grapheme.String()).SetStyle(grapheme.Style)
+			buffer.CellAt(bento.Position{X: x, Y: y}).AppendSymbol(gr.String()).SetStyle(gr.Style)
 		case symbolWidth == 0:
 			// append zero-width graphemes to the previous cell
-			buffer.CellAt(bento.Position{X: x - 1, Y: y}).AppendSymbol(grapheme.String()).SetStyle(grapheme.Style)
+			buffer.CellAt(bento.Position{X: x - 1, Y: y}).AppendSymbol(gr.String()).SetStyle(gr.Style)
 		default:
 			// just a normal grapheme (not first, not zero-width, not overflowing the area)
-			buffer.CellAt(bento.Position{X: x, Y: y}).SetSymbol(grapheme.String()).SetStyle(grapheme.Style)
+			buffer.CellAt(bento.Position{X: x, Y: y}).SetSymbol(gr.String()).SetStyle(gr.Style)
 		}
 
 		for xHidden := x + 1; xHidden < nextX; xHidden++ {

@@ -173,7 +173,7 @@ func (b *Buffer) SetStyle(area Rect, style Style) {
 
 	for y := area.Top(); y < area.Bottom(); y++ {
 		for x := area.Left(); x < area.Right(); x++ {
-			pos := Position{X: x, Y: y}
+			pos := NewPosition(x, y)
 
 			b.CellAt(pos).SetStyle(style)
 		}

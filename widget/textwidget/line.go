@@ -221,18 +221,18 @@ func (l Line) renderWithAlignment(
 		return
 	}
 
+	lineWidth := l.Width()
+	if lineWidth == 0 {
+		return
+	}
+
 	area = bento.Rect{
 		Position: area.Position,
 		Width:    area.Width,
 		Height:   1,
 	}
 
-	lineWidth := l.Width()
-	if lineWidth == 0 {
-		return
-	}
-
-	buffer.SetStyle(area, l.Style)
+	buffer.SetStyle(area.WithWidth(min(area.Width, lineWidth)), l.Style)
 
 	alignment := l.Alignment
 	if alignment == bento.AlignmentNone {

@@ -17,6 +17,16 @@ func (r Rect) Positioned(x, y int) Rect {
 	return r
 }
 
+func (r Rect) WithWidth(width int) Rect {
+	r.Width = width
+	return r
+}
+
+func (r Rect) WithHeight(height int) Rect {
+	r.Height = height
+	return r
+}
+
 func (r Rect) IsEmpty() bool {
 	return r.Width == 0 || r.Height == 0
 }
