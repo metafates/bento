@@ -321,8 +321,10 @@ func (b Block) renderRightTitles(position TitlePosition, area bento.Rect, buffer
 
 		titleWidth := t.Line.Width()
 		titleArea := bento.Rect{
-			X:      max(0, max(titlesArea.Left(), titlesArea.Right()-titleWidth)),
-			Y:      titlesArea.Y,
+			Position: bento.Position{
+				X: max(0, max(titlesArea.Left(), titlesArea.Right()-titleWidth)),
+				Y: titlesArea.Y,
+			},
 			Width:  min(titlesArea.Width, titleWidth),
 			Height: titlesArea.Height,
 		}
@@ -350,8 +352,10 @@ func (b Block) renderCenterTitles(position TitlePosition, area bento.Rect, buffe
 	titlesArea := b.titlesArea(area, position)
 
 	titlesArea = bento.Rect{
-		X:      titlesArea.Left() + max(0, titlesArea.Width-totalWidth)/2,
-		Y:      titlesArea.Y,
+		Position: bento.Position{
+			X: titlesArea.Left() + max(0, titlesArea.Width-totalWidth)/2,
+			Y: titlesArea.Y,
+		},
 		Width:  titlesArea.Width,
 		Height: titlesArea.Height,
 	}
@@ -364,8 +368,10 @@ func (b Block) renderCenterTitles(position TitlePosition, area bento.Rect, buffe
 		titleWidth := t.Line.Width()
 
 		titleArea := bento.Rect{
-			X:      titlesArea.X,
-			Y:      titlesArea.Y,
+			Position: bento.Position{
+				X: titlesArea.X,
+				Y: titlesArea.Y,
+			},
 			Width:  min(titleWidth, titlesArea.Width),
 			Height: titlesArea.Height,
 		}
@@ -389,8 +395,10 @@ func (b Block) renderLeftTitles(position TitlePosition, area bento.Rect, buffer 
 
 		titleWidth := t.Line.Width()
 		titleArea := bento.Rect{
-			X:      titlesArea.X,
-			Y:      titlesArea.Y,
+			Position: bento.Position{
+				X: titlesArea.X,
+				Y: titlesArea.Y,
+			},
 			Width:  min(titleWidth, titlesArea.Width),
 			Height: titlesArea.Height,
 		}
@@ -452,8 +460,10 @@ func (b Block) titlesArea(area bento.Rect, position TitlePosition) bento.Rect {
 	}
 
 	return bento.Rect{
-		X:      area.Left() + leftBorder,
-		Y:      y,
+		Position: bento.Position{
+			X: area.Left() + leftBorder,
+			Y: y,
+		},
 		Width:  max(0, area.Width-leftBorder-rightBorder),
 		Height: 1,
 	}

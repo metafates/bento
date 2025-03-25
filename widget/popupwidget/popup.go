@@ -2,8 +2,8 @@ package popupwidget
 
 import (
 	"github.com/metafates/bento"
-	"github.com/metafates/bento/blockwidget"
-	"github.com/metafates/bento/clearwidget"
+	"github.com/metafates/bento/widget/blockwidget"
+	"github.com/metafates/bento/widget/clearwidget"
 )
 
 var _ bento.Widget = (*Popup)(nil)

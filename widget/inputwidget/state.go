@@ -9,6 +9,8 @@ import (
 	"github.com/rivo/uniseg"
 )
 
+var _ bento.TryUpdater = (*State)(nil)
+
 type State struct {
 	cursor     int
 	showCursor bool
@@ -118,13 +120,13 @@ func (s *State) MoveWordLeft() {
 	// TODO
 }
 
-func (s *State) TryUpdate(msg bento.Msg) (bool, bento.Cmd) {
+func (s *State) TryUpdate(msg bento.Msg) (bento.Cmd, bool) {
 	keyMsg, ok := msg.(bento.KeyMsg)
 	if !ok {
-		return false, nil
+		return nil, false
 	}
 
-	return s.update(bento.Key(keyMsg)), nil
+	return nil, s.update(bento.Key(keyMsg))
 }
 
 func (s *State) update(key bento.Key) bool {

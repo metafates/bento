@@ -2,10 +2,10 @@ package inputwidget
 
 import (
 	"github.com/metafates/bento"
-	"github.com/metafates/bento/blockwidget"
 	"github.com/metafates/bento/internal/grapheme"
 	"github.com/metafates/bento/internal/sliceutil"
-	"github.com/metafates/bento/textwidget"
+	"github.com/metafates/bento/widget/blockwidget"
+	"github.com/metafates/bento/widget/textwidget"
 	"github.com/rivo/uniseg"
 )
 

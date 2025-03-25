@@ -5,7 +5,7 @@ import (
 
 	"github.com/edwingeng/deque/v2"
 	"github.com/metafates/bento"
-	"github.com/metafates/bento/textwidget"
+	"github.com/metafates/bento/widget/textwidget"
 )
 
 var _ LineComposer = (*WordWrapper)(nil)

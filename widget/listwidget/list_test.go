@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/metafates/bento"
-	"github.com/metafates/bento/textwidget"
+	"github.com/metafates/bento/widget/textwidget"
 	"github.com/stretchr/testify/require"
 )
 

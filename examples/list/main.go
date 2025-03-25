@@ -6,11 +6,11 @@ import (
 	"strconv"
 
 	"github.com/metafates/bento"
-	"github.com/metafates/bento/blockwidget"
-	"github.com/metafates/bento/listwidget"
-	"github.com/metafates/bento/paragraphwidget"
-	"github.com/metafates/bento/popupwidget"
-	"github.com/metafates/bento/textwidget"
+	"github.com/metafates/bento/widget/blockwidget"
+	"github.com/metafates/bento/widget/listwidget"
+	"github.com/metafates/bento/widget/paragraphwidget"
+	"github.com/metafates/bento/widget/popupwidget"
+	"github.com/metafates/bento/widget/textwidget"
 )
 
 var _ bento.Model = (*Model)(nil)
@@ -93,8 +93,8 @@ func (m *Model) Init() bento.Cmd {
 }
 
 func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
-	consumed, cmd := m.listState.TryUpdate(msg)
-	if consumed {
+	cmd, ok := m.listState.TryUpdate(msg)
+	if ok {
 		return m, cmd
 	}
 

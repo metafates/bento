@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	"github.com/metafates/bento"
-	"github.com/metafates/bento/blockwidget"
 	"github.com/metafates/bento/internal/sliceutil"
-	"github.com/metafates/bento/textwidget"
+	"github.com/metafates/bento/widget/blockwidget"
+	"github.com/metafates/bento/widget/textwidget"
 	"github.com/rivo/uniseg"
 )
 
@@ -130,8 +130,10 @@ func (l List) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State
 		}
 
 		rowArea := bento.Rect{
-			X:      x,
-			Y:      y,
+			Position: bento.Position{
+				X: x,
+				Y: y,
+			},
 			Width:  listArea.Width,
 			Height: item.Height(),
 		}
@@ -149,8 +151,10 @@ func (l List) RenderStateful(area bento.Rect, buffer *bento.Buffer, state *State
 			highlightSymbolWidth := uniseg.StringWidth(l.highlightSymbol)
 
 			itemArea = bento.Rect{
-				X:      rowArea.X + highlightSymbolWidth,
-				Y:      rowArea.Y,
+				Position: bento.Position{
+					X: rowArea.X + highlightSymbolWidth,
+					Y: rowArea.Y,
+				},
 				Width:  max(0, rowArea.Width-highlightSymbolWidth),
 				Height: rowArea.Height,
 			}

@@ -31,24 +31,24 @@ func (s *State) ID() int {
 	return s.id
 }
 
-func (s *State) TryUpdate(msg bento.Msg) (bool, bento.Cmd) {
+func (s *State) TryUpdate(msg bento.Msg) (bento.Cmd, bool) {
 	tickMsg, ok := msg.(TickMsg)
 	if !ok {
-		return false, nil
+		return nil, false
 	}
 
 	if tickMsg.id > 0 && tickMsg.id != s.id {
-		return false, nil
+		return nil, false
 	}
 
 	if tickMsg.tag > 0 && tickMsg.tag != s.tag {
-		return false, nil
+		return nil, false
 	}
 
 	s.frame++
 	s.tag++
 
-	return true, s.tick()
+	return s.tick(), true
 }
 
 // Tick is the command used to advance the spinner one frame. Use this command

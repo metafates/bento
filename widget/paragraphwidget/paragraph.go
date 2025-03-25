@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/metafates/bento"
-	"github.com/metafates/bento/blockwidget"
 	"github.com/metafates/bento/internal/reflow"
-	"github.com/metafates/bento/textwidget"
+	"github.com/metafates/bento/widget/blockwidget"
+	"github.com/metafates/bento/widget/textwidget"
 )
 
 var _ bento.Widget = (*Paragraph)(nil)

@@ -3,7 +3,7 @@ package throbberwidget
 import (
 	"fmt"
 
-	"github.com/metafates/bento/textwidget"
+	"github.com/metafates/bento/widget/textwidget"
 )
 
 type Type int

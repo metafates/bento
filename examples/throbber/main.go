@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/metafates/bento"
-	"github.com/metafates/bento/blockwidget"
-	"github.com/metafates/bento/textwidget"
-	"github.com/metafates/bento/throbberwidget"
+	"github.com/metafates/bento/widget/blockwidget"
+	"github.com/metafates/bento/widget/textwidget"
+	"github.com/metafates/bento/widget/throbberwidget"
 )
 
 var _ bento.Model = (*Model)(nil)
@@ -114,8 +114,8 @@ func getGrid(area bento.Rect, itemsCount int) []bento.Rect {
 
 // Update implements bento.Model.
 func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
-	consumed, cmd := m.throbber.TryUpdate(msg)
-	if consumed {
+	cmd, ok := m.throbber.TryUpdate(msg)
+	if ok {
 		return m, cmd
 	}
 

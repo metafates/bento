@@ -225,8 +225,10 @@ func changesToRects(
 		switch direction {
 		case DirectionHorizontal:
 			rect := Rect{
-				X:      startRounded,
-				Y:      area.Y,
+				Position: Position{
+					X: startRounded,
+					Y: area.Y,
+				},
 				Width:  size,
 				Height: area.Height,
 			}
@@ -234,8 +236,10 @@ func changesToRects(
 			rects = append(rects, rect)
 		case DirectionVertical:
 			rect := Rect{
-				X:      area.X,
-				Y:      startRounded,
+				Position: Position{
+					X: area.X,
+					Y: startRounded,
+				},
 				Width:  area.Width,
 				Height: size,
 			}

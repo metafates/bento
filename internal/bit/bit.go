@@ -1,21 +1,21 @@
 package bit
 
-type Bits interface {
+type Bit interface {
 	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
 }
 
-func Difference[B Bits](a, b B) B {
+func Difference[B Bit](a, b B) B {
 	return a & ^b
 }
 
-func Intersects[B Bits](a, b B) bool {
+func Intersects[B Bit](a, b B) bool {
 	return a&b != 0
 }
 
-func Contains[B Bits](a, b B) bool {
+func Contains[B Bit](a, b B) bool {
 	return a&b == b
 }
 
-func Union[B Bits](a, b B) B {
+func Union[B Bit](a, b B) B {
 	return a | b
 }

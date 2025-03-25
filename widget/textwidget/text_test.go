@@ -32,8 +32,10 @@ func TestText_Render(t *testing.T) {
 		})
 
 		outOfBoundsArea := bento.Rect{
-			X:      20,
-			Y:      20,
+			Position: bento.Position{
+				X: 20,
+				Y: 20,
+			},
 			Width:  10,
 			Height: 1,
 		}

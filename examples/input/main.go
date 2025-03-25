@@ -5,10 +5,10 @@ import (
 	"log"
 
 	"github.com/metafates/bento"
-	"github.com/metafates/bento/blockwidget"
-	"github.com/metafates/bento/fillwidget"
-	"github.com/metafates/bento/inputwidget"
-	"github.com/metafates/bento/popupwidget"
+	"github.com/metafates/bento/widget/blockwidget"
+	"github.com/metafates/bento/widget/fillwidget"
+	"github.com/metafates/bento/widget/inputwidget"
+	"github.com/metafates/bento/widget/popupwidget"
 )
 
 var _ bento.Model = (*Model)(nil)
@@ -37,8 +37,8 @@ func (m *Model) Init() bento.Cmd {
 
 // Update implements bento.Model.
 func (m *Model) Update(msg bento.Msg) (bento.Model, bento.Cmd) {
-	consumed, cmd := m.input.TryUpdate(msg)
-	if consumed {
+	cmd, ok := m.input.TryUpdate(msg)
+	if ok {
 		return m, cmd
 	}
 

@@ -30,7 +30,7 @@ type TryUpdater interface {
 	// If consumed is true the caller should return resulted cmd.
 	//
 	// It is adviced to call this method before any further message handling.
-	TryUpdate(msg Msg) (consumed bool, cmd Cmd)
+	TryUpdate(msg Msg) (cmd Cmd, consumed bool)
 }
 
 type Model interface {

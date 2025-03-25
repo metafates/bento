@@ -57,7 +57,7 @@ func NewTerminal(backend TerminalBackend, viewport Viewport) (*Terminal, error) 
 		panic("unimplemented")
 	case ViewportFixed:
 		viewportArea = Rect(v)
-		cursorPos = viewportArea.Position()
+		cursorPos = viewportArea.Position
 	}
 
 	return &Terminal{
@@ -250,7 +250,7 @@ func (t *Terminal) Clear() error {
 			return fmt.Errorf("clear all: %w", err)
 		}
 	case ViewportInline:
-		if err := t.backend.SetCursorPosition(t.viewportArea.Position()); err != nil {
+		if err := t.backend.SetCursorPosition(t.viewportArea.Position); err != nil {
 			return fmt.Errorf("set cursor position: %w", err)
 		}
 

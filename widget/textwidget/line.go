@@ -222,10 +222,9 @@ func (l Line) renderWithAlignment(
 	}
 
 	area = bento.Rect{
-		X:      area.X,
-		Y:      area.Y,
-		Width:  area.Width,
-		Height: 1,
+		Position: area.Position,
+		Width:    area.Width,
+		Height:   1,
 	}
 
 	lineWidth := l.Width()

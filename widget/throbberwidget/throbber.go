@@ -2,7 +2,7 @@ package throbberwidget
 
 import (
 	"github.com/metafates/bento"
-	"github.com/metafates/bento/textwidget"
+	"github.com/metafates/bento/widget/textwidget"
 )
 
 var _ bento.StatefulWidget[State] = (*Throbber)(nil)

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/metafates/bento"
-	"github.com/metafates/bento/textwidget"
+	"github.com/metafates/bento/widget/textwidget"
 	"github.com/stretchr/testify/require"
 )
 
@@ -1105,9 +1105,9 @@ func TestEdgeCases(t *testing.T) {
 			direction: bento.DirectionVertical,
 			split:     bento.Rect{Width: 1, Height: 1},
 			want: []bento.Rect{
-				{X: 0, Y: 0, Width: 1, Height: 1},
-				{X: 0, Y: 1, Width: 1, Height: 0},
-				{X: 0, Y: 1, Width: 1, Height: 0},
+				{Position: bento.Position{X: 0, Y: 0}, Width: 1, Height: 1},
+				{Position: bento.Position{X: 0, Y: 1}, Width: 1, Height: 0},
+				{Position: bento.Position{X: 0, Y: 1}, Width: 1, Height: 0},
 			},
 		},
 		{
@@ -1120,9 +1120,9 @@ func TestEdgeCases(t *testing.T) {
 			direction: bento.DirectionVertical,
 			split:     bento.Rect{Width: 1, Height: 1},
 			want: []bento.Rect{
-				{X: 0, Y: 0, Width: 1, Height: 0},
-				{X: 0, Y: 0, Width: 1, Height: 1},
-				{X: 0, Y: 1, Width: 1, Height: 0},
+				{Position: bento.Position{X: 0, Y: 0}, Width: 1, Height: 0},
+				{Position: bento.Position{X: 0, Y: 0}, Width: 1, Height: 1},
+				{Position: bento.Position{X: 0, Y: 1}, Width: 1, Height: 0},
 			},
 		},
 		{
@@ -1135,9 +1135,9 @@ func TestEdgeCases(t *testing.T) {
 			direction: bento.DirectionHorizontal,
 			split:     bento.Rect{Width: 1, Height: 1},
 			want: []bento.Rect{
-				{X: 0, Y: 0, Width: 1, Height: 1},
-				{X: 1, Y: 0, Width: 0, Height: 1},
-				{X: 1, Y: 0, Width: 0, Height: 1},
+				{Position: bento.Position{X: 0, Y: 0}, Width: 1, Height: 1},
+				{Position: bento.Position{X: 1, Y: 0}, Width: 0, Height: 1},
+				{Position: bento.Position{X: 1, Y: 0}, Width: 0, Height: 1},
 			},
 		},
 		{
@@ -1151,10 +1151,10 @@ func TestEdgeCases(t *testing.T) {
 			direction: bento.DirectionHorizontal,
 			split:     bento.Rect{Width: 7, Height: 1},
 			want: []bento.Rect{
-				{X: 0, Y: 0, Width: 0, Height: 1},
-				{X: 0, Y: 0, Width: 4, Height: 1},
-				{X: 4, Y: 0, Width: 0, Height: 1},
-				{X: 4, Y: 0, Width: 3, Height: 1},
+				{Position: bento.Position{X: 0, Y: 0}, Width: 0, Height: 1},
+				{Position: bento.Position{X: 0, Y: 0}, Width: 4, Height: 1},
+				{Position: bento.Position{X: 4, Y: 0}, Width: 0, Height: 1},
+				{Position: bento.Position{X: 4, Y: 0}, Width: 3, Height: 1},
 			},
 		},
 	}

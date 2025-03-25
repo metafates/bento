@@ -2,7 +2,7 @@ package blockwidget
 
 import (
 	"github.com/metafates/bento"
-	"github.com/metafates/bento/textwidget"
+	"github.com/metafates/bento/widget/textwidget"
 )
 
 type TitlePosition int

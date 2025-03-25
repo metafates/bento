@@ -1,7 +1,8 @@
 package bento
 
 type Rect struct {
-	X, Y int
+	Position
+	// X, Y int
 
 	Width, Height int
 }
@@ -40,13 +41,6 @@ func (r Rect) Bottom() int {
 	return r.Y + r.Height
 }
 
-func (r Rect) Position() Position {
-	return Position{
-		X: r.X,
-		Y: r.Y,
-	}
-}
-
 func (r Rect) Inner(padding Padding) Rect {
 	horizontal := padding.Right + padding.Left
 	vertical := padding.Top + padding.Bottom
@@ -56,8 +50,10 @@ func (r Rect) Inner(padding Padding) Rect {
 	}
 
 	return Rect{
-		X:      r.X + padding.Left,
-		Y:      r.Y + padding.Top,
+		Position: Position{
+			X: r.X + padding.Left,
+			Y: r.Y + padding.Top,
+		},
 		Width:  max(0, r.Width-horizontal),
 		Height: max(0, r.Height-vertical),
 	}
@@ -71,8 +67,10 @@ func (r Rect) Intersection(other Rect) Rect {
 	y2 := min(r.Bottom(), other.Bottom())
 
 	return Rect{
-		X:      x1,
-		Y:      y1,
+		Position: Position{
+			X: x1,
+			Y: y1,
+		},
 		Width:  max(0, x2-x1),
 		Height: max(0, y2-y1),
 	}
@@ -90,8 +88,10 @@ func (r Rect) Rows() []Rect {
 
 	for currentRowFwd < currentRowBack {
 		row := Rect{
-			X:      r.X,
-			Y:      currentRowFwd,
+			Position: Position{
+				X: r.X,
+				Y: currentRowFwd,
+			},
 			Width:  r.Width,
 			Height: 1,
 		}
@@ -106,8 +106,10 @@ func (r Rect) Rows() []Rect {
 
 func (r Rect) IndentX(offset int) Rect {
 	return Rect{
-		X:      r.X + offset,
-		Y:      r.Y,
+		Position: Position{
+			X: r.X + offset,
+			Y: r.Y,
+		},
 		Width:  max(0, r.Width-offset),
 		Height: r.Height,
 	}
